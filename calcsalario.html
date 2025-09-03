@@ -73,6 +73,12 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Adicional Noturno -->
+            <div class="space-y-2">
+                <label for="horasNoturnas" class="block text-sm font-medium text-gray-700">Horas Noturnas (1h e 45min)</label>
+                <input type="number" id="horasNoturnas" placeholder="Ex: 1.45" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+            </div>
         </div>
         
         <!-- Seção de Seleção de Período e Dias -->
@@ -157,10 +163,20 @@
                 <!-- Fim dos Detalhes do DSR -->
                 <!-- Detalhe do DSR -->
                 <div class="flex justify-between items-center text-sm text-gray-500 pt-1">
+                    <span>Dias úteis no período:</span>
+                    <span id="diasUteis" class="font-semibold text-gray-700">0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm text-gray-500 pt-1">
                     <span>Dias não úteis no período:</span>
                     <span id="diasNaoUteis" class="font-semibold text-gray-700">0</span>
                 </div>
                 <!-- Fim do Detalhe do DSR -->
+                <div class="border-t border-gray-200 pt-2 mt-2">
+                    <div class="flex justify-between items-center text-gray-600">
+                        <span class="font-medium">Total Adicional Noturno:</span>
+                        <span id="totalAdicionalNoturno" class="font-bold text-gray-800">R$ 0,00</span>
+                    </div>
+                </div>
             </div>
             
             <div class="bg-indigo-600 p-4 rounded-xl shadow-lg mt-4">
@@ -180,6 +196,7 @@
         const he50Input = document.getElementById('he50');
         const he65Input = document.getElementById('he65');
         const he100Input = document.getElementById('he100');
+        const horasNoturnasInput = document.getElementById('horasNoturnas');
         const dataInicioInput = document.getElementById('dataInicio');
         const dataFimInput = document.getElementById('dataFim');
         
@@ -191,9 +208,11 @@
         const valorHe65Span = document.getElementById('valorHe65');
         const valorHe100Span = document.getElementById('valorHe100');
         const diasNaoUteisSpan = document.getElementById('diasNaoUteis');
+        const diasUteisSpan = document.getElementById('diasUteis');
         const valorDSR50Span = document.getElementById('valorDSR50');
         const valorDSR65Span = document.getElementById('valorDSR65');
         const valorDSR100Span = document.getElementById('valorDSR100');
+        const totalAdicionalNoturnoSpan = document.getElementById('totalAdicionalNoturno');
 
         const calendarEl = document.getElementById('calendar');
 
@@ -202,7 +221,7 @@
         let periodoContabil = {};
 
         // Adiciona listeners para recálculo em tempo real
-        [salarioBrutoInput, horasMensaisInput, periculosidadeCheckbox, he50Input, he65Input, he100Input].forEach(element => {
+        [salarioBrutoInput, horasMensaisInput, periculosidadeCheckbox, he50Input, he65Input, he100Input, horasNoturnasInput].forEach(element => {
             element.addEventListener('input', calcular);
             element.addEventListener('change', calcular);
         });
@@ -242,10 +261,14 @@
             const dataAtual = new Date(inicio);
             while (dataAtual <= fim) {
                 const dayDiv = document.createElement('div');
+                const dayOfWeek = dataAtual.getDay(); // 0 = Domingo, 6 = Sábado
                 
                 dayDiv.className = `day text-gray-800`;
                 dayDiv.textContent = dataAtual.getDate();
                 dayDiv.dataset.date = dataAtual.toISOString().split('T')[0];
+
+                // Remove a seleção automática
+                dayDiv.classList.remove('selected');
                 
                 // Adiciona a funcionalidade de clique
                 dayDiv.addEventListener('click', () => {
@@ -285,6 +308,7 @@
             const he50 = parseFloat(he50Input.value) || 0;
             const he65 = parseFloat(he65Input.value) || 0;
             const he100 = parseFloat(he100Input.value) || 0;
+            const horasNoturnas = parseFloat(horasNoturnasInput.value) || 0;
 
             if (salarioBruto <= 0 || horasMensais <= 0) {
                 valorHoraNormalSpan.textContent = formatarMoeda(0);
@@ -298,6 +322,8 @@
                 valorDSR65Span.textContent = formatarMoeda(0);
                 valorDSR100Span.textContent = formatarMoeda(0);
                 diasNaoUteisSpan.textContent = 0;
+                diasUteisSpan.textContent = 0;
+                totalAdicionalNoturnoSpan.textContent = formatarMoeda(0);
                 return;
             }
 
@@ -323,26 +349,46 @@
             const totalHorasExtras = valorHe50Arredondado + valorHe65Arredondado + valorHe100Arredondado;
             totalHorasExtrasSpan.textContent = formatarMoeda(totalHorasExtras);
 
-            // 4. Atualização dos detalhes das horas extras
+            // 4. Cálculo do Adicional Noturno
+            const adicionalNoturnoValorHora = valorHoraComPericulosidade * 0.35;
+            const totalAdicionalNoturno = adicionalNoturnoValorHora * horasNoturnas;
+            totalAdicionalNoturnoSpan.textContent = formatarMoeda(totalAdicionalNoturno);
+
+            // 5. Atualização dos detalhes das horas extras
             valorHe50Span.textContent = formatarMoeda(valorHe50Arredondado);
             valorHe65Span.textContent = formatarMoeda(valorHe65Arredondado);
             valorHe100Span.textContent = formatarMoeda(valorHe100Arredondado);
 
-            // 5. Cálculo do DSR
+            // 6. Cálculo do DSR
             const inicio = new Date(dataInicioInput.value + 'T12:00:00');
             const fim = new Date(dataFimInput.value + 'T12:00:00');
 
             if (isNaN(inicio.getTime()) || isNaN(fim.getTime())) {
                 valorDSRSpan.textContent = formatarMoeda(0);
                 diasNaoUteisSpan.textContent = 0;
+                diasUteisSpan.textContent = 0;
                 return;
             }
 
             const umDia = 1000 * 60 * 60 * 24;
             const diasTotais = Math.round((fim - inicio) / umDia) + 1;
 
-            const diasNaoUteis = selectedRestDays.size;
-            const diasUteis = diasTotais - diasNaoUteis;
+            let diasUteis = 0;
+            let diasNaoUteis = 0;
+            const dataContador = new Date(inicio);
+            while (dataContador <= fim) {
+                const dayOfWeek = dataContador.getDay();
+                const dateStr = dataContador.toISOString().split('T')[0];
+                
+                // Se o dia não for um fim de semana e não estiver selecionado como dia de descanso
+                if (dayOfWeek >= 1 && dayOfWeek <= 5 && !selectedRestDays.has(dateStr)) {
+                    diasUteis++;
+                } else if (selectedRestDays.has(dateStr)) {
+                    diasNaoUteis++;
+                }
+
+                dataContador.setDate(dataContador.getDate() + 1);
+            }
             
             let valorDSR50 = 0;
             let valorDSR65 = 0;
@@ -362,9 +408,10 @@
             valorDSRSpan.textContent = formatarMoeda(Math.round(totalDSR * 100) / 100);
 
             diasNaoUteisSpan.textContent = diasNaoUteis;
+            diasUteisSpan.textContent = diasUteis;
 
             // 6. Total a Receber
-            const totalReceber = salarioBruto + adicionalPericulosidadeMensal + totalHorasExtras + totalDSR;
+            const totalReceber = salarioBruto + adicionalPericulosidadeMensal + totalHorasExtras + totalDSR + totalAdicionalNoturno;
             totalReceberSpan.textContent = formatarMoeda(totalReceber);
         }
 
