@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Requisição de Serviço</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .technician-entry { transition: all 0.3s ease-in-out; }
+        .modal-overlay {
+            transition: opacity 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Modal de Autenticação (Login/Registro) -->
+    <div id="auth-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg relative">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Acesso ao Relatório</h2>
+            <form id="login-form">
+                <div class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email:</label>
+                        <input type="email" id="login-email" required class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Senha:</label>
+                        <input type="password" id="login-password" required class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Entrar</button>
+                </div>
+            </form>
+             <p class="text-center text-sm text-gray-600 mt-4">Não tem uma conta? <a href="#" id="show-register" class="font-medium text-indigo-600 hover:text-indigo-500">Registre-se</a></p>
+            
+            <form id="register-form" class="hidden">
+                 <div class="space-y-4">
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-gray-700">Email:</label>
+                        <input type="email" id="register-email" required class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-gray-700">Senha (mínimo 6 caracteres):</label>
+                        <input type="password" id="register-password" required class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Registrar</button>
+                </div>
+            </form>
+             <p class="text-center text-sm text-gray-600 mt-4 hidden" id="register-back-link">Já tem uma conta? <a href="#" id="show-login" class="font-medium text-indigo-600 hover:text-indigo-500">Faça login</a></p>
+        </div>
+    </div>
+
+    <!-- Container Principal da Aplicação -->
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="flex justify-between items-center mb-8">
+             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Sistema de Requisição</h1>
+             <div id="user-session-controls">
+                <!-- Botões de Login/Logout aparecem aqui -->
+             </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Formulário de Requisição (Sempre visível) -->
+            <div id="form-container" class="bg-white p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-2xl font-bold mb-6 text-gray-900">Criar Nova Requisição</h2>
+                <form id="service-request-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div><label for="solicitante" class="block text-sm font-medium text-gray-700 mb-1">Solicitante:</label><input type="text" id="solicitante" name="solicitante" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                            <div><label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data:</label><input type="date" id="data" name="data" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                            <div><label for="hora" class="block text-sm font-medium text-gray-700 mb-1">Hora:</label><input type="time" id="hora" name="hora" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                        </div>
+                        <div class="space-y-4">
+                            <div><label for="area" class="block text-sm font-medium text-gray-700 mb-1">Área:</label><input type="text" id="area" name="area" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                            <div><label for="equipamento" class="block text-sm font-medium text-gray-700 mb-1">Equipamento:</label><input type="text" id="equipamento" name="equipamento" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                            <div><label for="sap" class="block text-sm font-medium text-gray-700 mb-1">SAP:</label><input type="text" id="sap" name="sap" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></div>
+                        </div>
+                    </div>
+                    <div class="mt-6"><label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Problema:</label><textarea id="descricao" name="descricao" rows="2" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea></div>
+                    <div class="mt-6"><label for="causa" class="block text-sm font-medium text-gray-700 mb-1">Causa do Problema:</label><textarea id="causa" name="causa" rows="2" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea></div>
+                    <div class="mt-6"><label for="solucao" class="block text-sm font-medium text-gray-700 mb-1">Solução do Problema:</label><textarea id="solucao" name="solucao" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea></div>
+                    <div class="mt-8 border-t pt-6">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Técnicos Responsáveis</h3>
+                        <div id="technicians-list" class="space-y-4"></div>
+                        <button type="button" id="add-technician-btn" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Adicionar Técnico</button>
+                    </div>
+                    <div class="mt-8 text-right"><button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Salvar Requisição</button></div>
+                </form>
+            </div>
+
+            <!-- Lista de Requisições (Relatórios) -->
+            <div id="requests-section" class="bg-white p-6 rounded-2xl shadow-lg">
+                 <h2 class="text-2xl font-bold mb-6 text-gray-900">Relatório de Requisições</h2>
+                 <div id="requests-container">
+                    <!-- Conteúdo dinâmico aqui -->
+                 </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, getDocs, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Configuração do Firebase ---
+        const firebaseConfig = {
+           apiKey: "AIzaSyBZX5ZzwJ7nYrDzec3jVGMyt011Qp1VLTw",
+           authDomain: "atendimentovw-5a9a9.firebaseapp.com",
+           projectId: "atendimentovw-5a9a9",
+           storageBucket: "atendimentovw-5a9a9.firebasestorage.app",
+           messagingSenderId: "85089516898",
+           appId: "1:85089516898:web:28075cd69baf68a95f003b",
+           measurementId: "G-6Y3LQ7TZLN"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        // --- Referências de Elementos do DOM ---
+        const authModal = document.getElementById('auth-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterLink = document.getElementById('show-register');
+        const showLoginLink = document.getElementById('show-login');
+        const registerBackLink = document.getElementById('register-back-link');
+        const userSessionControls = document.getElementById('user-session-controls');
+        const requestsContainer = document.getElementById('requests-container');
+        const form = document.getElementById('service-request-form');
+        
+        let unsubscribeRequests = null; // Para parar de ouvir os dados ao deslogar
+
+        // --- Lógica do Modal de Autenticação ---
+        const openModal = () => authModal.classList.remove('hidden');
+        const closeModal = () => authModal.classList.add('hidden');
+        closeModalBtn.addEventListener('click', closeModal);
+
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.add('hidden');
+            showRegisterLink.parentElement.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            registerBackLink.classList.remove('hidden');
+        });
+
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginForm.classList.remove('hidden');
+            showRegisterLink.parentElement.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            registerBackLink.classList.add('hidden');
+        });
+        
+        // --- Lógica de Autenticação ---
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = registerForm['register-email'].value;
+            const password = registerForm['register-password'].value;
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                await setDoc(doc(db, "users", userCredential.user.uid), { email: userCredential.user.email });
+                showModal('Usuário registrado com sucesso! Faça o login.', 'success');
+                registerForm.reset();
+                showLoginLink.click();
+            } catch (error) {
+                console.error("Erro ao registrar:", error);
+                showModal(`Erro ao registrar: ${error.message}`);
+            }
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm['login-email'].value;
+            const password = loginForm['login-password'].value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao fazer login:", error);
+                showModal(`Erro ao fazer login: ${error.message}`);
+            }
+        });
+
+        // --- Observador do Estado de Autenticação ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado
+                userSessionControls.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                         <span class="text-sm text-gray-600 hidden sm:block">${user.email}</span>
+                         <button id="export-excel-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Excel</button>
+                         <button id="logout-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">Sair</button>
+                    </div>`;
+                document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+                document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+                loadRequests();
+            } else {
+                // Usuário está deslogado
+                userSessionControls.innerHTML = '<button id="login-reports-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Login para ver Relatórios</button>';
+                document.getElementById('login-reports-btn').addEventListener('click', openModal);
+                
+                requestsContainer.innerHTML = '<p class="text-gray-500 text-center">Faça o login para visualizar as requisições.</p>';
+                if (unsubscribeRequests) {
+                    unsubscribeRequests(); // Para de ouvir em tempo real
+                }
+            }
+        });
+
+        // --- Lógica do Formulário (Público) ---
+        const techniciansList = document.getElementById('technicians-list');
+        const addTechnicianBtn = document.getElementById('add-technician-btn');
+        let technicianCount = 0;
+        const addTechnicianEntry = () => {
+            technicianCount++;
+            const entryDiv = document.createElement('div');
+            entryDiv.className = 'technician-entry grid grid-cols-1 sm:grid-cols-5 gap-4 border p-3 rounded-lg bg-gray-50';
+            entryDiv.innerHTML = `
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-600">Nome do Técnico:</label><input type="text" name="tech-name-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                <div><label class="text-sm font-medium text-gray-600">Registro:</label><input type="text" name="tech-reg-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md"></div>
+                <div class="flex items-end space-x-2 sm:col-span-2">
+                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Início:</label><input type="time" name="tech-start-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Final:</label><input type="time" name="tech-end-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                    <button type="button" class="remove-technician-btn h-8 w-8 flex-shrink-0 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center">&times;</button>
+                </div>`;
+            techniciansList.appendChild(entryDiv);
+            entryDiv.querySelector('.remove-technician-btn').addEventListener('click', () => { entryDiv.remove(); });
+        };
+        addTechnicianBtn.addEventListener('click', addTechnicianEntry);
+        addTechnicianEntry();
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const technicians = [];
+            document.querySelectorAll('.technician-entry').forEach(entry => {
+                const nameInput = entry.querySelector(`input[name^="tech-name-"]`);
+                const regInput = entry.querySelector(`input[name^="tech-reg-"]`);
+                const startInput = entry.querySelector(`input[name^="tech-start-"]`);
+                const endInput = entry.querySelector(`input[name^="tech-end-"]`);
+                if (nameInput && startInput && endInput) { technicians.push({ nome: nameInput.value, registro: regInput ? regInput.value : '', horaInicio: startInput.value, horaFinal: endInput.value }); }
+            });
+            const requestData = { solicitante: form.solicitante.value, data: form.data.value, hora: form.hora.value, area: form.area.value, equipamento: form.equipamento.value, sap: form.sap.value, descricaoProblema: form.descricao.value, causaProblema: form.causa.value, solucaoProblema: form.solucao.value, tecnicos: technicians, createdAt: serverTimestamp() };
+            try {
+                await addDoc(collection(db, `service_requests`), requestData);
+                form.reset();
+                techniciansList.innerHTML = ''; 
+                addTechnicianEntry(); 
+                showModal('Requisição salva com sucesso!', 'success');
+            } catch (error) {
+                console.error("Erro ao salvar a requisição:", error);
+                showModal('Ocorreu um erro ao salvar a requisição.');
+            }
+        });
+        
+        // --- Lógica de Carregamento de Relatórios ---
+        function loadRequests() {
+            requestsContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
+            const q = query(collection(db, `service_requests`), orderBy('createdAt', 'desc'));
+
+            unsubscribeRequests = onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada.</p>';
+                    return;
+                }
+                const requestsListDiv = document.createElement('div');
+                requestsListDiv.className = 'space-y-4';
+                snapshot.forEach(req => {
+                    const data = req.data();
+                    const reqCard = document.createElement('div');
+                    reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50';
+                    const formattedDate = new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    let techniciansHtml = data.tecnicos.map(tech => `<li class="text-sm text-gray-600 list-disc list-inside"><strong>${tech.nome}</strong> (Reg: ${tech.registro || 'N/A'}) - ${tech.horaInicio} às ${tech.horaFinal}</li>`).join('');
+                    reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
+                    requestsListDiv.appendChild(reqCard);
+                });
+                 requestsContainer.innerHTML = '';
+                 requestsContainer.appendChild(requestsListDiv);
+
+            }, (error) => { 
+                console.error("Erro ao carregar requisições:", error); 
+                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique as regras de segurança.</p>';
+            });
+        }
+        
+        // --- Lógica de Exportação para Excel ---
+        async function exportToExcel() {
+            showModal('Gerando relatório...', 'success');
+            try {
+                const q = query(collection(db, "service_requests"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                const dataToExport = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const techniciansStr = data.tecnicos.map(t => `${t.nome} (${t.horaInicio}-${t.horaFinal})`).join('; ');
+                    
+                    dataToExport.push({
+                        "Data": new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                        "Hora": data.hora,
+                        "Solicitante": data.solicitante,
+                        "Área": data.area,
+                        "Equipamento": data.equipamento,
+                        "SAP": data.sap,
+                        "Descrição do Problema": data.descricaoProblema,
+                        "Causa do Problema": data.causaProblema,
+                        "Solução do Problema": data.solucaoProblema,
+                        "Técnicos": techniciansStr
+                    });
+                });
+
+                if (dataToExport.length === 0) {
+                    showModal('Nenhuma requisição para exportar.');
+                    return;
+                }
+
+                const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Requisições");
+                XLSX.writeFile(workbook, "Relatorio_Requisicoes.xlsx");
+
+            } catch (error) {
+                console.error("Erro ao exportar para Excel:", error);
+                showModal("Falha ao gerar o relatório.");
+            }
+        }
+
+        // --- Função Utilitária para Notificações ---
+        function showModal(message, type = 'error') {
+            const modal = document.createElement('div');
+            Object.assign(modal.style, { position: 'fixed', bottom: '20px', left: '50%', transform: 'translateX(-50%)', padding: '16px', borderRadius: '8px', color: 'white', zIndex: '1000', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', opacity: '0', transition: 'opacity 0.5s', backgroundColor: type === 'success' ? '#28a745' : '#dc3545' });
+            modal.innerText = message;
+            document.body.appendChild(modal);
+            setTimeout(() => { modal.style.opacity = '1'; }, 10);
+            setTimeout(() => { modal.style.opacity = '0'; setTimeout(() => { document.body.removeChild(modal); }, 500); }, 5000);
+        }
+    </script>
+</body>
+</html>
+
