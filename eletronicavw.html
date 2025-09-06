@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Manutenção</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background-color: white;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .form-section legend {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            padding: 0 0.5rem;
+        }
+        .component-row {
+            transition: opacity 0.3s ease-in-out;
+        }
+        #tabelaRegistros th, #tabelaRegistros td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        #tabelaRegistros th {
+            background-color: #f8fafc;
+        }
+        /* Estilos para impressão */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #secaoImpressao, #secaoImpressao * {
+                visibility: visible;
+            }
+            #secaoImpressao {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            th, td {
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Tela de Login -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gray-100">
+        <div class="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Acesso ao Sistema</h2>
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                 <p id="loginError" class="text-red-500 text-sm hidden"></p>
+                <div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal do App (inicialmente oculto) -->
+    <div id="mainContent" class="hidden container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="relative text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Entrada e Saída de Equipamentos</h1>
+            <p class="text-gray-600 mt-2">Gerencie o fluxo de equipamentos de manutenção de forma eficiente.</p>
+            <button id="logoutButton" class="absolute top-0 right-0 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">Sair</button>
+        </header>
+
+        <div id="connectionStatus" class="p-4 mb-4 text-sm text-center text-white bg-blue-500 rounded-md transition-all duration-300">
+            Conectando ao Firebase...
+        </div>
+
+        <main>
+            <!-- Formulário de Manutenção -->
+            <form id="maintenanceForm" class="space-y-6">
+                <!-- Seção de Entrada do Equipamento -->
+                <fieldset class="form-section">
+                    <legend class="text-xl font-semibold mb-4">Dados de Entrada</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="nomePortador" class="block text-sm font-medium text-gray-700">Nome de quem trouxe</label>
+                            <input type="text" id="nomePortador" name="nomePortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nome do colaborador" required>
+                        </div>
+                        <div>
+                            <label for="registroPortador" class="block text-sm font-medium text-gray-700">Registro</label>
+                            <input type="text" id="registroPortador" name="registroPortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nº de registro" required>
+                        </div>
+                        <div>
+                            <label for="nomeEquipamento" class="block text-sm font-medium text-gray-700">Nome do Equipamento</label>
+                            <input type="text" id="nomeEquipamento" name="nomeEquipamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Ex: Furadeira de Impacto" required>
+                        </div>
+                        <div>
+                            <label for="area" class="block text-sm font-medium text-gray-700">Área</label>
+                            <input type="text" id="area" name="area" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Ex: Manutenção Elétrica">
+                        </div>
+                        <div>
+                            <label for="dataEntrada" class="block text-sm font-medium text-gray-700">Data de Entrada</label>
+                            <input type="date" id="dataEntrada" name="dataEntrada" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" required>
+                        </div>
+                         <div>
+                            <label for="sap" class="block text-sm font-medium text-gray-700">SAP</label>
+                            <input type="text" id="sap" name="sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Código SAP do equipamento">
+                        </div>
+                        <div>
+                            <label for="setor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select id="setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="" disabled selected>Selecione um setor</option>
+                                <option value="armacao">Armação</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="montagem_final">Montagem Final</option>
+                                <option value="site">Site</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="recebedor" class="block text-sm font-medium text-gray-700">Nome de quem recebeu</label>
+                            <input type="text" id="recebedor" name="recebedor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nome do colaborador">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço</label>
+                            <input type="text" id="nota" name="nota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nº da nota ou OS">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="problema" class="block text-sm font-medium text-gray-700">Descrição do Problema</label>
+                            <textarea id="problema" name="problema" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Descreva detalhadamente o defeito apresentado pelo equipamento."></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-end pt-4">
+                    <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        Dar Entrada no Equipamento
+                    </button>
+                </div>
+            </form>
+
+            <!-- Seção de Registros Salvos e Filtros -->
+            <div id="secaoRegistros" class="mt-12">
+                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Registros Salvos</h2>
+                <div class="form-section">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                        <div>
+                             <label for="filtroSap" class="block text-sm font-medium text-gray-700">Buscar por SAP</label>
+                             <input type="text" id="filtroSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o SAP...">
+                        </div>
+                        <div>
+                             <label for="filtroNota" class="block text-sm font-medium text-gray-700">Buscar por Nota/OS</label>
+                             <input type="text" id="filtroNota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite a Nota/OS...">
+                        </div>
+                        <div>
+                             <label for="filtroTecnico" class="block text-sm font-medium text-gray-700">Buscar por Técnico Atribuído</label>
+                             <input type="text" id="filtroTecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o nome do técnico...">
+                        </div>
+                        <div class="flex space-x-2">
+                             <button id="btnBuscar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Buscar</button>
+                             <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button id="btnImprimir" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">Imprimir Relatório</button>
+                        <button id="btnExportar" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar para Excel</button>
+                    </div>
+                </div>
+
+                <div id="secaoImpressao" class="mt-6 overflow-x-auto">
+                    <table id="tabelaRegistros" class="min-w-full bg-white">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="text-sm font-semibold text-gray-600">Equipamento</th>
+                                <th class="text-sm font-semibold text-gray-600">SAP</th>
+                                <th class="text-sm font-semibold text-gray-600">Nota/OS</th>
+                                <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
+                                <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
+                                <th class="text-sm font-semibold text-gray-600">Status</th>
+                                <th class="text-sm font-semibold text-gray-600">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="corpoTabela">
+                           <!-- Dados do Firestore serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal de Saída -->
+    <div id="saidaModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <form id="saidaForm">
+                <input type="hidden" id="editDocId">
+                <fieldset>
+                    <legend class="text-2xl font-bold mb-6 text-gray-800">Finalizar e Dar Saída no Equipamento</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="dataSaida" class="block text-sm font-medium text-gray-700">Data da Saída</label>
+                            <input type="date" id="dataSaida" name="dataSaida" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="tecnico" class="block text-sm font-medium text-gray-700">Nome do Técnico Finalizador</label>
+                            <input type="text" id="tecnico" name="tecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Técnico responsável" required>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status Final do Reparo</label>
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <div class="flex items-center"><input id="statusReparado" name="statusReparo" type="radio" value="reparado" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusReparado" class="ml-3 block text-sm">Com Reparo</label></div>
+                            <div class="flex items-center"><input id="statusComponente" name="statusReparo" type="radio" value="componente" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusComponente" class="ml-3 block text-sm">Aguardando Componente</label></div>
+                            <div class="flex items-center"><input id="statusSemReparo" name="statusReparo" type="radio" value="sem_reparo" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusSemReparo" class="ml-3 block text-sm">Sem Reparo</label></div>
+                        </div>
+                    </div>
+                    <div id="reparoSection" class="hidden mt-6">
+                        <label for="descricaoReparo" class="block text-sm font-medium">Descrição do Reparo</label>
+                        <textarea id="descricaoReparo" name="descricaoReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Descreva o serviço realizado..."></textarea>
+                    </div>
+                    <div id="componentesSection" class="hidden mt-6 p-4 bg-gray-50 border rounded-lg"><h3 class="text-lg font-medium mb-4">Componentes Solicitados</h3><div id="listaComponentes" class="space-y-4"></div><button type="button" id="addComponenteBtn" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Adicionar</button></div>
+                    <div id="semReparoSection" class="hidden mt-6"><label for="motivoSemReparo" class="block text-sm font-medium">Motivo de não ter reparo</label><textarea id="motivoSemReparo" name="motivoSemReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea></div>
+                </fieldset>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
+                    <button type="button" id="cancelarSaidaBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar Saída</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Scripts do Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCoRoG79lA3mSBFDwoVJhfeYVKfWvFG5cI",
+            authDomain: "entrada-vw.firebaseapp.com",
+            projectId: "entrada-vw",
+            storageBucket: "entrada-vw.firebasestorage.app",
+            messagingSenderId: "371207408497",
+            appId: "1:371207408497:web:98420539260bea2d39c4d0",
+            measurementId: "G-FKCXC13VXP"
+        };
+        
+        // --- INICIALIZAÇÃO E LÓGICA PRINCIPAL ---
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        const colRef = collection(db, "equipamentos");
+
+        // --- ELEMENTOS DA UI ---
+        const loginScreen = document.getElementById('loginScreen');
+        const mainContent = document.getElementById('mainContent');
+        const loginForm = document.getElementById('loginForm');
+        const logoutButton = document.getElementById('logoutButton');
+        const corpoTabela = document.getElementById('corpoTabela');
+        const statusDiv = document.getElementById('connectionStatus');
+        const entryForm = document.getElementById('maintenanceForm');
+        const saidaModal = document.getElementById('saidaModal');
+        const saidaForm = document.getElementById('saidaForm');
+        const loginError = document.getElementById('loginError');
+
+        let registrosAtuais = []; 
+        let unsubscribe = null; // Para parar de ouvir os dados ao deslogar
+
+        // --- CONTROLE DE AUTENTICAÇÃO ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                // Usuário está logado
+                loginScreen.classList.add('hidden');
+                mainContent.classList.remove('hidden');
+                statusDiv.textContent = "Autenticado com sucesso! Carregando registros...";
+                statusDiv.className = "p-4 mb-4 text-sm text-center text-white bg-green-500 rounded-md";
+                setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
+                
+                // Inicia o listener do Firestore APÓS o login
+                carregarRegistros();
+            } else {
+                // Usuário está deslogado
+                loginScreen.classList.remove('hidden');
+                mainContent.classList.add('hidden');
+
+                // Para de ouvir os dados do Firestore para economizar recursos
+                if (unsubscribe) {
+                    unsubscribe();
+                }
+            }
+        });
+
+        // Evento de Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            loginError.classList.add('hidden');
+            
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged vai cuidar de mostrar a tela principal
+            } catch (error) {
+                console.error("Erro de login:", error.code);
+                loginError.textContent = "Email ou senha inválidos. Tente novamente.";
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        // Evento de Logout
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // onAuthStateChanged vai cuidar de mostrar a tela de login
+            } catch (error) {
+                console.error("Erro ao sair:", error);
+            }
+        });
+
+        // --- FUNÇÕES DO APLICATIVO ---
+
+        // Renderizar tabela
+        const renderizarTabela = (docs) => {
+            corpoTabela.innerHTML = '';
+            registrosAtuais = [];
+            if(docs.length === 0) {
+                corpoTabela.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
+                return;
+            }
+            docs.forEach(docSnapshot => {
+                const data = docSnapshot.data();
+                registrosAtuais.push({id: docSnapshot.id, ...data});
+                const tr = document.createElement('tr');
+                
+                let statusClass = 'bg-gray-100 text-gray-800';
+                if (data.statusGeral === 'Em Andamento') statusClass = 'bg-yellow-100 text-yellow-800';
+                else if (data.statusGeral === 'Finalizado') statusClass = 'bg-green-100 text-green-800';
+                else if (data.statusGeral === 'Aguardando Componentes') statusClass = 'bg-blue-100 text-blue-800';
+                else if (data.statusGeral === 'Sem Reparo') statusClass = 'bg-red-100 text-red-800';
+
+                let acoesHtml = '';
+                if (!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') {
+                    acoesHtml = `<button data-id="${docSnapshot.id}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
+                } else if (data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes') {
+                    const buttonText = data.statusGeral === 'Aguardando Componentes' ? 'Continuar' : 'Finalizar';
+                    acoesHtml = `<button data-id="${docSnapshot.id}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
+                } else {
+                    acoesHtml = `<span class="text-gray-400 text-sm">Concluído</span>`;
+                }
+                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-imprimir-os text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Imprimir OS</button>`;
+
+                tr.innerHTML = `
+                    <td>${data.nomeEquipamento || ''}</td>
+                    <td>${data.sap || ''}</td>
+                    <td>${data.nota || ''}</td>
+                    <td>${data.dataEntrada ? new Date(data.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</td>
+                    <td>${data.tecnicoAtribuido || 'N/A'}</td>
+                    <td><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${data.statusGeral || 'N/A'}</span></td>
+                    <td>
+                       ${acoesHtml}
+                    </td>
+                `;
+                corpoTabela.appendChild(tr);
+            });
+        }
+        
+        // Carregar registros em tempo real
+        const carregarRegistros = (q = colRef) => {
+            if (unsubscribe) unsubscribe(); // Cancela o listener anterior, se houver
+            unsubscribe = onSnapshot(q, (snapshot) => renderizarTabela(snapshot.docs), (error) => {
+                console.error("Erro ao carregar registros:", error);
+            });
+        }
+
+        // Formulário de ENTRADA
+        entryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(entryForm);
+            const data = Object.fromEntries(formData.entries());
+            data.statusGeral = 'Em Andamento'; // Status inicial
+            data.tecnicoAtribuido = 'Geral'; // Atribuição inicial
+            try {
+                await addDoc(colRef, data);
+                alert('Equipamento registrado com sucesso!');
+                entryForm.reset();
+                document.getElementById('dataEntrada').valueAsDate = new Date();
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao registrar equipamento.');
+            }
+        });
+
+        // Gerenciador de cliques na tabela para Ações
+        corpoTabela.addEventListener('click', async (e) => {
+            const target = e.target;
+            const docId = target.dataset.id;
+            if (!docId) return;
+
+            if (target.classList.contains('btn-assumir')) {
+                const tecnicoNome = prompt("Por favor, digite seu nome para assumir esta O.S.:");
+                if (tecnicoNome && tecnicoNome.trim() !== '') {
+                    try {
+                        const docRef = doc(db, "equipamentos", docId);
+                        await updateDoc(docRef, { tecnicoAtribuido: tecnicoNome.trim() });
+                        alert(`O.S. atribuída a ${tecnicoNome.trim()} com sucesso!`);
+                    } catch (err) {
+                        console.error("Erro ao assumir O.S.:", err);
+                        alert("Ocorreu um erro ao tentar assumir a O.S.");
+                    }
+                }
+            } else if (target.classList.contains('btn-finalizar')) {
+                saidaForm.reset();
+                document.getElementById('editDocId').value = docId;
+                document.getElementById('dataSaida').valueAsDate = new Date();
+                const registro = registrosAtuais.find(r => r.id === docId);
+                if(registro && registro.tecnicoAtribuido !== 'Geral'){
+                     document.getElementById('tecnico').value = registro.tecnicoAtribuido;
+                }
+                saidaModal.classList.remove('hidden');
+            } else if (target.classList.contains('btn-imprimir-os')) {
+                imprimirOS(docId);
+            }
+        });
+
+        // Formulário de SAÍDA
+        saidaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            if (!docId) return;
+
+            const dataToUpdate = {
+                dataSaida: saidaForm.querySelector('#dataSaida').value,
+                tecnico: saidaForm.querySelector('#tecnico').value,
+                statusReparo: saidaForm.querySelector('input[name="statusReparo"]:checked')?.value || null
+            };
+
+            const statusReparo = dataToUpdate.statusReparo;
+            if (statusReparo === 'reparado') {
+                dataToUpdate.statusGeral = 'Finalizado';
+                dataToUpdate.descricaoReparo = saidaForm.querySelector('#descricaoReparo').value;
+            } else if (statusReparo === 'componente') {
+                dataToUpdate.statusGeral = 'Aguardando Componentes';
+                const componentes = [];
+                document.querySelectorAll('#listaComponentes .component-row').forEach(row => {
+                    const codigo = row.querySelector('input[name="codigo_componente[]"]').value;
+                    const descricao = row.querySelector('input[name="descricao_componente[]"]').value;
+                    if (codigo || descricao) {
+                        componentes.push({ codigo, descricao });
+                    }
+                });
+                dataToUpdate.componentes = componentes;
+            } else if (statusReparo === 'sem_reparo') {
+                dataToUpdate.statusGeral = 'Sem Reparo';
+                dataToUpdate.motivoSemReparo = saidaForm.querySelector('#motivoSemReparo').value;
+            }
+            
+            const docRef = doc(db, "equipamentos", docId);
+            try {
+                await updateDoc(docRef, dataToUpdate);
+                alert('Registro de saída salvo com sucesso!');
+                saidaModal.classList.add('hidden');
+            } catch (err) {
+                console.error("Erro ao atualizar:", err);
+                alert('Erro ao salvar a saída.');
+            }
+        });
+        
+        function imprimirOS(osId) {
+            const osData = registrosAtuais.find(r => r.id === osId);
+            if (!osData) return alert('Dados da OS não encontrados.');
+
+            let printHtml = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <title>Ordem de Serviço - ${osData.nota || 'N/A'}</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <style>
+                    body { font-family: 'Inter', sans-serif; padding: 2rem; }
+                    .header { text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #ccc; padding-bottom: 1rem;}
+                    .section-title { font-size: 1.25rem; font-weight: 600; color: #1f2937; border-bottom: 1px solid #eee; padding-bottom: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
+                    .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+                    .grid-item { margin-bottom: 0.5rem; }
+                    .grid-item label { font-weight: 600; color: #4a5568; display: block; }
+                    .grid-item span { color: #2d3748; }
+                    .full-width { grid-column: 1 / -1; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1 class="text-3xl font-bold">Relatório de Ordem de Serviço</h1>
+                    <p class="text-gray-600">OS Nº: ${osData.nota || 'N/A'}</p>
+                </div>
+                <div>
+                    <h2 class="section-title">Dados de Entrada</h2>
+                    <div class="grid-container">
+                        <div class="grid-item"><label>Trazido por:</label> <span>${osData.nomePortador || ''}</span></div>
+                        <div class="grid-item"><label>Registro:</label> <span>${osData.registroPortador || ''}</span></div>
+                        <div class="grid-item"><label>Equipamento:</label> <span>${osData.nomeEquipamento || ''}</span></div>
+                        <div class="grid-item"><label>SAP:</label> <span>${osData.sap || ''}</span></div>
+                        <div class="grid-item"><label>Área:</label> <span>${osData.area || ''}</span></div>
+                        <div class="grid-item"><label>Setor:</label> <span>${osData.setor || ''}</span></div>
+                        <div class="grid-item"><label>Data de Entrada:</label> <span>${osData.dataEntrada ? new Date(osData.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</span></div>
+                        <div class="grid-item"><label>Recebido por:</label> <span>${osData.recebedor || ''}</span></div>
+                         <div class="grid-item"><label>Atribuído ao Técnico:</label> <span>${osData.tecnicoAtribuido || 'N/A'}</span></div>
+                        <div class="grid-item full-width"><label>Descrição do Problema:</label> <span>${osData.problema || ''}</span></div>
+                    </div>
+                    <h2 class="section-title">Dados de Finalização</h2>
+                    <div class="grid-container">
+                        <div class="grid-item"><label>Status Geral:</label> <span>${osData.statusGeral || 'Em Andamento'}</span></div>
+                        <div class="grid-item"><label>Técnico Finalizador:</label> <span>${osData.tecnico || 'N/A'}</span></div>
+                        <div class="grid-item"><label>Data de Saída:</label> <span>${osData.dataSaida ? new Date(osData.dataSaida).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</span></div>
+            `;
+
+            if (osData.statusGeral === 'Finalizado') {
+                printHtml += `<div class="grid-item full-width"><label>Descrição do Reparo:</label> <span>${osData.descricaoReparo || ''}</span></div>`;
+            }
+            if (osData.statusGeral === 'Aguardando Componentes') {
+                printHtml += `<div class="grid-item full-width"><label>Componentes Solicitados:</label>`;
+                if (osData.componentes && osData.componentes.length > 0) {
+                     osData.componentes.forEach(c => {
+                        printHtml += `<div> - Cód: ${c.codigo || ''}, Desc: ${c.descricao || ''}</div>`;
+                     });
+                } else {
+                    printHtml += `<span>Nenhum componente listado.</span>`;
+                }
+                printHtml += `</div>`;
+            }
+            if (osData.statusGeral === 'Sem Reparo') {
+                 printHtml += `<div class="grid-item full-width"><label>Motivo (Sem Reparo):</label> <span>${osData.motivoSemReparo || ''}</span></div>`;
+            }
+
+            printHtml += `
+                    </div>
+                </div>
+            </body>
+            </html>`;
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(printHtml);
+            printWindow.document.close();
+            printWindow.onload = function() {
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            };
+        }
+
+        // Lógica do Modal de Saída
+        document.getElementById('cancelarSaidaBtn').addEventListener('click', () => saidaModal.classList.add('hidden'));
+
+        const statusRadios = document.querySelectorAll('input[name="statusReparo"]');
+        const reparoSection = document.getElementById('reparoSection');
+        const componentesSection = document.getElementById('componentesSection');
+        const semReparoSection = document.getElementById('semReparoSection');
+
+        function toggleSaidaSections() {
+            const selected = document.querySelector('input[name="statusReparo"]:checked')?.value;
+            reparoSection.classList.toggle('hidden', selected !== 'reparado');
+            componentesSection.classList.toggle('hidden', selected !== 'componente');
+            semReparoSection.classList.toggle('hidden', selected !== 'sem_reparo');
+        }
+        statusRadios.forEach(radio => radio.addEventListener('change', toggleSaidaSections));
+
+        document.getElementById('addComponenteBtn').addEventListener('click', () => {
+            const newRow = document.createElement('div');
+            newRow.className = 'component-row grid grid-cols-1 sm:grid-cols-8 gap-3 items-center';
+            newRow.innerHTML = `<div class="sm:col-span-3"><input type="text" name="codigo_componente[]" class="block w-full rounded-md border-gray-300" placeholder="Código"></div><div class="sm:col-span-4"><input type="text" name="descricao_componente[]" class="block w-full rounded-md border-gray-300" placeholder="Descrição"></div><div class="sm:col-span-1 text-right"><button type="button" class="remover-componente-btn h-8 w-8 rounded-full bg-red-100 text-red-600 hover:bg-red-200">X</button></div>`;
+            document.getElementById('listaComponentes').appendChild(newRow);
+            newRow.querySelector('.remover-componente-btn').addEventListener('click', () => newRow.remove());
+        });
+
+        // Lógica de Filtros
+        document.getElementById('btnBuscar').addEventListener('click', () => {
+            const sap = document.getElementById('filtroSap').value.trim();
+            const nota = document.getElementById('filtroNota').value.trim();
+            const tecnico = document.getElementById('filtroTecnico').value.trim();
+            let q;
+            const constraints = [];
+            if (sap) constraints.push(where("sap", "==", sap));
+            if (nota) constraints.push(where("nota", "==", nota));
+            if (tecnico) constraints.push(where("tecnicoAtribuido", "==", tecnico));
+            
+            if (constraints.length > 0) {
+                 q = query(colRef, ...constraints);
+            } else {
+                 q = colRef;
+            }
+            carregarRegistros(q);
+        });
+
+        document.getElementById('btnLimpar').addEventListener('click', () => {
+            document.getElementById('filtroSap').value = '';
+            document.getElementById('filtroNota').value = '';
+            document.getElementById('filtroTecnico').value = '';
+            carregarRegistros();
+        });
+
+        document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+        document.getElementById('btnExportar').addEventListener('click', () => {
+            if (registrosAtuais.length === 0) return alert("Não há dados para exportar.");
+            const headers = ['NomePortador', 'RegistroPortador', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
+            registrosAtuais.forEach(reg => {
+                const row = headers.map(header => `"${reg[header] || ''}"`);
+                csvContent += row.join(";") + "\n";
+            });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "relatorio_manutencao.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+        document.getElementById('dataEntrada').valueAsDate = new Date();
+    </script>
+</body>
+</html>
+
