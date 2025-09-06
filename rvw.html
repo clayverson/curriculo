@@ -11,23 +11,22 @@
         body { font-family: 'Inter', sans-serif; }
         .technician-entry { transition: all 0.3s ease-in-out; }
         .modal-overlay {
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity: 0.3s ease-in-out;
         }
         /* Estilos para Impressão */
         @media print {
-            body > *:not(.printable) {
-                display: none !important;
+            body * {
+                visibility: hidden;
+            }
+            .printable, .printable * {
+                visibility: visible;
             }
             .printable {
-                display: block !important;
                 position: absolute;
-                top: 0;
                 left: 0;
+                top: 0;
                 width: 100%;
                 padding: 1rem;
-            }
-            .printable * {
-                visibility: visible !important;
             }
             .no-print {
                 display: none !important;
@@ -35,22 +34,21 @@
              .print-card {
                 page-break-inside: avoid;
                 border: 1px solid #ccc !important;
-                padding: 1rem;
-                margin-bottom: 1rem;
+                box-shadow: none !important;
             }
-        }
-        .no-print {
-             /* Esconde em modo de impressão, já coberto pelo @media print, mas bom ter como classe */
         }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
+    <!-- Area de Impressão (invisível na tela) -->
+    <div id="print-area"></div>
+
     <!-- Modal de Autenticação (Login/Registro) -->
     <div id="auth-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 no-print">
         <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg relative">
             <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Acesso ao Relatório</h2>
+            <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Acesso ao Sistema</h2>
             <form id="login-form">
                 <div class="space-y-4">
                     <div>
@@ -86,6 +84,50 @@
              <p class="text-center text-sm text-gray-600 mt-4 hidden" id="register-back-link">Já tem uma conta? <a href="#" id="show-login" class="font-medium text-indigo-600 hover:text-indigo-500">Faça login</a></p>
         </div>
     </div>
+    
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="delete-confirm-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 hidden z-50 no-print">
+        <div class="max-w-sm w-full bg-white p-8 rounded-2xl shadow-lg text-center">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Confirmar Exclusão</h3>
+            <p class="text-gray-600 mb-6">Você tem certeza que deseja excluir esta requisição? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="cancel-delete-btn" class="px-6 py-2 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                <button id="confirm-delete-btn" class="px-6 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edição de Requisição -->
+    <div id="edit-request-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 no-print overflow-y-auto">
+        <div class="max-w-3xl w-full bg-white p-8 rounded-2xl shadow-lg relative my-8">
+            <button id="close-edit-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold mb-6 text-gray-900">Editar Requisição</h2>
+            <form id="edit-request-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div><label for="edit-solicitante" class="block text-sm font-medium text-gray-700 mb-1">Solicitante:</label><input type="text" id="edit-solicitante" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="edit-data" class="block text-sm font-medium text-gray-700 mb-1">Data:</label><input type="date" id="edit-data" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="edit-hora" class="block text-sm font-medium text-gray-700 mb-1">Hora:</label><input type="time" id="edit-hora" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                    </div>
+                    <div class="space-y-4">
+                        <div><label for="edit-area" class="block text-sm font-medium text-gray-700 mb-1">Área:</label><input type="text" id="edit-area" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="edit-equipamento" class="block text-sm font-medium text-gray-700 mb-1">Equipamento:</label><input type="text" id="edit-equipamento" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                        <div><label for="edit-sap" class="block text-sm font-medium text-gray-700 mb-1">SAP:</label><input type="text" id="edit-sap" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></div>
+                    </div>
+                </div>
+                <div class="mt-6"><label for="edit-descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição do Problema:</label><textarea id="edit-descricao" rows="2" required class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <div class="mt-6"><label for="edit-causa" class="block text-sm font-medium text-gray-700 mb-1">Causa do Problema:</label><textarea id="edit-causa" rows="2" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <div class="mt-6"><label for="edit-solucao" class="block text-sm font-medium text-gray-700 mb-1">Solução do Problema:</label><textarea id="edit-solucao" rows="3" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md shadow-sm"></textarea></div>
+                <div class="mt-8 border-t pt-6">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Técnicos Responsáveis</h3>
+                    <div id="technicians-list-edit" class="space-y-4"></div>
+                    <button type="button" id="add-technician-btn-edit" class="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Adicionar Técnico</button>
+                </div>
+                <div class="mt-8 text-right"><button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700">Salvar Alterações</button></div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Container Principal da Aplicação -->
     <div id="main-container" class="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -97,7 +139,7 @@
         </header>
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Formulário de Requisição (Sempre visível) -->
+            <!-- Formulário de Requisição (Sempre visível para usuários logados) -->
             <div id="form-container" class="bg-white p-6 rounded-2xl shadow-lg no-print">
                  <h2 class="text-2xl font-bold mb-6 text-gray-900">Criar Nova Requisição</h2>
                 <form id="service-request-form">
@@ -129,6 +171,15 @@
             <div id="requests-section" class="bg-white p-6 rounded-2xl shadow-lg">
                  <h2 class="text-2xl font-bold mb-4 text-gray-900">Relatório de Requisições</h2>
                  
+                 <div id="selection-controls" class="hidden mb-4 p-3 bg-gray-100 rounded-lg border border-gray-200 no-print flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <input type="checkbox" id="select-all-checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500">
+                        <label for="select-all-checkbox" class="text-sm font-medium text-gray-700">Selecionar Todas</label>
+                        <span id="selection-counter" class="text-sm text-gray-500"></span>
+                    </div>
+                    <button id="print-selected-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed" disabled>Imprimir Seleção</button>
+                 </div>
+
                  <div id="filter-controls" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 no-print">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -164,7 +215,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuração do Firebase ---
         const firebaseConfig = {
@@ -182,6 +233,8 @@
         const auth = getAuth(app);
         
         // --- Referências de Elementos do DOM ---
+        const mainGrid = document.querySelector('main');
+        const formContainer = document.getElementById('form-container');
         const authModal = document.getElementById('auth-modal');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const loginForm = document.getElementById('login-form');
@@ -193,16 +246,33 @@
         const requestsContainer = document.getElementById('requests-container');
         const form = document.getElementById('service-request-form');
         const filterControls = document.getElementById('filter-controls');
+        const selectionControls = document.getElementById('selection-controls');
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const selectionCounter = document.getElementById('selection-counter');
+        const printSelectedBtn = document.getElementById('print-selected-btn');
         const mainContainer = document.getElementById('main-container');
-        
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const printArea = document.getElementById('print-area');
+        // Referências do Modal de Edição
+        const editRequestModal = document.getElementById('edit-request-modal');
+        const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
+        const editRequestForm = document.getElementById('edit-request-form');
+        const techniciansListEdit = document.getElementById('technicians-list-edit');
+        const addTechnicianBtnEdit = document.getElementById('add-technician-btn-edit');
+
         let unsubscribeRequests = null; 
         let allRequests = []; 
         let currentlyDisplayedRequests = []; 
+        let currentUser = null; 
+        let requestToDeleteId = null;
+        let requestToEditId = null;
 
         // --- Lógica do Modal de Autenticação ---
-        const openModal = () => authModal.classList.remove('hidden');
-        const closeModal = () => authModal.classList.add('hidden');
-        closeModalBtn.addEventListener('click', closeModal);
+        const openAuthModal = () => authModal.classList.remove('hidden');
+        const closeAuthModal = () => authModal.classList.add('hidden');
+        closeModalBtn.addEventListener('click', closeAuthModal);
 
         showRegisterLink.addEventListener('click', (e) => {
             e.preventDefault();
@@ -227,7 +297,10 @@
             const password = registerForm['register-password'].value;
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, "users", userCredential.user.uid), { email: userCredential.user.email });
+                await setDoc(doc(db, "users", userCredential.user.uid), { 
+                    email: userCredential.user.email,
+                    role: 'viewer' 
+                });
                 showModal('Usuário registrado com sucesso! Faça o login.', 'success');
                 registerForm.reset();
                 showLoginLink.click();
@@ -243,7 +316,7 @@
             const password = loginForm['login-password'].value;
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                closeModal();
+                closeAuthModal();
             } catch (error) {
                 console.error("Erro ao fazer login:", error);
                 showModal(`Erro ao fazer login: ${error.message}`);
@@ -251,77 +324,92 @@
         });
 
         // --- Observador do Estado de Autenticação ---
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuário está logado
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                const userRole = userDocSnap.exists() ? userDocSnap.data().role : 'viewer';
+                currentUser = { uid: user.uid, email: user.email, role: userRole };
+
+                // VISÃO DE USUÁRIO LOGADO
+                mainGrid.classList.remove('lg:grid-cols-1');
+                mainGrid.classList.add('lg:grid-cols-2');
+                formContainer.classList.remove('hidden');
+
                 userSessionControls.innerHTML = `
                     <div class="flex items-center space-x-2 sm:space-x-4">
-                         <span class="text-sm text-gray-600 hidden sm:block">${user.email}</span>
-                         <button id="print-report-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Imprimir Relatório</button>
+                         <span class="text-sm text-gray-600 hidden sm:block">${currentUser.email} (${currentUser.role})</span>
                          <button id="export-excel-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Excel</button>
                          <button id="logout-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">Sair</button>
                     </div>`;
                 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
                 document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
-                document.getElementById('print-report-btn').addEventListener('click', printFilteredReport);
                 
                 filterControls.classList.remove('hidden');
+                selectionControls.classList.remove('hidden');
                 document.getElementById('filter-btn').addEventListener('click', applyFilters);
                 document.getElementById('clear-filter-btn').addEventListener('click', clearFilters);
 
                 loadRequests();
             } else {
-                // Usuário está deslogado
-                userSessionControls.innerHTML = '<button id="login-reports-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Login para ver Relatórios</button>';
-                document.getElementById('login-reports-btn').addEventListener('click', openModal);
-                
-                requestsContainer.innerHTML = '<p class="text-gray-500 text-center">Faça o login para visualizar as requisições.</p>';
-                filterControls.classList.add('hidden'); 
+                // VISÃO DE USUÁRIO DESLOGADO
+                currentUser = null;
+                mainGrid.classList.remove('lg:grid-cols-2');
+                mainGrid.classList.add('lg:grid-cols-1');
+                formContainer.classList.add('hidden');
 
-                if (unsubscribeRequests) {
-                    unsubscribeRequests();
-                }
+                userSessionControls.innerHTML = '<button id="login-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700">Fazer Login</button>';
+                document.getElementById('login-btn').addEventListener('click', openAuthModal);
+                
+                requestsContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center py-16">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-900">Acesso Restrito</h2>
+                        <p class="text-gray-600">Por favor, faça o login para criar ou visualizar requisições.</p>
+                    </div>
+                `;
+                filterControls.classList.add('hidden'); 
+                selectionControls.classList.add('hidden');
+
+                if (unsubscribeRequests) unsubscribeRequests();
             }
         });
 
         // --- Lógica do Formulário (Público) ---
         const techniciansList = document.getElementById('technicians-list');
         const addTechnicianBtn = document.getElementById('add-technician-btn');
-        let technicianCount = 0;
-        const addTechnicianEntry = () => {
-            technicianCount++;
+        const addTechnicianEntry = (listElement) => {
             const entryDiv = document.createElement('div');
             entryDiv.className = 'technician-entry grid grid-cols-1 sm:grid-cols-5 gap-4 border p-3 rounded-lg bg-gray-50';
             entryDiv.innerHTML = `
-                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-600">Nome do Técnico:</label><input type="text" name="tech-name-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
-                <div><label class="text-sm font-medium text-gray-600">Registro:</label><input type="text" name="tech-reg-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md"></div>
+                <div class="sm:col-span-2"><label class="text-sm font-medium text-gray-600">Nome do Técnico:</label><input type="text" name="tech-name" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                <div><label class="text-sm font-medium text-gray-600">Registro:</label><input type="text" name="tech-reg" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md"></div>
                 <div class="flex items-end space-x-2 sm:col-span-2">
-                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Início:</label><input type="time" name="tech-start-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
-                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Final:</label><input type="time" name="tech-end-${technicianCount}" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Início:</label><input type="time" name="tech-start" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
+                    <div class="flex-1"><label class="text-sm font-medium text-gray-600">Final:</label><input type="time" name="tech-end" class="mt-1 w-full px-2 py-1 border border-gray-300 rounded-md" required></div>
                     <button type="button" class="remove-technician-btn h-8 w-8 flex-shrink-0 bg-red-500 text-white rounded-md hover:bg-red-600 flex items-center justify-center">&times;</button>
                 </div>`;
-            techniciansList.appendChild(entryDiv);
+            listElement.appendChild(entryDiv);
             entryDiv.querySelector('.remove-technician-btn').addEventListener('click', () => { entryDiv.remove(); });
         };
-        addTechnicianBtn.addEventListener('click', addTechnicianEntry);
-        addTechnicianEntry();
+        addTechnicianBtn.addEventListener('click', () => addTechnicianEntry(techniciansList));
+        addTechnicianEntry(techniciansList);
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            if (!auth.currentUser) {
+                showModal('Você precisa estar logado para criar uma requisição.');
+                return;
+            }
             const technicians = [];
-            document.querySelectorAll('.technician-entry').forEach(entry => {
-                const nameInput = entry.querySelector(`input[name^="tech-name-"]`);
-                const regInput = entry.querySelector(`input[name^="tech-reg-"]`);
-                const startInput = entry.querySelector(`input[name^="tech-start-"]`);
-                const endInput = entry.querySelector(`input[name^="tech-end-"]`);
-                if (nameInput && startInput && endInput) { technicians.push({ nome: nameInput.value, registro: regInput ? regInput.value : '', horaInicio: startInput.value, horaFinal: endInput.value }); }
+            techniciansList.querySelectorAll('.technician-entry').forEach(entry => {
+                technicians.push({ nome: entry.querySelector('[name=tech-name]').value, registro: entry.querySelector('[name=tech-reg]').value, horaInicio: entry.querySelector('[name=tech-start]').value, horaFinal: entry.querySelector('[name=tech-end]').value });
             });
             const requestData = { solicitante: form.solicitante.value, data: form.data.value, hora: form.hora.value, area: form.area.value, equipamento: form.equipamento.value, sap: form.sap.value, descricaoProblema: form.descricao.value, causaProblema: form.causa.value, solucaoProblema: form.solucao.value, tecnicos: technicians, createdAt: serverTimestamp() };
             try {
                 await addDoc(collection(db, `service_requests`), requestData);
                 form.reset();
                 techniciansList.innerHTML = ''; 
-                addTechnicianEntry(); 
+                addTechnicianEntry(techniciansList); 
                 showModal('Requisição salva com sucesso!', 'success');
             } catch (error) {
                 console.error("Erro ao salvar a requisição:", error);
@@ -336,34 +424,72 @@
 
             unsubscribeRequests = onSnapshot(q, (snapshot) => {
                 allRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderRequests(allRequests);
+                applyFilters();
             }, (error) => { 
                 console.error("Erro ao carregar requisições:", error); 
-                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique as regras de segurança.</p>';
+                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados.</p>';
             });
         }
 
         function renderRequests(requests) {
             currentlyDisplayedRequests = requests;
             if (requests.length === 0) {
-                requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada para os filtros aplicados.</p>';
+                requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada.</p>';
                 return;
             }
+            requestsContainer.innerHTML = '';
             const requestsListDiv = document.createElement('div');
             requestsListDiv.className = 'space-y-4';
             requests.forEach(data => {
                 const reqCard = document.createElement('div');
                 reqCard.id = `request-card-${data.id}`;
-                reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50 print-card';
+                reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50 print-card relative';
                 const formattedDate = new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 let techniciansHtml = data.tecnicos.map(tech => `<li class="text-sm text-gray-600 list-disc list-inside"><strong>${tech.nome}</strong> (Reg: ${tech.registro || 'N/A'}) - ${tech.horaInicio} às ${tech.horaFinal}</li>`).join('');
-                reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><div class="flex items-center space-x-2"><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span><div class="no-print"><button data-card-id="request-card-${data.id}" class="print-single-btn p-1 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5z"/></svg></button></div></div></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
+                
+                let actionButtons = '';
+                if(currentUser) {
+                    if (currentUser.role === 'editor' || currentUser.role === 'admin') {
+                        actionButtons += `<button data-doc-id="${data.id}" class="edit-request-btn p-1 rounded-full hover:bg-blue-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-pencil-fill text-blue-500" viewBox="0 0 16 16"><path d="M12.854.146a.5.5 0 0 0-.707 0L10.5 1.793 14.207 5.5l1.647-1.646a.5.5 0 0 0 0-.708l-3-3zm.646 6.061L9.793 2.5 3.293 9H3.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.207l6.5-6.5zm-7.468 7.468A.5.5 0 0 1 6 13.5V13h-.5a.5.5 0 0 1-.5-.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.5-.5V10h-.5a.499.499 0 0 1-.175-.032l-.179.178a.5.5 0 0 0-.11.168l-2 5a.5.5 0 0 0 .65.65l5-2a.5.5 0 0 0 .168-.11l.178-.178z"/></svg></button>`;
+                    }
+                    if (currentUser.role === 'admin') {
+                         actionButtons += `<button data-doc-id="${data.id}" class="delete-request-btn p-1 rounded-full hover:bg-red-100 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-trash3-fill text-red-500" viewBox="0 0 16 16"><path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5zm-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5ZM4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06Zm6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528ZM8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5Z"/></svg></button>`;
+                    }
+                }
+
+                reqCard.innerHTML = `
+                    <div class="absolute top-2 left-2 no-print">
+                        <input type="checkbox" class="request-checkbox h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500" data-doc-id="${data.id}">
+                    </div>
+                    <div class="flex justify-between items-start ml-8">
+                        <div>
+                            <h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3>
+                            <p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span>
+                            <div class="no-print flex items-center space-x-1">
+                                <button data-card-id="request-card-${data.id}" class="print-single-btn p-1 rounded-full hover:bg-gray-200 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5z"/></svg>
+                                </button>
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-3 ml-8">
+                        <div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div>
+                        <div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div>
+                        <div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div>
+                    </div>`;
                 requestsListDiv.appendChild(reqCard);
             });
-             requestsContainer.innerHTML = '';
              requestsContainer.appendChild(requestsListDiv);
              
              document.querySelectorAll('.print-single-btn').forEach(btn => btn.addEventListener('click', printSingleRequest));
+             document.querySelectorAll('.delete-request-btn').forEach(btn => btn.addEventListener('click', showDeleteConfirmation));
+             document.querySelectorAll('.edit-request-btn').forEach(btn => btn.addEventListener('click', openEditModal));
+             document.querySelectorAll('.request-checkbox').forEach(cb => cb.addEventListener('change', updateSelectionControls));
+             updateSelectionControls();
         }
 
         // --- Lógica de Filtros ---
@@ -393,28 +519,172 @@
             renderRequests(allRequests);
         }
         
-        // --- Lógica de Impressão ---
+        // --- Lógica de Exclusão ---
+        function showDeleteConfirmation(event) {
+            requestToDeleteId = event.currentTarget.dataset.docId;
+            deleteConfirmModal.classList.remove('hidden');
+        }
+        function hideDeleteConfirmation() {
+            requestToDeleteId = null;
+            deleteConfirmModal.classList.add('hidden');
+        }
+        async function deleteRequest() {
+            if (!requestToDeleteId) return;
+            try {
+                await deleteDoc(doc(db, 'service_requests', requestToDeleteId));
+                showModal('Requisição excluída com sucesso!', 'success');
+            } catch(error) {
+                console.error("Erro ao excluir requisição:", error);
+                showModal('Falha ao excluir a requisição.');
+            } finally {
+                hideDeleteConfirmation();
+            }
+        }
+        cancelDeleteBtn.addEventListener('click', hideDeleteConfirmation);
+        confirmDeleteBtn.addEventListener('click', deleteRequest);
+
+        // --- Lógica de Edição ---
+        addTechnicianBtnEdit.addEventListener('click', () => addTechnicianEntry(techniciansListEdit));
+        
+        function openEditModal(event) {
+            requestToEditId = event.currentTarget.dataset.docId;
+            const requestData = allRequests.find(req => req.id === requestToEditId);
+            if (!requestData) return;
+
+            editRequestForm.querySelector('#edit-solicitante').value = requestData.solicitante;
+            editRequestForm.querySelector('#edit-data').value = requestData.data;
+            editRequestForm.querySelector('#edit-hora').value = requestData.hora;
+            editRequestForm.querySelector('#edit-area').value = requestData.area;
+            editRequestForm.querySelector('#edit-equipamento').value = requestData.equipamento;
+            editRequestForm.querySelector('#edit-sap').value = requestData.sap;
+            editRequestForm.querySelector('#edit-descricao').value = requestData.descricaoProblema;
+            editRequestForm.querySelector('#edit-causa').value = requestData.causaProblema;
+            editRequestForm.querySelector('#edit-solucao').value = requestData.solucaoProblema;
+            
+            techniciansListEdit.innerHTML = '';
+            requestData.tecnicos.forEach(tech => {
+                addTechnicianEntry(techniciansListEdit);
+                const lastEntry = techniciansListEdit.lastElementChild;
+                lastEntry.querySelector('[name=tech-name]').value = tech.nome;
+                lastEntry.querySelector('[name=tech-reg]').value = tech.registro;
+                lastEntry.querySelector('[name=tech-start]').value = tech.horaInicio;
+                lastEntry.querySelector('[name=tech-end]').value = tech.horaFinal;
+            });
+
+            editRequestModal.classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            requestToEditId = null;
+            editRequestModal.classList.add('hidden');
+        }
+        closeEditModalBtn.addEventListener('click', closeEditModal);
+
+        editRequestForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!requestToEditId) return;
+
+            const technicians = [];
+            techniciansListEdit.querySelectorAll('.technician-entry').forEach(entry => {
+                technicians.push({ nome: entry.querySelector('[name=tech-name]').value, registro: entry.querySelector('[name=tech-reg]').value, horaInicio: entry.querySelector('[name=tech-start]').value, horaFinal: entry.querySelector('[name=tech-end]').value });
+            });
+
+            const updatedData = {
+                solicitante: editRequestForm.querySelector('#edit-solicitante').value,
+                data: editRequestForm.querySelector('#edit-data').value,
+                hora: editRequestForm.querySelector('#edit-hora').value,
+                area: editRequestForm.querySelector('#edit-area').value,
+                equipamento: editRequestForm.querySelector('#edit-equipamento').value,
+                sap: editRequestForm.querySelector('#edit-sap').value,
+                descricaoProblema: editRequestForm.querySelector('#edit-descricao').value,
+                causaProblema: editRequestForm.querySelector('#edit-causa').value,
+                solucaoProblema: editRequestForm.querySelector('#edit-solucao').value,
+                tecnicos: technicians
+            };
+
+            try {
+                await updateDoc(doc(db, 'service_requests', requestToEditId), updatedData);
+                showModal('Requisição atualizada com sucesso!', 'success');
+            } catch(error) {
+                console.error('Erro ao atualizar requisição:', error);
+                showModal('Falha ao atualizar a requisição.');
+            } finally {
+                closeEditModal();
+            }
+        });
+
+
+        // --- Lógica de Impressão e Seleção ---
+        function updateSelectionControls() {
+            const visibleCheckboxes = requestsContainer.querySelectorAll('.request-checkbox');
+            const checkedCheckboxes = requestsContainer.querySelectorAll('.request-checkbox:checked');
+            
+            const count = checkedCheckboxes.length;
+            selectionCounter.textContent = `(${count} selecionada${count !== 1 ? 's' : ''})`;
+
+            if (count > 0) {
+                printSelectedBtn.disabled = false;
+            } else {
+                printSelectedBtn.disabled = true;
+            }
+
+            if (visibleCheckboxes.length > 0 && count === visibleCheckboxes.length) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else if (count > 0) {
+                selectAllCheckbox.indeterminate = true;
+            } else {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            }
+        }
+
+        selectAllCheckbox.addEventListener('change', () => {
+            const isChecked = selectAllCheckbox.checked;
+            requestsContainer.querySelectorAll('.request-checkbox').forEach(cb => cb.checked = isChecked);
+            updateSelectionControls();
+        });
+
+        printSelectedBtn.addEventListener('click', () => {
+            const selectedIds = Array.from(requestsContainer.querySelectorAll('.request-checkbox:checked'))
+                .map(cb => cb.dataset.docId);
+
+            if (selectedIds.length === 0) {
+                showModal('Nenhuma requisição selecionada para imprimir.');
+                return;
+            }
+
+            printArea.innerHTML = '';
+            selectedIds.forEach(id => {
+                const cardToClone = document.getElementById(`request-card-${id}`);
+                if (cardToClone) {
+                    const clone = cardToClone.cloneNode(true);
+                    // Remove checkbox do clone
+                    clone.querySelector('.request-checkbox').parentElement.remove();
+                    printArea.appendChild(clone);
+                }
+            });
+            
+            printArea.classList.add('printable');
+            window.print();
+        });
+
         function printSingleRequest(event) {
             const cardId = event.currentTarget.dataset.cardId;
             const cardToPrint = document.getElementById(cardId);
             if(cardToPrint) {
-                mainContainer.classList.add('printable');
-                cardToPrint.classList.add('printable');
+                printArea.innerHTML = '';
+                const clone = cardToPrint.cloneNode(true);
+                clone.querySelector('.request-checkbox').parentElement.remove();
+                printArea.appendChild(clone);
+                printArea.classList.add('printable');
                 window.print();
-            }
-        }
-
-        function printFilteredReport() {
-            const reportContainer = document.getElementById('requests-container');
-            if(reportContainer) {
-                 mainContainer.classList.add('printable');
-                 reportContainer.classList.add('printable');
-                 window.print();
             }
         }
         
         window.addEventListener('afterprint', () => {
-            document.querySelectorAll('.printable').forEach(el => el.classList.remove('printable'));
+            printArea.classList.remove('printable');
+            printArea.innerHTML = '';
         });
 
 
