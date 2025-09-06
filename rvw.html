@@ -13,12 +13,41 @@
         .modal-overlay {
             transition: opacity 0.3s ease-in-out;
         }
+        /* Estilos para Impressão */
+        @media print {
+            body > *:not(.printable) {
+                display: none !important;
+            }
+            .printable {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                padding: 1rem;
+            }
+            .printable * {
+                visibility: visible !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+             .print-card {
+                page-break-inside: avoid;
+                border: 1px solid #ccc !important;
+                padding: 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+        .no-print {
+             /* Esconde em modo de impressão, já coberto pelo @media print, mas bom ter como classe */
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
 
     <!-- Modal de Autenticação (Login/Registro) -->
-    <div id="auth-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+    <div id="auth-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50 no-print">
         <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg relative">
             <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
             <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Acesso ao Relatório</h2>
@@ -59,8 +88,8 @@
     </div>
 
     <!-- Container Principal da Aplicação -->
-    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="flex justify-between items-center mb-8">
+    <div id="main-container" class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="flex justify-between items-center mb-8 no-print">
              <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Sistema de Requisição</h1>
              <div id="user-session-controls">
                 <!-- Botões de Login/Logout aparecem aqui -->
@@ -69,7 +98,7 @@
 
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Formulário de Requisição (Sempre visível) -->
-            <div id="form-container" class="bg-white p-6 rounded-2xl shadow-lg">
+            <div id="form-container" class="bg-white p-6 rounded-2xl shadow-lg no-print">
                  <h2 class="text-2xl font-bold mb-6 text-gray-900">Criar Nova Requisição</h2>
                 <form id="service-request-form">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -100,9 +129,8 @@
             <div id="requests-section" class="bg-white p-6 rounded-2xl shadow-lg">
                  <h2 class="text-2xl font-bold mb-4 text-gray-900">Relatório de Requisições</h2>
                  
-                 <!-- NOVO: Controles de Filtro -->
-                 <div id="filter-controls" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                 <div id="filter-controls" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 no-print">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label for="filter-data" class="block text-sm font-medium text-gray-700">Data:</label>
                             <input type="date" id="filter-data" class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
@@ -115,9 +143,13 @@
                             <label for="filter-equipamento" class="block text-sm font-medium text-gray-700">Equipamento:</label>
                             <input type="text" id="filter-equipamento" placeholder="Nome do equipamento..." class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                         </div>
-                        <div class="flex space-x-2">
-                             <button id="filter-btn" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Filtrar</button>
-                             <button id="clear-filter-btn" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
+                        <div>
+                            <label for="filter-tecnico" class="block text-sm font-medium text-gray-700">Técnico:</label>
+                            <input type="text" id="filter-tecnico" placeholder="Nome do técnico..." class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div class="sm:col-span-2 flex justify-end items-end space-x-2 pt-2">
+                             <button id="filter-btn" class="w-full sm:w-auto inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Filtrar</button>
+                             <button id="clear-filter-btn" class="w-full sm:w-auto inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
                         </div>
                     </div>
                  </div>
@@ -161,10 +193,11 @@
         const requestsContainer = document.getElementById('requests-container');
         const form = document.getElementById('service-request-form');
         const filterControls = document.getElementById('filter-controls');
+        const mainContainer = document.getElementById('main-container');
         
         let unsubscribeRequests = null; 
-        let allRequests = []; // Armazena todas as requisições para filtrar
-        let currentlyDisplayedRequests = []; // Armazena o que está visível para exportar
+        let allRequests = []; 
+        let currentlyDisplayedRequests = []; 
 
         // --- Lógica do Modal de Autenticação ---
         const openModal = () => authModal.classList.remove('hidden');
@@ -222,15 +255,17 @@
             if (user) {
                 // Usuário está logado
                 userSessionControls.innerHTML = `
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 sm:space-x-4">
                          <span class="text-sm text-gray-600 hidden sm:block">${user.email}</span>
+                         <button id="print-report-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700">Imprimir Relatório</button>
                          <button id="export-excel-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Excel</button>
                          <button id="logout-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700">Sair</button>
                     </div>`;
                 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
                 document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+                document.getElementById('print-report-btn').addEventListener('click', printFilteredReport);
                 
-                filterControls.classList.remove('hidden'); // Mostra os filtros
+                filterControls.classList.remove('hidden');
                 document.getElementById('filter-btn').addEventListener('click', applyFilters);
                 document.getElementById('clear-filter-btn').addEventListener('click', clearFilters);
 
@@ -241,7 +276,7 @@
                 document.getElementById('login-reports-btn').addEventListener('click', openModal);
                 
                 requestsContainer.innerHTML = '<p class="text-gray-500 text-center">Faça o login para visualizar as requisições.</p>';
-                filterControls.classList.add('hidden'); // Esconde os filtros
+                filterControls.classList.add('hidden'); 
 
                 if (unsubscribeRequests) {
                     unsubscribeRequests();
@@ -301,7 +336,7 @@
 
             unsubscribeRequests = onSnapshot(q, (snapshot) => {
                 allRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderRequests(allRequests); // Renderiza a lista inicial
+                renderRequests(allRequests);
             }, (error) => { 
                 console.error("Erro ao carregar requisições:", error); 
                 requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique as regras de segurança.</p>';
@@ -309,7 +344,7 @@
         }
 
         function renderRequests(requests) {
-            currentlyDisplayedRequests = requests; // Atualiza a lista para exportação
+            currentlyDisplayedRequests = requests;
             if (requests.length === 0) {
                 requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada para os filtros aplicados.</p>';
                 return;
@@ -318,14 +353,17 @@
             requestsListDiv.className = 'space-y-4';
             requests.forEach(data => {
                 const reqCard = document.createElement('div');
-                reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50';
+                reqCard.id = `request-card-${data.id}`;
+                reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50 print-card';
                 const formattedDate = new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 let techniciansHtml = data.tecnicos.map(tech => `<li class="text-sm text-gray-600 list-disc list-inside"><strong>${tech.nome}</strong> (Reg: ${tech.registro || 'N/A'}) - ${tech.horaInicio} às ${tech.horaFinal}</li>`).join('');
-                reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
+                reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><div class="flex items-center space-x-2"><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span><div class="no-print"><button data-card-id="request-card-${data.id}" class="print-single-btn p-1 rounded-full hover:bg-gray-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16"><path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5z"/></svg></button></div></div></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
                 requestsListDiv.appendChild(reqCard);
             });
              requestsContainer.innerHTML = '';
              requestsContainer.appendChild(requestsListDiv);
+             
+             document.querySelectorAll('.print-single-btn').forEach(btn => btn.addEventListener('click', printSingleRequest));
         }
 
         // --- Lógica de Filtros ---
@@ -333,12 +371,15 @@
             const filterDate = document.getElementById('filter-data').value;
             const filterSolicitante = document.getElementById('filter-solicitante').value.toLowerCase();
             const filterEquipamento = document.getElementById('filter-equipamento').value.toLowerCase();
+            const filterTecnico = document.getElementById('filter-tecnico').value.toLowerCase();
 
             const filteredRequests = allRequests.filter(req => {
                 const matchesDate = !filterDate || req.data === filterDate;
                 const matchesSolicitante = !filterSolicitante || req.solicitante.toLowerCase().includes(filterSolicitante);
                 const matchesEquipamento = !filterEquipamento || req.equipamento.toLowerCase().includes(filterEquipamento);
-                return matchesDate && matchesSolicitante && matchesEquipamento;
+                const matchesTecnico = !filterTecnico || (req.tecnicos && req.tecnicos.some(tech => tech.nome.toLowerCase().includes(filterTecnico)));
+                
+                return matchesDate && matchesSolicitante && matchesEquipamento && matchesTecnico;
             });
 
             renderRequests(filteredRequests);
@@ -348,9 +389,35 @@
             document.getElementById('filter-data').value = '';
             document.getElementById('filter-solicitante').value = '';
             document.getElementById('filter-equipamento').value = '';
+            document.getElementById('filter-tecnico').value = '';
             renderRequests(allRequests);
         }
         
+        // --- Lógica de Impressão ---
+        function printSingleRequest(event) {
+            const cardId = event.currentTarget.dataset.cardId;
+            const cardToPrint = document.getElementById(cardId);
+            if(cardToPrint) {
+                mainContainer.classList.add('printable');
+                cardToPrint.classList.add('printable');
+                window.print();
+            }
+        }
+
+        function printFilteredReport() {
+            const reportContainer = document.getElementById('requests-container');
+            if(reportContainer) {
+                 mainContainer.classList.add('printable');
+                 reportContainer.classList.add('printable');
+                 window.print();
+            }
+        }
+        
+        window.addEventListener('afterprint', () => {
+            document.querySelectorAll('.printable').forEach(el => el.classList.remove('printable'));
+        });
+
+
         // --- Lógica de Exportação para Excel ---
         function exportToExcel() {
             if (currentlyDisplayedRequests.length === 0) {
