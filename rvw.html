@@ -98,7 +98,30 @@
 
             <!-- Lista de Requisições (Relatórios) -->
             <div id="requests-section" class="bg-white p-6 rounded-2xl shadow-lg">
-                 <h2 class="text-2xl font-bold mb-6 text-gray-900">Relatório de Requisições</h2>
+                 <h2 class="text-2xl font-bold mb-4 text-gray-900">Relatório de Requisições</h2>
+                 
+                 <!-- NOVO: Controles de Filtro -->
+                 <div id="filter-controls" class="hidden mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div>
+                            <label for="filter-data" class="block text-sm font-medium text-gray-700">Data:</label>
+                            <input type="date" id="filter-data" class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="filter-solicitante" class="block text-sm font-medium text-gray-700">Solicitante:</label>
+                            <input type="text" id="filter-solicitante" placeholder="Nome do solicitante..." class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="filter-equipamento" class="block text-sm font-medium text-gray-700">Equipamento:</label>
+                            <input type="text" id="filter-equipamento" placeholder="Nome do equipamento..." class="mt-1 w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div class="flex space-x-2">
+                             <button id="filter-btn" class="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">Filtrar</button>
+                             <button id="clear-filter-btn" class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
+                        </div>
+                    </div>
+                 </div>
+
                  <div id="requests-container">
                     <!-- Conteúdo dinâmico aqui -->
                  </div>
@@ -109,7 +132,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, getDocs, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuração do Firebase ---
         const firebaseConfig = {
@@ -137,8 +160,11 @@
         const userSessionControls = document.getElementById('user-session-controls');
         const requestsContainer = document.getElementById('requests-container');
         const form = document.getElementById('service-request-form');
+        const filterControls = document.getElementById('filter-controls');
         
-        let unsubscribeRequests = null; // Para parar de ouvir os dados ao deslogar
+        let unsubscribeRequests = null; 
+        let allRequests = []; // Armazena todas as requisições para filtrar
+        let currentlyDisplayedRequests = []; // Armazena o que está visível para exportar
 
         // --- Lógica do Modal de Autenticação ---
         const openModal = () => authModal.classList.remove('hidden');
@@ -203,6 +229,11 @@
                     </div>`;
                 document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
                 document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
+                
+                filterControls.classList.remove('hidden'); // Mostra os filtros
+                document.getElementById('filter-btn').addEventListener('click', applyFilters);
+                document.getElementById('clear-filter-btn').addEventListener('click', clearFilters);
+
                 loadRequests();
             } else {
                 // Usuário está deslogado
@@ -210,8 +241,10 @@
                 document.getElementById('login-reports-btn').addEventListener('click', openModal);
                 
                 requestsContainer.innerHTML = '<p class="text-gray-500 text-center">Faça o login para visualizar as requisições.</p>';
+                filterControls.classList.add('hidden'); // Esconde os filtros
+
                 if (unsubscribeRequests) {
-                    unsubscribeRequests(); // Para de ouvir em tempo real
+                    unsubscribeRequests();
                 }
             }
         });
@@ -267,43 +300,69 @@
             const q = query(collection(db, `service_requests`), orderBy('createdAt', 'desc'));
 
             unsubscribeRequests = onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada.</p>';
-                    return;
-                }
-                const requestsListDiv = document.createElement('div');
-                requestsListDiv.className = 'space-y-4';
-                snapshot.forEach(req => {
-                    const data = req.data();
-                    const reqCard = document.createElement('div');
-                    reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50';
-                    const formattedDate = new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-                    let techniciansHtml = data.tecnicos.map(tech => `<li class="text-sm text-gray-600 list-disc list-inside"><strong>${tech.nome}</strong> (Reg: ${tech.registro || 'N/A'}) - ${tech.horaInicio} às ${tech.horaFinal}</li>`).join('');
-                    reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
-                    requestsListDiv.appendChild(reqCard);
-                });
-                 requestsContainer.innerHTML = '';
-                 requestsContainer.appendChild(requestsListDiv);
-
+                allRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderRequests(allRequests); // Renderiza a lista inicial
             }, (error) => { 
                 console.error("Erro ao carregar requisições:", error); 
                 requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique as regras de segurança.</p>';
             });
         }
+
+        function renderRequests(requests) {
+            currentlyDisplayedRequests = requests; // Atualiza a lista para exportação
+            if (requests.length === 0) {
+                requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada para os filtros aplicados.</p>';
+                return;
+            }
+            const requestsListDiv = document.createElement('div');
+            requestsListDiv.className = 'space-y-4';
+            requests.forEach(data => {
+                const reqCard = document.createElement('div');
+                reqCard.className = 'border border-gray-200 p-4 rounded-lg shadow-sm bg-gray-50';
+                const formattedDate = new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                let techniciansHtml = data.tecnicos.map(tech => `<li class="text-sm text-gray-600 list-disc list-inside"><strong>${tech.nome}</strong> (Reg: ${tech.registro || 'N/A'}) - ${tech.horaInicio} às ${tech.horaFinal}</li>`).join('');
+                reqCard.innerHTML = `<div class="flex justify-between items-start"><div><h3 class="font-bold text-lg text-indigo-700">${data.equipamento} - <span class="font-medium text-gray-800">${data.area}</span></h3><p class="text-sm text-gray-500">Solicitado por: <strong>${data.solicitante}</strong> em ${formattedDate} às ${data.hora}</p></div><span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SAP: ${data.sap || 'N/A'}</span></div><div class="mt-4 space-y-3"><div><h4 class="font-semibold text-gray-700">Problema:</h4><p class="text-gray-600 text-sm pl-2">${data.descricaoProblema}</p></div><div><h4 class="font-semibold text-gray-700">Solução Aplicada:</h4><p class="text-gray-600 text-sm pl-2">${data.solucaoProblema || 'Não informada.'}</p></div><div><h4 class="font-semibold text-gray-700">Técnicos:</h4><ul>${techniciansHtml}</ul></div></div>`;
+                requestsListDiv.appendChild(reqCard);
+            });
+             requestsContainer.innerHTML = '';
+             requestsContainer.appendChild(requestsListDiv);
+        }
+
+        // --- Lógica de Filtros ---
+        function applyFilters() {
+            const filterDate = document.getElementById('filter-data').value;
+            const filterSolicitante = document.getElementById('filter-solicitante').value.toLowerCase();
+            const filterEquipamento = document.getElementById('filter-equipamento').value.toLowerCase();
+
+            const filteredRequests = allRequests.filter(req => {
+                const matchesDate = !filterDate || req.data === filterDate;
+                const matchesSolicitante = !filterSolicitante || req.solicitante.toLowerCase().includes(filterSolicitante);
+                const matchesEquipamento = !filterEquipamento || req.equipamento.toLowerCase().includes(filterEquipamento);
+                return matchesDate && matchesSolicitante && matchesEquipamento;
+            });
+
+            renderRequests(filteredRequests);
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-data').value = '';
+            document.getElementById('filter-solicitante').value = '';
+            document.getElementById('filter-equipamento').value = '';
+            renderRequests(allRequests);
+        }
         
         // --- Lógica de Exportação para Excel ---
-        async function exportToExcel() {
+        function exportToExcel() {
+            if (currentlyDisplayedRequests.length === 0) {
+                showModal('Nenhuma requisição para exportar com os filtros atuais.');
+                return;
+            }
             showModal('Gerando relatório...', 'success');
+            
             try {
-                const q = query(collection(db, "service_requests"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-                
-                const dataToExport = [];
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
+                const dataToExport = currentlyDisplayedRequests.map(data => {
                     const techniciansStr = data.tecnicos.map(t => `${t.nome} (${t.horaInicio}-${t.horaFinal})`).join('; ');
-                    
-                    dataToExport.push({
+                    return {
                         "Data": new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
                         "Hora": data.hora,
                         "Solicitante": data.solicitante,
@@ -314,18 +373,13 @@
                         "Causa do Problema": data.causaProblema,
                         "Solução do Problema": data.solucaoProblema,
                         "Técnicos": techniciansStr
-                    });
+                    };
                 });
-
-                if (dataToExport.length === 0) {
-                    showModal('Nenhuma requisição para exportar.');
-                    return;
-                }
 
                 const worksheet = XLSX.utils.json_to_sheet(dataToExport);
                 const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Requisições");
-                XLSX.writeFile(workbook, "Relatorio_Requisicoes.xlsx");
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Requisicoes");
+                XLSX.writeFile(workbook, "Relatorio_Requisicoes_Filtrado.xlsx");
 
             } catch (error) {
                 console.error("Erro ao exportar para Excel:", error);
