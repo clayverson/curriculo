@@ -84,13 +84,11 @@
     <div id="mainContent" class="hidden container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="relative text-center mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Entrada e Saída de Equipamentos</h1>
-            <p class="text-gray-600 mt-2">Gerencie o fluxo de equipamentos de manutenção de forma eficiente.</p>
-            <button id="logoutButton" class="absolute top-0 right-0 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">Sair</button>
+            <div class="flex justify-center items-center mt-2 space-x-4">
+                <p id="userInfo" class="text-gray-600"></p>
+                <button id="logoutButton" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">Sair</button>
+            </div>
         </header>
-
-        <div id="connectionStatus" class="p-4 mb-4 text-sm text-center text-white bg-blue-500 rounded-md transition-all duration-300">
-            Conectando ao Firebase...
-        </div>
 
         <main>
             <!-- Formulário de Manutenção -->
@@ -244,12 +242,24 @@
         </div>
     </div>
 
+    <!-- Modal de Confirmação de Exclusão -->
+    <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 z-50 flex items-center justify-center">
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto text-center">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Confirmar Exclusão</h3>
+            <p class="text-sm text-gray-600 mb-6">Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</p>
+            <div class="flex justify-center space-x-4">
+                <button id="cancelDeleteBtn" class="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300">Cancelar</button>
+                <button id="confirmDeleteBtn" class="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700">Excluir</button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Scripts do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCoRoG79lA3mSBFDwoVJhfeYVKfWvFG5cI",
@@ -266,6 +276,9 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const colRef = collection(db, "equipamentos");
+        const usersColRef = collection(db, "users");
+        
+        let currentUser = { role: null, email: null };
 
         // --- ELEMENTOS DA UI ---
         const loginScreen = document.getElementById('loginScreen');
@@ -273,40 +286,56 @@
         const loginForm = document.getElementById('loginForm');
         const logoutButton = document.getElementById('logoutButton');
         const corpoTabela = document.getElementById('corpoTabela');
-        const statusDiv = document.getElementById('connectionStatus');
-        const entryForm = document.getElementById('maintenanceForm');
+        const maintenanceForm = document.getElementById('maintenanceForm');
         const saidaModal = document.getElementById('saidaModal');
         const saidaForm = document.getElementById('saidaForm');
         const loginError = document.getElementById('loginError');
+        const userInfo = document.getElementById('userInfo');
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
 
         let registrosAtuais = []; 
-        let unsubscribe = null; // Para parar de ouvir os dados ao deslogar
+        let unsubscribe = null; 
+        let docToDeleteId = null;
 
-        // --- CONTROLE DE AUTENTICAÇÃO ---
-        onAuthStateChanged(auth, user => {
+        // --- CONTROLE DE AUTENTICAÇÃO E PERMISSÕES ---
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Usuário está logado
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                
+                if (userDocSnap.exists()) {
+                    currentUser.role = userDocSnap.data().role;
+                } else {
+                    // Se o usuário existe na Auth mas não no Firestore, define a menor permissão
+                    currentUser.role = 'inserir'; 
+                }
+                currentUser.email = user.email;
+
                 loginScreen.classList.add('hidden');
                 mainContent.classList.remove('hidden');
-                statusDiv.textContent = "Autenticado com sucesso! Carregando registros...";
-                statusDiv.className = "p-4 mb-4 text-sm text-center text-white bg-green-500 rounded-md";
-                setTimeout(() => { statusDiv.style.display = 'none'; }, 4000);
+                userInfo.textContent = `Usuário: ${currentUser.email} (Nível: ${currentUser.role})`;
                 
-                // Inicia o listener do Firestore APÓS o login
+                // Controla a visibilidade do formulário de entrada
+                if(currentUser.role === 'inserir' || currentUser.role === 'tecnico' || currentUser.role === 'admin') {
+                    maintenanceForm.classList.remove('hidden');
+                } else {
+                    maintenanceForm.classList.add('hidden');
+                }
+
                 carregarRegistros();
             } else {
-                // Usuário está deslogado
+                currentUser = { role: null, email: null };
                 loginScreen.classList.remove('hidden');
                 mainContent.classList.add('hidden');
 
-                // Para de ouvir os dados do Firestore para economizar recursos
                 if (unsubscribe) {
                     unsubscribe();
                 }
             }
         });
 
-        // Evento de Login
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
@@ -315,7 +344,6 @@
             
             try {
                 await signInWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged vai cuidar de mostrar a tela principal
             } catch (error) {
                 console.error("Erro de login:", error.code);
                 loginError.textContent = "Email ou senha inválidos. Tente novamente.";
@@ -323,11 +351,9 @@
             }
         });
 
-        // Evento de Logout
         logoutButton.addEventListener('click', async () => {
             try {
                 await signOut(auth);
-                // onAuthStateChanged vai cuidar de mostrar a tela de login
             } catch (error) {
                 console.error("Erro ao sair:", error);
             }
@@ -335,7 +361,6 @@
 
         // --- FUNÇÕES DO APLICATIVO ---
 
-        // Renderizar tabela
         const renderizarTabela = (docs) => {
             corpoTabela.innerHTML = '';
             registrosAtuais = [];
@@ -355,15 +380,31 @@
                 else if (data.statusGeral === 'Sem Reparo') statusClass = 'bg-red-100 text-red-800';
 
                 let acoesHtml = '';
-                if (!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') {
-                    acoesHtml = `<button data-id="${docSnapshot.id}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
-                } else if (data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes') {
-                    const buttonText = data.statusGeral === 'Aguardando Componentes' ? 'Continuar' : 'Finalizar';
-                    acoesHtml = `<button data-id="${docSnapshot.id}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
-                } else {
-                    acoesHtml = `<span class="text-gray-400 text-sm">Concluído</span>`;
+                const podeAssumir = currentUser.role === 'tecnico' || currentUser.role === 'admin';
+                const podeFinalizar = currentUser.role === 'tecnico' || currentUser.role === 'admin';
+                const podeTransferir = currentUser.role === 'admin';
+                const podeExcluir = currentUser.role === 'admin';
+
+                if ((!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') && podeAssumir) {
+                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
+                } else if (data.tecnicoAtribuido && data.tecnicoAtribuido !== 'Geral') {
+                    if ((data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes') && podeFinalizar) {
+                        const buttonText = data.statusGeral === 'Aguardando Componentes' ? 'Continuar' : 'Finalizar';
+                        acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
+                    } else {
+                         acoesHtml += `<span class="text-gray-400 text-sm">Concluído</span>`;
+                    }
+
+                    if (podeTransferir) {
+                        acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-transferir text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Transferir</button>`;
+                    }
                 }
-                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-imprimir-os text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Imprimir OS</button>`;
+                
+                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-imprimir-os text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Imprimir OS</button>`;
+
+                if (podeExcluir) {
+                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-excluir text-red-600 hover:text-red-900 text-sm font-medium ml-3">Excluir</button>`;
+                }
 
                 tr.innerHTML = `
                     <td>${data.nomeEquipamento || ''}</td>
@@ -380,33 +421,37 @@
             });
         }
         
-        // Carregar registros em tempo real
         const carregarRegistros = (q = colRef) => {
-            if (unsubscribe) unsubscribe(); // Cancela o listener anterior, se houver
+            if (unsubscribe) unsubscribe();
             unsubscribe = onSnapshot(q, (snapshot) => renderizarTabela(snapshot.docs), (error) => {
                 console.error("Erro ao carregar registros:", error);
             });
         }
 
-        // Formulário de ENTRADA
-        entryForm.addEventListener('submit', async (e) => {
+        maintenanceForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(entryForm);
+            const formData = new FormData(maintenanceForm);
             const data = Object.fromEntries(formData.entries());
-            data.statusGeral = 'Em Andamento'; // Status inicial
-            data.tecnicoAtribuido = 'Geral'; // Atribuição inicial
+            data.statusGeral = 'Em Andamento';
+            data.tecnicoAtribuido = 'Geral';
+            data.historico = [{
+                acao: 'Criação',
+                usuario: currentUser.email,
+                data: new Date().toISOString(),
+                detalhes: 'Registro de entrada criado.'
+            }];
+
             try {
                 await addDoc(colRef, data);
                 alert('Equipamento registrado com sucesso!');
-                entryForm.reset();
+                maintenanceForm.reset();
                 document.getElementById('dataEntrada').valueAsDate = new Date();
             } catch (err) {
                 console.error(err);
                 alert('Erro ao registrar equipamento.');
             }
         });
-
-        // Gerenciador de cliques na tabela para Ações
+        
         corpoTabela.addEventListener('click', async (e) => {
             const target = e.target;
             const docId = target.dataset.id;
@@ -415,12 +460,11 @@
             if (target.classList.contains('btn-assumir')) {
                 const tecnicoNome = prompt("Por favor, digite seu nome para assumir esta O.S.:");
                 if (tecnicoNome && tecnicoNome.trim() !== '') {
+                    const logEntry = { acao: 'Assumiu', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Técnico '${tecnicoNome.trim()}' assumiu a O.S.` };
                     try {
-                        const docRef = doc(db, "equipamentos", docId);
-                        await updateDoc(docRef, { tecnicoAtribuido: tecnicoNome.trim() });
+                        await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: tecnicoNome.trim(), historico: arrayUnion(logEntry) });
                         alert(`O.S. atribuída a ${tecnicoNome.trim()} com sucesso!`);
                     } catch (err) {
-                        console.error("Erro ao assumir O.S.:", err);
                         alert("Ocorreu um erro ao tentar assumir a O.S.");
                     }
                 }
@@ -435,10 +479,40 @@
                 saidaModal.classList.remove('hidden');
             } else if (target.classList.contains('btn-imprimir-os')) {
                 imprimirOS(docId);
+            } else if (target.classList.contains('btn-transferir')) {
+                const registroAtual = registrosAtuais.find(r => r.id === docId);
+                const novoTecnico = prompt("Digite o nome do novo técnico para esta O.S.:");
+                if (novoTecnico && novoTecnico.trim() !== '') {
+                    const logEntry = { acao: 'Transferência', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `O.S. transferida de '${registroAtual.tecnicoAtribuido}' para '${novoTecnico.trim()}'.` };
+                    try {
+                        await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: novoTecnico.trim(), historico: arrayUnion(logEntry) });
+                        alert(`O.S. transferida para ${novoTecnico.trim()} com sucesso!`);
+                    } catch (err) {
+                        alert("Ocorreu um erro ao tentar transferir a O.S.");
+                    }
+                }
+            } else if (target.classList.contains('btn-excluir')) {
+                docToDeleteId = docId;
+                deleteConfirmModal.classList.remove('hidden');
+            }
+        });
+        
+        // Modal de Exclusão
+        cancelDeleteBtn.addEventListener('click', () => deleteConfirmModal.classList.add('hidden'));
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (docToDeleteId) {
+                try {
+                    await deleteDoc(doc(db, "equipamentos", docToDeleteId));
+                    alert('Registro excluído com sucesso!');
+                } catch(err) {
+                    alert('Erro ao excluir o registro.');
+                } finally {
+                    docToDeleteId = null;
+                    deleteConfirmModal.classList.add('hidden');
+                }
             }
         });
 
-        // Formulário de SAÍDA
         saidaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const docId = document.getElementById('editDocId').value;
@@ -470,13 +544,13 @@
                 dataToUpdate.motivoSemReparo = saidaForm.querySelector('#motivoSemReparo').value;
             }
             
-            const docRef = doc(db, "equipamentos", docId);
+            const logEntry = { acao: 'Finalização', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Status alterado para '${dataToUpdate.statusGeral}'. Finalizado por ${dataToUpdate.tecnico}.` };
+
             try {
-                await updateDoc(docRef, dataToUpdate);
+                await updateDoc(doc(db, "equipamentos", docId), { ...dataToUpdate, historico: arrayUnion(logEntry) });
                 alert('Registro de saída salvo com sucesso!');
                 saidaModal.classList.add('hidden');
             } catch (err) {
-                console.error("Erro ao atualizar:", err);
                 alert('Erro ao salvar a saída.');
             }
         });
@@ -484,6 +558,19 @@
         function imprimirOS(osId) {
             const osData = registrosAtuais.find(r => r.id === osId);
             if (!osData) return alert('Dados da OS não encontrados.');
+
+            let historicoHtml = '';
+            if (osData.historico && Array.isArray(osData.historico)) {
+                historicoHtml += `<h2 class="section-title">Histórico de Alterações</h2><div class="full-width">`;
+                [...osData.historico].sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(log => {
+                    historicoHtml += `<div class="grid-item border-b py-2">
+                        <label>${new Date(log.data).toLocaleString('pt-BR')}:</label>
+                        <span><b>Ação:</b> ${log.acao || 'N/A'} | <b>Usuário:</b> ${log.usuario || 'N/A'}</span><br>
+                        <span class="text-sm text-gray-600">${log.detalhes || ''}</span>
+                    </div>`;
+                });
+                historicoHtml += `</div>`;
+            }
 
             let printHtml = `
             <!DOCTYPE html>
@@ -548,6 +635,7 @@
 
             printHtml += `
                     </div>
+                    ${historicoHtml}
                 </div>
             </body>
             </html>`;
@@ -562,7 +650,6 @@
             };
         }
 
-        // Lógica do Modal de Saída
         document.getElementById('cancelarSaidaBtn').addEventListener('click', () => saidaModal.classList.add('hidden'));
 
         const statusRadios = document.querySelectorAll('input[name="statusReparo"]');
@@ -586,7 +673,6 @@
             newRow.querySelector('.remover-componente-btn').addEventListener('click', () => newRow.remove());
         });
 
-        // Lógica de Filtros
         document.getElementById('btnBuscar').addEventListener('click', () => {
             const sap = document.getElementById('filtroSap').value.trim();
             const nota = document.getElementById('filtroNota').value.trim();
@@ -633,4 +719,5 @@
     </script>
 </body>
 </html>
+
 
