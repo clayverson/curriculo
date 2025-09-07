@@ -156,7 +156,11 @@
             <div id="secaoRegistros" class="mt-12">
                  <h2 class="text-2xl font-bold text-gray-900 mb-4">Registros Salvos</h2>
                 <div class="form-section">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                        <div>
+                             <label for="filtroId" class="block text-sm font-medium text-gray-700">Buscar por ID da O.S</label>
+                             <input type="text" id="filtroId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ex: OS-20250101-0001">
+                        </div>
                         <div>
                              <label for="filtroSap" class="block text-sm font-medium text-gray-700">Buscar por SAP</label>
                              <input type="text" id="filtroSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o SAP...">
@@ -166,17 +170,31 @@
                              <input type="text" id="filtroNota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite a Nota/OS...">
                         </div>
                         <div>
-                             <label for="filtroTecnico" class="block text-sm font-medium text-gray-700">Buscar por Técnico Atribuído</label>
-                             <input type="text" id="filtroTecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o nome do técnico...">
+                             <label for="filtroTecnico" class="block text-sm font-medium text-gray-700">Buscar por Técnico</label>
+                             <input type="text" id="filtroTecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o nome...">
                         </div>
-                        <div class="flex space-x-2">
+                        <div>
+                            <label for="filtroData" class="block text-sm font-medium text-gray-700">Buscar por Data</label>
+                            <input type="date" id="filtroData" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                       </div>
+                       <div>
+                            <label for="filtroStatus" class="block text-sm font-medium text-gray-700">Buscar por Status</label>
+                            <select id="filtroStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                                <option value="">Todos</option>
+                                <option value="Em Andamento">Em Andamento</option>
+                                <option value="Aguardando Componentes">Aguardando Componentes</option>
+                                <option value="Finalizado">Finalizado</option>
+                                <option value="Sem Reparo">Sem Reparo</option>
+                            </select>
+                        </div>
+                        <div class="md:col-start-3 md:col-end-4 flex space-x-2">
                              <button id="btnBuscar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Buscar</button>
                              <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
                         </div>
                     </div>
                     <div class="flex justify-end space-x-3 mt-6">
                         <button id="btnImprimir" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">Imprimir Relatório</button>
-                        <button id="btnExportar" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar para Excel</button>
+                        <button id="btnExportar" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Selecionados</button>
                     </div>
                 </div>
 
@@ -184,8 +202,9 @@
                     <table id="tabelaRegistros" class="min-w-full bg-white">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="w-12 text-center"><input type="checkbox" id="selectAllCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
+                                <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
                                 <th class="text-sm font-semibold text-gray-600">Equipamento</th>
-                                <th class="text-sm font-semibold text-gray-600">SAP</th>
                                 <th class="text-sm font-semibold text-gray-600">Nota/OS</th>
                                 <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
                                 <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
@@ -241,15 +260,105 @@
             </form>
         </div>
     </div>
+    
+    <!-- Modal de Edição (Admin) -->
+    <div id="editModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+            <form id="editForm">
+                <input type="hidden" id="editAdminDocId">
+                <fieldset>
+                    <legend id="editModalLegend" class="text-2xl font-bold mb-6 text-gray-800">Editar Registro (Admin)</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="edit-nomePortador" class="block text-sm font-medium text-gray-700">Nome de quem trouxe</label>
+                            <input type="text" id="edit-nomePortador" name="nomePortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-registroPortador" class="block text-sm font-medium text-gray-700">Registro</label>
+                            <input type="text" id="edit-registroPortador" name="registroPortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-nomeEquipamento" class="block text-sm font-medium text-gray-700">Nome do Equipamento</label>
+                            <input type="text" id="edit-nomeEquipamento" name="nomeEquipamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-area" class="block text-sm font-medium text-gray-700">Área</label>
+                            <input type="text" id="edit-area" name="area" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="edit-dataEntrada" class="block text-sm font-medium text-gray-700">Data de Entrada</label>
+                            <input type="date" id="edit-dataEntrada" name="dataEntrada" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-sap" class="block text-sm font-medium text-gray-700">SAP</label>
+                            <input type="text" id="edit-sap" name="sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="edit-setor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select id="edit-setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="armacao">Armação</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="montagem_final">Montagem Final</option>
+                                <option value="site">Site</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-recebedor" class="block text-sm font-medium text-gray-700">Nome de quem recebeu</label>
+                            <input type="text" id="edit-recebedor" name="recebedor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="edit-nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço</label>
+                            <input type="text" id="edit-nota" name="nota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="edit-problema" class="block text-sm font-medium text-gray-700">Descrição do Problema</label>
+                            <textarea id="edit-problema" name="problema" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
+                    <button type="button" id="cancelarEditBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- Modal de Confirmação de Exclusão -->
-    <div id="deleteConfirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm mx-auto text-center">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Confirmar Exclusão</h3>
-            <p class="text-sm text-gray-600 mb-6">Você tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.</p>
-            <div class="flex justify-center space-x-4">
-                <button id="cancelDeleteBtn" class="px-4 py-2 rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300">Cancelar</button>
-                <button id="confirmDeleteBtn" class="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700">Excluir</button>
+    <!-- Modal de Visualização -->
+    <div id="viewModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-6 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div id="viewModalTitle" class="text-2xl font-bold mb-4 text-gray-800 border-b pb-4">Detalhes da Ordem de Serviço</div>
+            <div class="max-h-[70vh] overflow-y-auto pr-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div><strong class="text-gray-600 block">Trazido por:</strong> <span id="view-nomePortador"></span></div>
+                    <div><strong class="text-gray-600 block">Registro:</strong> <span id="view-registroPortador"></span></div>
+                    <div><strong class="text-gray-600 block">Equipamento:</strong> <span id="view-nomeEquipamento"></span></div>
+                    <div><strong class="text-gray-600 block">SAP:</strong> <span id="view-sap"></span></div>
+                    <div><strong class="text-gray-600 block">Área:</strong> <span id="view-area"></span></div>
+                    <div><strong class="text-gray-600 block">Setor:</strong> <span id="view-setor"></span></div>
+                    <div><strong class="text-gray-600 block">Data de Entrada:</strong> <span id="view-dataEntrada"></span></div>
+                    <div><strong class="text-gray-600 block">Recebido por:</strong> <span id="view-recebedor"></span></div>
+                    <div class="md:col-span-2"><strong class="text-gray-600 block">Nota / O.S.:</strong> <span id="view-nota"></span></div>
+                    <div class="md:col-span-2"><strong class="text-gray-600 block">Descrição do Problema:</strong> <p id="view-problema" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Dados de Finalização</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                        <div><strong class="text-gray-600 block">Status:</strong> <span id="view-statusGeral"></span></div>
+                        <div><strong class="text-gray-600 block">Técnico Finalizador:</strong> <span id="view-tecnico"></span></div>
+                        <div><strong class="text-gray-600 block">Data de Saída:</strong> <span id="view-dataSaida"></span></div>
+                        <div id="view-detalhes-finalizacao" class="md:col-span-2"></div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Histórico de Alterações</h3>
+                    <div id="view-historico" class="space-y-3 text-sm"></div>
+                </div>
+            </div>
+            <div class="flex justify-end items-center pt-6 mt-4 border-t">
+                <button type="button" id="fecharViewBtn" class="py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600">Fechar</button>
             </div>
         </div>
     </div>
@@ -259,7 +368,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCoRoG79lA3mSBFDwoVJhfeYVKfWvFG5cI",
@@ -276,7 +385,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const colRef = collection(db, "equipamentos");
-        const usersColRef = collection(db, "users");
         
         let currentUser = { role: null, email: null };
 
@@ -291,13 +399,14 @@
         const saidaForm = document.getElementById('saidaForm');
         const loginError = document.getElementById('loginError');
         const userInfo = document.getElementById('userInfo');
-        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const cancelEditBtn = document.getElementById('cancelarEditBtn');
+        const viewModal = document.getElementById('viewModal');
+        const fecharViewBtn = document.getElementById('fecharViewBtn');
 
         let registrosAtuais = []; 
         let unsubscribe = null; 
-        let docToDeleteId = null;
 
         // --- CONTROLE DE AUTENTICAÇÃO E PERMISSÕES ---
         onAuthStateChanged(auth, async (user) => {
@@ -308,7 +417,6 @@
                 if (userDocSnap.exists()) {
                     currentUser.role = userDocSnap.data().role;
                 } else {
-                    // Se o usuário existe na Auth mas não no Firestore, define a menor permissão
                     currentUser.role = 'inserir'; 
                 }
                 currentUser.email = user.email;
@@ -317,7 +425,6 @@
                 mainContent.classList.remove('hidden');
                 userInfo.textContent = `Usuário: ${currentUser.email} (Nível: ${currentUser.role})`;
                 
-                // Controla a visibilidade do formulário de entrada
                 if(currentUser.role === 'inserir' || currentUser.role === 'tecnico' || currentUser.role === 'admin') {
                     maintenanceForm.classList.remove('hidden');
                 } else {
@@ -364,8 +471,10 @@
         const renderizarTabela = (docs) => {
             corpoTabela.innerHTML = '';
             registrosAtuais = [];
+            document.getElementById('selectAllCheckbox').checked = false;
+
             if(docs.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="7" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="8" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
             docs.forEach(docSnapshot => {
@@ -383,7 +492,7 @@
                 const podeAssumir = currentUser.role === 'tecnico' || currentUser.role === 'admin';
                 const podeFinalizar = currentUser.role === 'tecnico' || currentUser.role === 'admin';
                 const podeTransferir = currentUser.role === 'admin';
-                const podeExcluir = currentUser.role === 'admin';
+                const podeEditar = currentUser.role === 'admin';
 
                 if ((!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') && podeAssumir) {
                     acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
@@ -400,15 +509,17 @@
                     }
                 }
                 
+                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-visualizar text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Visualizar</button>`;
                 acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-imprimir-os text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Imprimir OS</button>`;
 
-                if (podeExcluir) {
-                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-excluir text-red-600 hover:text-red-900 text-sm font-medium ml-3">Excluir</button>`;
+                if (podeEditar) {
+                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-editar text-yellow-600 hover:text-yellow-900 text-sm font-medium ml-3">Editar</button>`;
                 }
 
                 tr.innerHTML = `
+                    <td class="text-center"><input type="checkbox" class="row-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docSnapshot.id}"></td>
+                    <td>${data.osId || ''}</td>
                     <td>${data.nomeEquipamento || ''}</td>
-                    <td>${data.sap || ''}</td>
                     <td>${data.nota || ''}</td>
                     <td>${data.dataEntrada ? new Date(data.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</td>
                     <td>${data.tecnicoAtribuido || 'N/A'}</td>
@@ -430,15 +541,25 @@
 
         maintenanceForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Gerar ID único
+            const today = new Date().toISOString().slice(0, 10);
+            const q = query(colRef, where("dataEntrada", "==", today));
+            const querySnapshot = await getDocs(q);
+            const todayCount = querySnapshot.size;
+            const newCount = (todayCount + 1).toString().padStart(4, '0');
+            const newOsId = `OS-${today.replace(/-/g, '')}-${newCount}`;
+
             const formData = new FormData(maintenanceForm);
             const data = Object.fromEntries(formData.entries());
+            data.osId = newOsId;
             data.statusGeral = 'Em Andamento';
             data.tecnicoAtribuido = 'Geral';
             data.historico = [{
                 acao: 'Criação',
                 usuario: currentUser.email,
                 data: new Date().toISOString(),
-                detalhes: 'Registro de entrada criado.'
+                detalhes: `Registro de entrada criado com o ID ${newOsId}.`
             }];
 
             try {
@@ -473,8 +594,8 @@
                 document.getElementById('editDocId').value = docId;
                 document.getElementById('dataSaida').valueAsDate = new Date();
                 const registro = registrosAtuais.find(r => r.id === docId);
-                if(registro && registro.tecnicoAtribuido !== 'Geral'){
-                     document.getElementById('tecnico').value = registro.tecnicoAtribuido;
+                if (registro) {
+                    document.getElementById('tecnico').value = registro.tecnicoAtribuido || '';
                 }
                 saidaModal.classList.remove('hidden');
             } else if (target.classList.contains('btn-imprimir-os')) {
@@ -491,28 +612,77 @@
                         alert("Ocorreu um erro ao tentar transferir a O.S.");
                     }
                 }
-            } else if (target.classList.contains('btn-excluir')) {
-                docToDeleteId = docId;
-                deleteConfirmModal.classList.remove('hidden');
-            }
-        });
-        
-        // Modal de Exclusão
-        cancelDeleteBtn.addEventListener('click', () => deleteConfirmModal.classList.add('hidden'));
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (docToDeleteId) {
-                try {
-                    await deleteDoc(doc(db, "equipamentos", docToDeleteId));
-                    alert('Registro excluído com sucesso!');
-                } catch(err) {
-                    alert('Erro ao excluir o registro.');
-                } finally {
-                    docToDeleteId = null;
-                    deleteConfirmModal.classList.add('hidden');
-                }
+            } else if (target.classList.contains('btn-editar')) {
+                abrirModalEdicao(docId);
+            } else if (target.classList.contains('btn-visualizar')) {
+                abrirModalVisualizacao(docId);
             }
         });
 
+        // --- LÓGICA DE EDIÇÃO (ADMIN) ---
+        function abrirModalEdicao(docId) {
+            const registro = registrosAtuais.find(r => r.id === docId);
+            if (!registro) return;
+            
+            editForm.querySelector('#editModalLegend').textContent = `Editar Registro (Admin) - OS: ${registro.osId || 'N/A'}`;
+            editForm.querySelector('#editAdminDocId').value = docId;
+
+            for (const key in registro) {
+                const field = editForm.elements[key];
+                if (field) {
+                    field.value = registro[key];
+                }
+            }
+            editModal.classList.remove('hidden');
+        }
+
+        cancelEditBtn.addEventListener('click', () => {
+            editModal.classList.add('hidden');
+        });
+
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = editForm.querySelector('#editAdminDocId').value;
+            if (!docId) return;
+
+            const registroOriginal = registrosAtuais.find(r => r.id === docId);
+            const formData = new FormData(editForm);
+            const dadosAtualizados = Object.fromEntries(formData.entries());
+            
+            let detalhesLog = 'Registro editado. Alterações:';
+            let mudancas = 0;
+            for (const key in dadosAtualizados) {
+                if (dadosAtualizados.hasOwnProperty(key) && String(dadosAtualizados[key]) !== String(registroOriginal[key] || '')) {
+                    detalhesLog += ` | Campo '${key}': de '${registroOriginal[key] || ''}' para '${dadosAtualizados[key]}'.`;
+                    mudancas++;
+                }
+            }
+
+            if (mudancas === 0) {
+                return alert('Nenhuma alteração foi feita.');
+            }
+
+            const logEntry = {
+                acao: 'Edição (Admin)',
+                usuario: currentUser.email,
+                data: new Date().toISOString(),
+                detalhes: detalhesLog
+            };
+
+            try {
+                await updateDoc(doc(db, "equipamentos", docId), {
+                    ...dadosAtualizados,
+                    historico: arrayUnion(logEntry)
+                });
+                alert('Registro atualizado com sucesso!');
+                editModal.classList.add('hidden');
+            } catch (err) {
+                console.error("Erro ao editar registro:", err);
+                alert('Erro ao salvar as alterações.');
+            }
+        });
+        
+        // --- LÓGICA DO MODAL DE SAÍDA ---
         saidaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const docId = document.getElementById('editDocId').value;
@@ -554,6 +724,59 @@
                 alert('Erro ao salvar a saída.');
             }
         });
+
+        // --- LÓGICA DE VISUALIZAÇÃO ---
+        function abrirModalVisualizacao(docId) {
+            const osData = registrosAtuais.find(r => r.id === docId);
+            if (!osData) return;
+
+            document.getElementById('viewModalTitle').textContent = `Detalhes da Ordem de Serviço - ${osData.osId || 'N/A'}`;
+
+            document.getElementById('view-nomePortador').textContent = osData.nomePortador || 'N/A';
+            document.getElementById('view-registroPortador').textContent = osData.registroPortador || 'N/A';
+            document.getElementById('view-nomeEquipamento').textContent = osData.nomeEquipamento || 'N/A';
+            document.getElementById('view-sap').textContent = osData.sap || 'N/A';
+            document.getElementById('view-area').textContent = osData.area || 'N/A';
+            document.getElementById('view-setor').textContent = osData.setor || 'N/A';
+            document.getElementById('view-dataEntrada').textContent = osData.dataEntrada ? new Date(osData.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+            document.getElementById('view-recebedor').textContent = osData.recebedor || 'N/A';
+            document.getElementById('view-nota').textContent = osData.nota || 'N/A';
+            document.getElementById('view-problema').textContent = osData.problema || 'N/A';
+            document.getElementById('view-statusGeral').textContent = osData.statusGeral || 'Em Andamento';
+            document.getElementById('view-tecnico').textContent = osData.tecnico || 'N/A';
+            document.getElementById('view-dataSaida').textContent = osData.dataSaida ? new Date(osData.dataSaida).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
+            
+            const detalhesFinalizacao = document.getElementById('view-detalhes-finalizacao');
+            detalhesFinalizacao.innerHTML = '';
+            if (osData.statusGeral === 'Finalizado') {
+                detalhesFinalizacao.innerHTML = `<strong class="text-gray-600 block">Descrição do Reparo:</strong> <p class="mt-1 p-2 bg-gray-50 rounded">${osData.descricaoReparo || ''}</p>`;
+            } else if (osData.statusGeral === 'Aguardando Componentes' && osData.componentes && osData.componentes.length > 0) {
+                 let compHtml = '<strong class="text-gray-600 block">Componentes Solicitados:</strong>';
+                 osData.componentes.forEach(c => { compHtml += `<div> - Cód: ${c.codigo || ''}, Desc: ${c.descricao || ''}</div>`; });
+                 detalhesFinalizacao.innerHTML = compHtml;
+            } else if (osData.statusGeral === 'Sem Reparo') {
+                detalhesFinalizacao.innerHTML = `<strong class="text-gray-600 block">Motivo (Sem Reparo):</strong> <p class="mt-1 p-2 bg-gray-50 rounded">${osData.motivoSemReparo || ''}</p>`;
+            }
+
+            const historicoContainer = document.getElementById('view-historico');
+            historicoContainer.innerHTML = '';
+            if (osData.historico && Array.isArray(osData.historico)) {
+                [...osData.historico].sort((a, b) => new Date(b.data) - new Date(a.data)).forEach(log => {
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'border-b py-2';
+                    logDiv.innerHTML = `
+                        <p class="font-semibold text-gray-700">${new Date(log.data).toLocaleString('pt-BR')}:</p>
+                        <p class="pl-2"><b>Ação:</b> ${log.acao || 'N/A'} | <b>Usuário:</b> ${log.usuario || 'N/A'}</p>
+                        <p class="pl-2 text-gray-600">${log.detalhes || ''}</p>
+                    `;
+                    historicoContainer.appendChild(logDiv);
+                });
+            }
+
+            viewModal.classList.remove('hidden');
+        }
+
+        fecharViewBtn.addEventListener('click', () => viewModal.classList.add('hidden'));
         
         function imprimirOS(osId) {
             const osData = registrosAtuais.find(r => r.id === osId);
@@ -576,7 +799,7 @@
             <!DOCTYPE html>
             <html lang="pt-BR">
             <head>
-                <title>Ordem de Serviço - ${osData.nota || 'N/A'}</title>
+                <title>Ordem de Serviço - ${osData.osId || 'N/A'}</title>
                 <script src="https://cdn.tailwindcss.com"><\/script>
                 <style>
                     body { font-family: 'Inter', sans-serif; padding: 2rem; }
@@ -592,7 +815,7 @@
             <body>
                 <div class="header">
                     <h1 class="text-3xl font-bold">Relatório de Ordem de Serviço</h1>
-                    <p class="text-gray-600">OS Nº: ${osData.nota || 'N/A'}</p>
+                    <p class="text-gray-600">ID da OS: ${osData.osId || 'N/A'}</p>
                 </div>
                 <div>
                     <h2 class="section-title">Dados de Entrada</h2>
@@ -650,6 +873,8 @@
             };
         }
 
+        // --- LÓGICA DE FILTROS E SELEÇÃO ---
+
         document.getElementById('cancelarSaidaBtn').addEventListener('click', () => saidaModal.classList.add('hidden'));
 
         const statusRadios = document.querySelectorAll('input[name="statusReparo"]');
@@ -674,14 +899,21 @@
         });
 
         document.getElementById('btnBuscar').addEventListener('click', () => {
+            const osId = document.getElementById('filtroId').value.trim();
             const sap = document.getElementById('filtroSap').value.trim();
             const nota = document.getElementById('filtroNota').value.trim();
             const tecnico = document.getElementById('filtroTecnico').value.trim();
+            const data = document.getElementById('filtroData').value;
+            const status = document.getElementById('filtroStatus').value;
+            
             let q;
             const constraints = [];
+            if (osId) constraints.push(where("osId", "==", osId));
             if (sap) constraints.push(where("sap", "==", sap));
             if (nota) constraints.push(where("nota", "==", nota));
             if (tecnico) constraints.push(where("tecnicoAtribuido", "==", tecnico));
+            if (data) constraints.push(where("dataEntrada", "==", data));
+            if (status) constraints.push(where("statusGeral", "==", status));
             
             if (constraints.length > 0) {
                  q = query(colRef, ...constraints);
@@ -692,32 +924,89 @@
         });
 
         document.getElementById('btnLimpar').addEventListener('click', () => {
+            document.getElementById('filtroId').value = '';
             document.getElementById('filtroSap').value = '';
             document.getElementById('filtroNota').value = '';
             document.getElementById('filtroTecnico').value = '';
+            document.getElementById('filtroData').value = '';
+            document.getElementById('filtroStatus').value = '';
             carregarRegistros();
         });
 
         document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+        
         document.getElementById('btnExportar').addEventListener('click', () => {
-            if (registrosAtuais.length === 0) return alert("Não há dados para exportar.");
-            const headers = ['NomePortador', 'RegistroPortador', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
+            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkedCheckboxes.length === 0) {
+                return alert("Por favor, selecione pelo menos um registro para exportar.");
+            }
+
+            const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.dataset.id);
+            const registrosParaExportar = registrosAtuais.filter(reg => selectedIds.includes(reg.id));
+
+            if (registrosParaExportar.length === 0) return alert("Nenhum dado válido selecionado para exportar.");
+            
+            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
             let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
-            registrosAtuais.forEach(reg => {
-                const row = headers.map(header => `"${reg[header] || ''}"`);
+            registrosParaExportar.forEach(reg => {
+                const rowData = {
+                    ID_OS: reg.osId,
+                    NomePortador: reg.nomePortador,
+                    RegistroPortador: reg.registroPortador,
+                    Equipamento: reg.nomeEquipamento,
+                    Area: reg.area,
+                    DataEntrada: reg.dataEntrada,
+                    SAP: reg.sap,
+                    Setor: reg.setor,
+                    Recebedor: reg.recebedor,
+                    TecnicoAtribuido: reg.tecnicoAtribuido,
+                    Nota: reg.nota,
+                    Problema: reg.problema,
+                    StatusGeral: reg.statusGeral,
+                    DataSaida: reg.dataSaida,
+                    Tecnico: reg.tecnico,
+                    StatusReparo: reg.statusReparo,
+                    DescricaoReparo: reg.descricaoReparo,
+                    MotivoSemReparo: reg.motivoSemReparo
+                };
+                const row = headers.map(header => `"${rowData[header] || ''}"`);
                 csvContent += row.join(";") + "\n";
             });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "relatorio_manutencao.csv");
+            link.setAttribute("download", "relatorio_manutencao_selecionado.csv");
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        });
+        
+        document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+            document.querySelectorAll('.row-checkbox').forEach(checkbox => {
+                checkbox.checked = e.target.checked;
+            });
+        });
+
+        corpoTabela.addEventListener('change', (e) => {
+            if (e.target.classList.contains('row-checkbox')) {
+                const allCheckboxes = document.querySelectorAll('.row-checkbox');
+                const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+                const selectAll = document.getElementById('selectAllCheckbox');
+                
+                if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+                    selectAll.checked = true;
+                    selectAll.indeterminate = false;
+                } else if (checkedCount > 0) {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = true;
+                } else {
+                    selectAll.checked = false;
+                    selectAll.indeterminate = false;
+                }
+            }
         });
 
         document.getElementById('dataEntrada').valueAsDate = new Date();
     </script>
 </body>
 </html>
-
 
