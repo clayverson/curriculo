@@ -28,7 +28,43 @@
 </head>
 <body class="bg-gray-100 text-gray-800">
 
-    <div id="app" class="flex h-screen">
+    <!-- Tela de Login -->
+    <div id="login-view" class="flex items-center justify-center h-screen bg-gray-200">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-center mb-6">
+                <i class="fas fa-bell text-4xl text-blue-500"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Bem-vindo ao Gerenciador</h2>
+            <p class="text-center text-gray-500 mb-6">Faça login para continuar</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="seu@email.com">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="••••••••">
+                </div>
+                <p id="auth-error" class="text-red-500 text-sm text-center mb-4"></p>
+                <div class="flex items-center justify-between space-x-2">
+                    <button type="button" id="register-btn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition">Registrar</button>
+                    <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Entrar</button>
+                </div>
+            </form>
+            <div class="relative flex py-5 items-center">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm">OU</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+            <button id="google-login-btn" class="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-50 transition">
+                <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google logo" class="h-5 mr-3">
+                Entrar com Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Aplicação Principal -->
+    <div id="app" class="flex h-screen hidden">
         <!-- Sidebar de Navegação -->
         <aside class="w-64 bg-gray-800 text-white flex flex-col p-4 shadow-lg">
             <div class="flex items-center mb-8">
@@ -53,6 +89,13 @@
                 <!-- Container for dynamic nodes -->
                 <div id="dynamic-node-list"></div>
             </nav>
+            <div id="user-info" class="border-t border-gray-700 pt-4">
+                <p id="user-email" class="text-sm text-center text-gray-400 truncate"></p>
+                <button id="logout-btn" class="w-full mt-2 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center justify-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span>Sair</span>
+                </button>
+            </div>
         </aside>
 
         <!-- Conteúdo Principal -->
@@ -176,10 +219,11 @@
                             <thead class="bg-gray-50 border-b">
                                 <tr>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Data</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Usuário</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Ação</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Detalhes da Mudança</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Justificativa</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Alarme</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Alarme/Nó</th>
                                 </tr>
                             </thead>
                             <tbody id="audit-table-body">
@@ -196,148 +240,173 @@
         </main>
     </div>
 
-    <!-- Modal para Adicionar/Editar Alarme -->
-    <div id="alarm-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-8 transform scale-95 transition-all duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Alarme</h2>
-                <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            </div>
-            <form id="alarm-form">
-                <input type="hidden" id="alarm-id">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div>
-                        <label for="item" class="block text-sm font-medium text-gray-700 mb-1">Item</label>
-                        <input type="text" id="item" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                    </div>
-                    <div>
-                        <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                        <input type="text" id="descricao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                    </div>
-                    <div>
-                        <label for="localizacao" class="block text-sm font-medium text-gray-700 mb-1">Localização</label>
-                        <input type="text" id="localizacao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                    </div>
-                     <div>
-                        <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
-                        <input type="text" id="endereco" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                    </div>
-                     <div>
-                        <label for="ala" class="block text-sm font-medium text-gray-700 mb-1">Ala</label>
-                        <input type="text" id="ala" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                     <div>
-                        <label for="sap" class="block text-sm font-medium text-gray-700 mb-1">SAP</label>
-                        <input type="text" id="sap" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="quantidade" class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
-                        <input type="number" id="quantidade" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                        <input type="date" id="data" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                        <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                            <option value="Funcionando">Funcionando</option>
-                            <option value="Não Funcionando">Não Funcionando</option>
-                            <option value="Aguardando Manutenção">Aguardando Manutenção</option>
-                            <option value="Aguardando Peças">Aguardando Peças</option>
-                        </select>
-                    </div>
-                    <div class="flex items-end pb-2">
-                        <div class="flex items-center">
-                             <input type="checkbox" id="realizado" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                             <label for="realizado" class="ml-2 block text-sm text-gray-900">Realizado</label>
+    <!-- Modals -->
+    <div id="modal-container">
+        <!-- Modal para Adicionar/Editar Alarme -->
+        <div id="alarm-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Alarme</h2>
+                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="alarm-form">
+                    <input type="hidden" id="alarm-id">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="item" class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+                            <input type="text" id="item" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                            <input type="text" id="descricao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="localizacao" class="block text-sm font-medium text-gray-700 mb-1">Localização</label>
+                            <input type="text" id="localizacao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                            <input type="text" id="endereco" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="ala" class="block text-sm font-medium text-gray-700 mb-1">Ala</label>
+                            <input type="text" id="ala" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="sap" class="block text-sm font-medium text-gray-700 mb-1">SAP</label>
+                            <input type="text" id="sap" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="quantidade" class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                            <input type="number" id="quantidade" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                            <input type="date" id="data" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="Funcionando">Funcionando</option>
+                                <option value="Não Funcionando">Não Funcionando</option>
+                                <option value="Aguardando Manutenção">Aguardando Manutenção</option>
+                                <option value="Aguardando Peças">Aguardando Peças</option>
+                            </select>
+                        </div>
+                        <div class="flex items-end pb-2">
+                            <div class="flex items-center">
+                                 <input type="checkbox" id="realizado" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                 <label for="realizado" class="ml-2 block text-sm text-gray-900">Realizado</label>
+                            </div>
                         </div>
                     </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Alarme</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal para Adicionar Nó -->
+        <div id="add-node-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Adicionar Novo Nó</h2>
+                    <button id="close-add-node-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
                 </div>
-                <div class="mt-8 flex justify-end">
-                    <button type="button" id="cancel-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Alarme</button>
+                <form id="add-node-form">
+                    <div>
+                        <label for="node-name" class="block text-sm font-medium text-gray-700 mb-1">Nome do Nó</label>
+                        <input type="text" id="node-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-add-node-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Nó</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Editar Nó -->
+        <div id="edit-node-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Editar Nome do Nó</h2>
+                    <button id="close-edit-node-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
                 </div>
-            </form>
+                <form id="edit-node-form">
+                    <input type="hidden" id="edit-node-id">
+                    <input type="hidden" id="edit-node-old-name">
+                    <div>
+                        <label for="edit-node-name" class="block text-sm font-medium text-gray-700 mb-1">Novo Nome do Nó</label>
+                        <input type="text" id="edit-node-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-edit-node-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Atualizar Nó</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmação para Deletar -->
+        <div id="confirm-delete-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
+                <h2 class="text-xl font-bold mb-4">Confirmar Exclusão</h2>
+                <p id="confirm-delete-message" class="text-gray-600 mb-6">Você tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+                <div class="flex justify-end">
+                    <button id="cancel-delete-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition">Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Justificativa da Mudança -->
+        <div id="reason-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
+                <h2 class="text-xl font-bold mb-4">Justificativa da Alteração</h2>
+                <p class="text-gray-600 mb-4">Por favor, descreva brevemente o motivo desta alteração.</p>
+                <form id="reason-form">
+                    <textarea id="change-reason" rows="4" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Manutenção preventiva realizada."></textarea>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" id="cancel-reason-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Importar Planilha -->
+        <div id="import-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Importar Alarmes da Planilha</h2>
+                    <button id="close-import-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="import-form">
+                    <p class="text-gray-600 mb-1">
+                        Copie os dados da sua planilha (Excel, Google Sheets, etc), incluindo a linha do cabeçalho, e cole no campo abaixo.
+                    </p>
+                    <p class="text-gray-500 text-sm mb-4">
+                        O sistema irá criar novos alarmes ou <strong class="font-semibold">atualizar existentes</strong> com base na combinação de 'Item' e 'Nó'.
+                    </p>
+                    <textarea id="sheet-data" rows="10" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Cole os dados da planilha aqui..."></textarea>
+                    
+                    <div class="mt-4">
+                        <label for="import-reason" class="block text-sm font-medium text-gray-700 mb-1">Justificativa da Importação</label>
+                        <textarea id="import-reason" rows="2" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Carga inicial de dados da Ala 3."></textarea>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-import-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition">Importar Dados</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     
-    <!-- Modal para Adicionar Nó -->
-    <div id="add-node-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Adicionar Novo Nó</h2>
-                <button id="close-add-node-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            </div>
-            <form id="add-node-form">
-                <div>
-                    <label for="node-name" class="block text-sm font-medium text-gray-700 mb-1">Nome do Nó</label>
-                    <input type="text" id="node-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
-                </div>
-                <div class="mt-8 flex justify-end">
-                    <button type="button" id="cancel-add-node-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Nó</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação para Deletar -->
-    <div id="confirm-delete-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
-            <h2 class="text-xl font-bold mb-4">Confirmar Exclusão</h2>
-            <p id="confirm-delete-message" class="text-gray-600 mb-6">Você tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
-            <div class="flex justify-end">
-                <button id="cancel-delete-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
-                <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition">Excluir</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Justificativa da Mudança -->
-    <div id="reason-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-8 transform scale-95 transition-all duration-300">
-            <h2 class="text-xl font-bold mb-4">Justificativa da Alteração</h2>
-            <p class="text-gray-600 mb-4">Por favor, descreva brevemente o motivo desta alteração.</p>
-            <form id="reason-form">
-                <textarea id="change-reason" rows="4" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Manutenção preventiva realizada."></textarea>
-                <div class="mt-6 flex justify-end">
-                    <button type="button" id="cancel-reason-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Confirmar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para Importar Planilha -->
-    <div id="import-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
-        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 transform scale-95 transition-all duration-300">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Importar Alarmes da Planilha</h2>
-                <button id="close-import-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
-            </div>
-            <form id="import-form">
-                <p class="text-gray-600 mb-1">
-                    Copie os dados da sua planilha (Excel, Google Sheets, etc), incluindo a linha do cabeçalho, e cole no campo abaixo.
-                </p>
-                <p class="text-gray-500 text-sm mb-4">
-                    O sistema irá criar novos alarmes ou <strong class="font-semibold">atualizar existentes</strong> com base na combinação de 'Item' e 'Nó'.
-                </p>
-                <textarea id="sheet-data" rows="10" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Cole os dados da planilha aqui..."></textarea>
-                
-                <div class="mt-4">
-                    <label for="import-reason" class="block text-sm font-medium text-gray-700 mb-1">Justificativa da Importação</label>
-                    <textarea id="import-reason" rows="2" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Carga inicial de dados da Ala 3."></textarea>
-                </div>
-                
-                <div class="mt-8 flex justify-end">
-                    <button type="button" id="cancel-import-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
-                    <button type="submit" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition">Importar Dados</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <!-- Custom Alert/Toast -->
     <div id="toast-notification" class="fixed top-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300">
         <p id="toast-message">Operação realizada com sucesso!</p>
@@ -348,8 +417,16 @@
         // Importações do Firebase
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, serverTimestamp, query, deleteDoc, where, getDocs, writeBatch, orderBy } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, serverTimestamp, query, deleteDoc, where, getDocs, writeBatch, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
         // --- INÍCIO DA CONFIGURAÇÃO PARA USO LOCAL ---
         const LOCAL_FIREBASE_CONFIG = {
@@ -376,7 +453,8 @@
 
         // Configuração e Variáveis Globais
         const INITIAL_NODES = ["Nó 01", "Nó 2", "Nó 4", "Nó 5", "Nó 6", "Nó 7", "Nó 11", "Nó 13", "MINIMAX", "FACP FIRE AETRA"];
-        let db, auth, userId;
+        let db, auth;
+        let currentUser = null;
         let alarms = [];
         let nodes = [];
         let auditLog = [];
@@ -384,8 +462,13 @@
         let evolutionChartInstance = null;
         let selectedView = 'dashboard';
         let currentSelectedNode = null;
+        let unsubscribeAlarms = () => {};
+        let unsubscribeNodes = () => {};
+        let unsubscribeAuditLog = () => {};
         
         // Elementos da UI
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app');
         const dashboardView = document.getElementById('dashboard-view');
         const nodeView = document.getElementById('node-view');
         const auditView = document.getElementById('audit-view');
@@ -426,9 +509,11 @@
             if (e.target === modal) closeModal();
         });
         
-        // --- FUNÇÕES DO MODAL DE NÓ ---
+        // --- FUNÇÕES DO MODAL DE NÓ (Adicionar/Editar) ---
         const addNodeModal = document.getElementById('add-node-modal');
         const addNodeForm = document.getElementById('add-node-form');
+        const editNodeModal = document.getElementById('edit-node-modal');
+        const editNodeForm = document.getElementById('edit-node-form');
         
         const closeAddNodeModal = () => {
             addNodeModal.classList.add('opacity-0');
@@ -437,8 +522,30 @@
             addNodeForm.reset();
         };
 
+        const openEditNodeModal = (nodeId, nodeName) => {
+            document.getElementById('edit-node-id').value = nodeId;
+            document.getElementById('edit-node-old-name').value = nodeName;
+            document.getElementById('edit-node-name').value = nodeName;
+            editNodeModal.classList.remove('hidden');
+            setTimeout(() => {
+                editNodeModal.classList.remove('opacity-0');
+                editNodeModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const closeEditNodeModal = () => {
+            editNodeModal.classList.add('opacity-0');
+            editNodeModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                editNodeModal.classList.add('hidden');
+                editNodeForm.reset();
+            }, 300);
+        };
+
         document.getElementById('close-add-node-modal-btn').addEventListener('click', closeAddNodeModal);
         document.getElementById('cancel-add-node-btn').addEventListener('click', closeAddNodeModal);
+        document.getElementById('close-edit-node-modal-btn').addEventListener('click', closeEditNodeModal);
+        document.getElementById('cancel-edit-node-btn').addEventListener('click', closeEditNodeModal);
 
         // --- FUNÇÕES DO MODAL DE IMPORTAÇÃO ---
         const importModal = document.getElementById('import-modal');
@@ -584,22 +691,36 @@
                 link.innerHTML = `
                     <div class="flex items-center">
                         <i class="fas fa-server w-6 mr-3"></i>
-                        <span>${node.name}</span>
+                        <span class="truncate">${node.name}</span>
                     </div>
-                    <button data-node-id="${node.id}" data-node-name="${node.name}" class="delete-node-btn text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
+                     <div class="flex items-center space-x-3">
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="edit-node-btn text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="delete-node-btn text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 `;
                 
                 link.addEventListener('click', (e) => {
-                    if (e.target.closest('.delete-node-btn')) return; // Não navega se clicar no botão de deletar
+                    if (e.target.closest('button')) return; 
                     e.preventDefault();
                     switchView('node', node.name);
                 });
 
                 dynamicNodeListContainer.appendChild(link);
             });
-             // Adicionar event listeners para os botões de deletar
+             
+            dynamicNodeListContainer.querySelectorAll('.edit-node-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nodeId = btn.dataset.nodeId;
+                    const nodeName = btn.dataset.nodeName;
+                    openEditNodeModal(nodeId, nodeName);
+                });
+            });
+
             dynamicNodeListContainer.querySelectorAll('.delete-node-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -767,13 +888,24 @@
                         action = '<span class="font-semibold text-red-600">Alarme Excluído</span>';
                         details = 'Registro removido permanentemente.';
                     }
-                } else {
+                } else if (log.fieldName === 'nó') {
+                    if (log.newValue === 'deletado') {
+                         action = '<span class="font-semibold text-red-600">Nó Excluído</span>';
+                         details = `Nó '${log.oldValue}' e seus alarmes foram removidos.`;
+                    } else {
+                         action = '<span class="font-semibold text-purple-600">Nó Renomeado</span>';
+                         details = `Nome alterado de "${log.oldValue}" para "${log.newValue}".`;
+                    }
+                }
+                
+                else {
                      action = `<span class="font-semibold text-blue-600">Campo Modificado</span>`;
                      details = `<b>${log.fieldName}</b>: <span class="text-gray-500">"${log.oldValue || 'vazio'}"</span> &rarr; <span class="text-black">"${log.newValue}"</span>`;
                 }
 
                 row.innerHTML = `
                     <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${logDate}</td>
+                    <td class="p-4 text-sm text-gray-500 truncate" title="${log.userEmail || ''}">${log.userEmail || '-'}</td>
                     <td class="p-4 text-sm">${action}</td>
                     <td class="p-4 text-sm">${details}</td>
                     <td class="p-4 text-sm text-gray-700">${log.changeReason || '-'}</td>
@@ -810,32 +942,27 @@
         };
         
         // --- FUNÇÕES DO FIREBASE ---
-        async function setupFirebase() {
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            onAuthStateChanged(auth, user => {
-                if (user) {
-                    userId = user.uid;
-                    listenToAlarms();
-                    listenToNodes();
-                    listenToAuditLog();
-                }
-            });
-
-             try {
-                const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                if (authToken) await signInWithCustomToken(auth, authToken);
-                else await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Falha na autenticação:", error);
-                showToast("Erro de autenticação com o servidor.", true);
+        
+        function initializeAppListeners() {
+            if (currentUser) {
+                listenToAlarms();
+                listenToNodes();
+                listenToAuditLog();
             }
         }
         
+        function clearAppListeners() {
+            unsubscribeAlarms();
+            unsubscribeNodes();
+            unsubscribeAuditLog();
+            alarms = [];
+            nodes = [];
+            auditLog = [];
+        }
+
         function listenToAlarms() {
             const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
-            onSnapshot(query(collection(db, alarmsCollectionPath)), (snapshot) => {
+            unsubscribeAlarms = onSnapshot(query(collection(db, alarmsCollectionPath)), (snapshot) => {
                 alarms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 if (selectedView === 'node') renderAlarmsTable(currentSelectedNode);
                 else if (selectedView === 'dashboard') {
@@ -849,7 +976,7 @@
             const nodesCollectionPath = `artifacts/${appId}/public/data/nodes`;
             let hasAttemptedInit = false; // Flag to ensure we only try to initialize once.
 
-            onSnapshot(query(collection(db, nodesCollectionPath)), (snapshot) => {
+            unsubscribeNodes = onSnapshot(query(collection(db, nodesCollectionPath)), (snapshot) => {
                 
                 if (snapshot.empty && !hasAttemptedInit) {
                     hasAttemptedInit = true; // Set flag immediately to prevent re-entry.
@@ -872,7 +999,6 @@
                 nodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderSidebar();
                 
-                // Keep UI state consistent after re-render
                 const activeItem = document.querySelector('.sidebar-item.active');
                 if (activeItem) activeItem.classList.remove('active');
 
@@ -895,7 +1021,7 @@
             const auditLogCollectionPath = `artifacts/${appId}/public/data/audit_log`;
             const q = query(collection(db, auditLogCollectionPath), orderBy("timestamp", "desc"));
 
-            onSnapshot(q, (snapshot) => {
+            unsubscribeAuditLog = onSnapshot(q, (snapshot) => {
                 auditLog = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
                 if(selectedView === 'audit') renderAuditLogTable();
                 else if (selectedView === 'dashboard') renderEvolutionChart();
@@ -903,12 +1029,13 @@
         }
 
         async function logAudit(fieldName, oldValue, newValue, alarmId, alarmItem, changeReason) {
-            if (!userId) return;
+            if (!currentUser) return;
             const auditLogCollectionPath = `artifacts/${appId}/public/data/audit_log`;
             try {
                 await addDoc(collection(db, auditLogCollectionPath), {
                     alarmId, alarmItem, fieldName, oldValue, newValue, changeReason,
-                    changedBy: userId,
+                    changedBy: currentUser.uid,
+                    userEmail: currentUser.email,
                     timestamp: serverTimestamp()
                 });
             } catch (error) {
@@ -917,7 +1044,7 @@
         }
 
         async function saveAlarm(data, reason) {
-            if (!userId) {
+            if (!currentUser) {
                 showToast("Usuário não autenticado.", true);
                 return;
             }
@@ -1009,7 +1136,6 @@
                     }
                 });
                 
-                // Remap 'no' to 'node' for consistency
                 if(alarmData.no) {
                     alarmData.node = alarmData.no;
                     delete alarmData.no;
@@ -1088,9 +1214,7 @@
 
 
         async function saveNode(nodeName) {
-            if (!userId) {
-                showToast("Usuário não autenticado.", true); return;
-            }
+            if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
             if (!nodeName || nodeName.trim() === '') {
                 showToast("O nome do nó não pode ser vazio.", true); return;
             }
@@ -1108,8 +1232,45 @@
             }
         }
 
+        async function updateNode(nodeId, oldName, newName, reason) {
+            if (!currentUser || !newName || newName.trim() === '') {
+                showToast("Nome inválido.", true); return;
+            }
+            if (nodes.some(node => node.name.toLowerCase() === newName.trim().toLowerCase() && node.id !== nodeId)) {
+                showToast("Já existe um nó com esse nome.", true); return;
+            }
+
+            const nodesCollectionPath = `artifacts/${appId}/public/data/nodes`;
+            const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
+            const nodeRef = doc(db, nodesCollectionPath, nodeId);
+            const q = query(collection(db, alarmsCollectionPath), where("node", "==", oldName));
+
+            try {
+                const batch = writeBatch(db);
+                batch.update(nodeRef, { name: newName.trim() });
+
+                const alarmSnapshot = await getDocs(q);
+                alarmSnapshot.forEach(doc => {
+                    batch.update(doc.ref, { node: newName.trim() });
+                });
+
+                await batch.commit();
+                logAudit('nó', oldName, newName.trim(), nodeId, `Nó ${oldName}`, reason);
+                showToast("Nó atualizado com sucesso!");
+                closeEditNodeModal();
+                
+                if (currentSelectedNode === oldName) {
+                    switchView('node', newName.trim());
+                }
+
+            } catch (error) {
+                console.error("Erro ao atualizar o nó:", error);
+                showToast("Falha ao atualizar o nó.", true);
+            }
+        }
+
         async function deleteAlarm(alarmId, reason) {
-             if (!userId) { showToast("Usuário não autenticado.", true); return; }
+             if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
             const alarmDocPath = `artifacts/${appId}/public/data/alarms/${alarmId}`;
             try {
                 const alarmToDelete = alarms.find(a => a.id === alarmId);
@@ -1123,7 +1284,7 @@
         }
 
         async function deleteNodeAndAlarms(nodeId, nodeName, reason) {
-            if (!userId) { showToast("Usuário não autenticado.", true); return; }
+            if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
             const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
             const q = query(collection(db, alarmsCollectionPath), where("node", "==", nodeName));
             
@@ -1131,10 +1292,11 @@
                 const alarmSnapshot = await getDocs(q);
                 const batch = writeBatch(db);
                 alarmSnapshot.forEach(docRef => batch.delete(docRef.ref));
-                await batch.commit();
-
+                
                 const nodeDocPath = `artifacts/${appId}/public/data/nodes/${nodeId}`;
-                await deleteDoc(doc(db, nodeDocPath));
+                batch.delete(doc(db, nodeDocPath));
+
+                await batch.commit();
                 logAudit('nó', nodeName, 'deletado', nodeId, `Todos os alarmes do nó ${nodeName}`, reason);
                 showToast(`Nó "${nodeName}" e seus alarmes foram excluídos.`);
             } catch (error) {
@@ -1143,7 +1305,57 @@
             }
         }
         
-        // --- MANIPULADORES DE EVENTOS ---
+        // --- INICIALIZAÇÃO E AUTENTICAÇÃO ---
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                document.getElementById('user-email').textContent = user.email;
+                initializeAppListeners();
+            } else {
+                currentUser = null;
+                loginView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                clearAppListeners();
+            }
+        });
+
+        const authError = document.getElementById('auth-error');
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch(error => { authError.textContent = "Email ou senha inválidos."; });
+        });
+
+        document.getElementById('register-btn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    authError.textContent = '';
+                    showToast("Conta criada com sucesso!");
+                })
+                .catch(error => { authError.textContent = "Erro ao registrar. A senha deve ter pelo menos 6 caracteres."; });
+        });
+        
+        document.getElementById('google-login-btn').addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .catch(error => { console.error("Erro no login com Google:", error); });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth);
+        });
+        
+        
+        // --- MANIPULADORES DE EVENTOS GERAIS ---
         alarmForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const alarmData = {
@@ -1178,11 +1390,20 @@
 
         addNodeForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const nodeName = document.getElementById('node-name').value;
+            saveNode(nodeName);
+        });
+        
+        editNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nodeId = document.getElementById('edit-node-id').value;
+            const oldName = document.getElementById('edit-node-old-name').value;
+            const newName = document.getElementById('edit-node-name').value;
             openReasonModal((reason) => {
-                // Embora não tenhamos log de nó, podemos adicionar futuramente
-                saveNode(document.getElementById('node-name').value);
+                updateNode(nodeId, oldName, newName, reason);
             });
         });
+
 
         alarmsTableBody.addEventListener('change', async (e) => {
             if (e.target.classList.contains('status-select')) {
@@ -1203,7 +1424,6 @@
                     } catch (error) {
                          console.error("Erro ao atualizar status:", error);
                          showToast("Falha ao atualizar status.", true);
-                         // Reverte a UI em caso de erro
                          e.target.value = oldStatus;
                          e.target.className = `status-select ${getStatusClass(oldStatus)} rounded-full px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2`;
                     }
@@ -1245,7 +1465,7 @@
             exportToExcel(cleanedData, `Alarmes_${currentSelectedNode.replace(' ', '_')}_${today}`);
         });
 
-        // --- INICIALIZAÇÃO ---
+        // --- INICIALIZAÇÃO DA UI ---
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('dashboard-link').addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1262,8 +1482,6 @@
                     addNodeModal.querySelector('div').classList.remove('scale-95');
                 }, 10);
             });
-            switchView('dashboard');
-            setupFirebase();
         });
     </script>
 
