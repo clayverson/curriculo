@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Controle de Manutenção</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -91,6 +92,25 @@
         </header>
 
         <main>
+            <!-- Seção de Dashboard -->
+            <section id="dashboardSection" class="mb-12">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Dashboard de Desempenho</h2>
+                <!-- Visão Geral -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Visão Geral do Sistema</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="bg-white p-6 rounded-lg shadow flex flex-col justify-center items-center">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4">Total de O.S Ativas</h4>
+                            <p id="total-ativas-kpi" class="text-6xl font-bold text-blue-600">0</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <h4 class="text-lg font-semibold text-gray-700 mb-4">Status Geral das O.S</h4>
+                            <div class="h-64 flex justify-center items-center"><canvas id="statusChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Formulário de Manutenção -->
             <form id="maintenanceForm" class="space-y-6">
                 <!-- Seção de Entrada do Equipamento -->
@@ -205,6 +225,7 @@
                                 <th class="w-12 text-center"><input type="checkbox" id="selectAllCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
                                 <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
                                 <th class="text-sm font-semibold text-gray-600">Equipamento</th>
+                                <th class="text-sm font-semibold text-gray-600">SAP</th>
                                 <th class="text-sm font-semibold text-gray-600">Nota/OS</th>
                                 <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
                                 <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
@@ -363,12 +384,11 @@
         </div>
     </div>
 
-
     <!-- Scripts do Firebase -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCoRoG79lA3mSBFDwoVJhfeYVKfWvFG5cI",
@@ -385,6 +405,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
         const colRef = collection(db, "equipamentos");
+        const usersColRef = collection(db, "users");
         
         let currentUser = { role: null, email: null };
 
@@ -405,20 +426,23 @@
         const viewModal = document.getElementById('viewModal');
         const fecharViewBtn = document.getElementById('fecharViewBtn');
 
+
         let registrosAtuais = []; 
         let unsubscribe = null; 
-
+        let statusChartInstance = null;
+        
         // --- CONTROLE DE AUTENTICAÇÃO E PERMISSÕES ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 const userDocRef = doc(db, "users", user.uid);
-                const userDocSnap = await getDoc(userDocRef);
+                let userDocSnap = await getDoc(userDocRef);
                 
-                if (userDocSnap.exists()) {
-                    currentUser.role = userDocSnap.data().role;
-                } else {
-                    currentUser.role = 'inserir'; 
+                if (!userDocSnap.exists()) {
+                    await setDoc(userDocRef, { email: user.email, role: 'inserir' });
+                    userDocSnap = await getDoc(userDocRef);
                 }
+
+                currentUser.role = userDocSnap.data().role;
                 currentUser.email = user.email;
 
                 loginScreen.classList.add('hidden');
@@ -466,17 +490,43 @@
             }
         });
 
-        // --- FUNÇÕES DO APLICATIVO ---
+        // --- LÓGICA DO DASHBOARD ---
+        function atualizarDashboard(docsData) {
+            const statusCount = {};
+            let ativasCount = 0;
 
+            docsData.forEach(data => {
+                const status = data.statusGeral || "Indefinido";
+                statusCount[status] = (statusCount[status] || 0) + 1;
+                if (status === 'Em Andamento' || status === 'Aguardando Componentes') {
+                    ativasCount++;
+                }
+            });
+            
+            document.getElementById('total-ativas-kpi').textContent = ativasCount;
+            renderStatusChart(statusCount);
+        }
+
+        function renderStatusChart(data) {
+            const ctx = document.getElementById('statusChart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(ctx, { type: 'pie', data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['rgba(251, 191, 36, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(107, 114, 128, 0.7)'], borderColor: ['rgba(251, 191, 36, 1)', 'rgba(59, 130, 246, 1)', 'rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(107, 114, 128, 1)'], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+        
+        // --- FUNÇÕES DO APLICATIVO ---
         const renderizarTabela = (docs) => {
             corpoTabela.innerHTML = '';
             registrosAtuais = [];
             document.getElementById('selectAllCheckbox').checked = false;
 
             if(docs.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="8" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
+                corpoTabela.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
+                atualizarDashboard([]);
                 return;
             }
+            
+            atualizarDashboard(docs.map(d => d.data()));
+            
             docs.forEach(docSnapshot => {
                 const data = docSnapshot.data();
                 registrosAtuais.push({id: docSnapshot.id, ...data});
@@ -520,6 +570,7 @@
                     <td class="text-center"><input type="checkbox" class="row-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docSnapshot.id}"></td>
                     <td>${data.osId || ''}</td>
                     <td>${data.nomeEquipamento || ''}</td>
+                    <td>${data.sap || ''}</td>
                     <td>${data.nota || ''}</td>
                     <td>${data.dataEntrada ? new Date(data.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</td>
                     <td>${data.tecnicoAtribuido || 'N/A'}</td>
@@ -1004,7 +1055,7 @@
                 }
             }
         });
-
+        
         document.getElementById('dataEntrada').valueAsDate = new Date();
     </script>
 </body>
