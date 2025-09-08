@@ -190,9 +190,9 @@
                                     <th class="p-4 text-sm font-semibold text-gray-600">Ala</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">SAP</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Qtd.</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Data</th>
-                                    <th class="p-4 text-sm font-semibold text-gray-600">Realizado</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Data Criação</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Status</th>
+                                    <th class="p-4 text-sm font-semibold text-gray-600">Última Modificação</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Última Verificação</th>
                                     <th class="p-4 text-sm font-semibold text-gray-600">Ações</th>
                                 </tr>
@@ -281,8 +281,8 @@
                             <input type="number" id="quantidade" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         <div>
-                            <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
-                            <input type="date" id="data" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data de Criação</label>
+                            <input type="date" id="data" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
                         </div>
                         <div>
                             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
@@ -292,12 +292,6 @@
                                 <option value="Aguardando Manutenção">Aguardando Manutenção</option>
                                 <option value="Aguardando Peças">Aguardando Peças</option>
                             </select>
-                        </div>
-                        <div class="flex items-end pb-2">
-                            <div class="flex items-center">
-                                 <input type="checkbox" id="realizado" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                 <label for="realizado" class="ml-2 block text-sm text-gray-900">Realizado</label>
-                            </div>
                         </div>
                     </div>
                     <div class="mt-8 flex justify-end">
@@ -485,6 +479,7 @@
         const cancelBtn = document.getElementById('cancel-btn');
 
         const openModal = () => {
+            document.getElementById('data').value = new Date().toISOString().slice(0, 10);
             modal.classList.remove('hidden');
             setTimeout(() => { 
                 modal.classList.remove('opacity-0');
@@ -602,6 +597,7 @@
         const reasonModal = document.getElementById('reason-modal');
         const reasonForm = document.getElementById('reason-form');
         let reasonConfirmCallback = null;
+        let activeEditableField = null;
 
         const openReasonModal = (onConfirm) => {
             reasonConfirmCallback = onConfirm;
@@ -622,7 +618,14 @@
             }, 300);
         };
         
-        document.getElementById('cancel-reason-btn').addEventListener('click', closeReasonModal);
+        document.getElementById('cancel-reason-btn').addEventListener('click', () => {
+            if (activeEditableField) {
+                activeEditableField.target.value = activeEditableField.oldValue;
+                activeEditableField = null;
+            }
+            closeReasonModal();
+        });
+
         reasonForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const reason = document.getElementById('change-reason').value;
@@ -694,10 +697,10 @@
                         <span class="truncate">${node.name}</span>
                     </div>
                      <div class="flex items-center space-x-3">
-                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="edit-node-btn text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="edit-node-btn text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition">
                             <i class="fas fa-pencil-alt"></i>
                         </button>
-                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="delete-node-btn text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="delete-node-btn text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -831,25 +834,25 @@
             document.getElementById('empty-state').classList.toggle('hidden', filteredAlarms.length > 0);
 
             if (filteredAlarms.length > 0) {
-                filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || ''));
+                filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || '', undefined, { numeric: true }));
 
                 filteredAlarms.forEach(alarm => {
                     const row = document.createElement('tr');
                     row.className = 'border-b hover:bg-gray-50 transition';
                     const statusClass = getStatusClass(alarm.status);
-                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleDateString('pt-BR') : 'N/A';
+                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleString('pt-BR') : 'N/A';
+                    const lastVerificationDate = alarm.lastVerification ? alarm.lastVerification.toDate().toLocaleString('pt-BR') : '-';
                     const alarmDate = alarm.data ? new Date(alarm.data + 'T00:00:00Z').toLocaleDateString('pt-BR') : '-';
 
                     row.innerHTML = `
                         <td class="p-4 whitespace-nowrap">${alarm.item || '-'}</td>
                         <td class="p-4 whitespace-nowrap">${alarm.description || '-'}</td>
-                        <td class="p-4 whitespace-nowrap">${alarm.location || '-'}</td>
-                        <td class="p-4 whitespace-nowrap">${alarm.address || '-'}</td>
-                        <td class="p-4 whitespace-nowrap">${alarm.wing || '-'}</td>
+                        <td class="p-2 whitespace-nowrap"><input type="text" value="${alarm.location || ''}" data-id="${alarm.id}" data-field="location" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="p-2 whitespace-nowrap"><input type="text" value="${alarm.address || ''}" data-id="${alarm.id}" data-field="address" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="p-2 whitespace-nowrap"><input type="text" value="${alarm.wing || ''}" data-id="${alarm.id}" data-field="wing" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
                         <td class="p-4 whitespace-nowrap">${alarm.sap || '-'}</td>
-                        <td class="p-4 text-center">${alarm.quantidade || '-'}</td>
+                        <td class="p-2 whitespace-nowrap"><input type="number" value="${alarm.quantidade != null ? alarm.quantidade : ''}" data-id="${alarm.id}" data-field="quantidade" class="editable-field bg-transparent w-24 text-center focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
                         <td class="p-4 whitespace-nowrap">${alarmDate}</td>
-                        <td class="p-4 text-center">${alarm.realizado ? '<i class="fas fa-check-circle text-green-500"></i>' : '<i class="fas fa-times-circle text-gray-400"></i>'}</td>
                         <td class="p-4">
                             <select data-id="${alarm.id}" class="status-select ${statusClass} rounded-full px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2">
                                 <option value="Funcionando" ${alarm.status === 'Funcionando' ? 'selected' : ''}>Funcionando</option>
@@ -859,8 +862,10 @@
                             </select>
                         </td>
                         <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${lastUpdateDate}</td>
-                        <td class="p-4 text-center">
-                           <button data-id="${alarm.id}" class="delete-alarm-btn text-gray-400 hover:text-red-600 transition"><i class="fas fa-trash-alt"></i></button>
+                        <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${lastVerificationDate}</td>
+                        <td class="p-4 text-center space-x-2">
+                           <button data-id="${alarm.id}" class="verify-alarm-btn text-gray-400 hover:text-green-600 transition" title="Confirmar verificação"><i class="fas fa-check-circle"></i></button>
+                           <button data-id="${alarm.id}" class="delete-alarm-btn text-gray-400 hover:text-red-600 transition" title="Excluir alarme"><i class="fas fa-trash-alt"></i></button>
                         </td>
                     `;
                     alarmsTableBody.appendChild(row);
@@ -896,6 +901,9 @@
                          action = '<span class="font-semibold text-purple-600">Nó Renomeado</span>';
                          details = `Nome alterado de "${log.oldValue}" para "${log.newValue}".`;
                     }
+                } else if (log.fieldName === 'verificação') {
+                     action = `<span class="font-semibold text-cyan-600">Verificação</span>`;
+                     details = `Alarme confirmado como "Funcionando".`;
                 }
                 
                 else {
@@ -1094,7 +1102,6 @@
                 address: header.indexOf('endereço') > -1 ? header.indexOf('endereço') : header.indexOf('endereco'),
                 wing: header.indexOf('ala'),
                 node: header.indexOf('nó') > -1 ? header.indexOf('nó') : header.indexOf('no'),
-                realizado: header.indexOf('realizado'),
                 status: header.indexOf('status'),
                 data: header.indexOf('data'),
                 sap: header.indexOf('sap'),
@@ -1120,9 +1127,7 @@
                     const idx = headerMap[key];
                     if (idx > -1 && values[idx]) {
                         let value = values[idx].trim();
-                        if (key === 'realizado') {
-                            alarmData[key] = ['true', 'sim', 'verdadeiro', '1'].includes(value.toLowerCase());
-                        } else if (key === 'data' && value) {
+                        if (key === 'data' && value) {
                             const parts = value.split('/');
                             if (parts.length === 3) {
                                 const [day, month, year] = parts;
@@ -1367,7 +1372,6 @@
                 sap: document.getElementById('sap').value,
                 quantidade: document.getElementById('quantidade').value || 0,
                 data: document.getElementById('data').value,
-                realizado: document.getElementById('realizado').checked,
                 status: document.getElementById('status').value,
                 node: currentSelectedNode,
                 lastUpdate: serverTimestamp(),
@@ -1433,6 +1437,8 @@
 
         alarmsTableBody.addEventListener('click', (e) => {
              const deleteBtn = e.target.closest('.delete-alarm-btn');
+             const verifyBtn = e.target.closest('.verify-alarm-btn');
+
              if (deleteBtn) {
                  const alarmId = deleteBtn.dataset.id;
                  const alarm = alarms.find(a => a.id === alarmId);
@@ -1442,14 +1448,73 @@
                      });
                  });
              }
+
+             if (verifyBtn) {
+                const alarmId = verifyBtn.dataset.id;
+                const alarm = alarms.find(a => a.id === alarmId);
+                openReasonModal(async (reason) => {
+                    const alarmRef = doc(db, `artifacts/${appId}/public/data/alarms`, alarmId);
+                    try {
+                        await updateDoc(alarmRef, {
+                            lastVerification: serverTimestamp(),
+                            lastUpdate: serverTimestamp()
+                        });
+                        logAudit('verificação', null, 'confirmada', alarmId, alarm.item, reason);
+                        showToast("Verificação confirmada!");
+                    } catch (error) {
+                        console.error("Erro ao confirmar verificação:", error);
+                        showToast("Falha ao confirmar verificação.", true);
+                    }
+                });
+             }
         });
         
+        alarmsTableBody.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('editable-field')) {
+                const id = e.target.dataset.id;
+                const field = e.target.dataset.field;
+                const newValue = e.target.value.trim();
+                
+                const alarmToUpdate = alarms.find(a => a.id === id);
+                if (!alarmToUpdate) return;
+                
+                const oldValue = (alarmToUpdate[field] !== undefined && alarmToUpdate[field] !== null) ? String(alarmToUpdate[field]) : '';
+
+                if (newValue !== oldValue) {
+                    activeEditableField = { target: e.target, oldValue: oldValue };
+                    openReasonModal(async (reason) => {
+                        const alarmRef = doc(db, `artifacts/${appId}/public/data/alarms`, id);
+                        try {
+                            const valueToSave = field === 'quantidade' ? (newValue === '' ? 0 : Number(newValue)) : newValue;
+                            await updateDoc(alarmRef, {
+                                [field]: valueToSave,
+                                lastUpdate: serverTimestamp()
+                            });
+                            logAudit(field, oldValue, valueToSave, id, alarmToUpdate.item, reason);
+                            showToast("Campo atualizado com sucesso!");
+                        } catch (error) {
+                            console.error(`Erro ao atualizar o campo ${field}:`, error);
+                            showToast(`Falha ao atualizar o campo.`, true);
+                            e.target.value = oldValue; // Reverte em caso de falha
+                        } finally {
+                            activeEditableField = null;
+                        }
+                    });
+                }
+            }
+        }, true); // Usa a fase de captura para o evento 'blur'
+
+
         document.getElementById('export-all-btn').addEventListener('click', () => {
             if (alarms.length === 0) {
                 showToast("Nenhum alarme para exportar.", true);
                 return;
             }
-            const dataToExport = alarms.map(({ id, lastUpdate, ...rest }) => ({...rest, lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '' }));
+            const dataToExport = alarms.map(({ id, lastUpdate, lastVerification, ...rest }) => ({
+                ...rest, 
+                lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '',
+                lastVerification: lastVerification?.toDate().toLocaleString('pt-BR') || ''
+            }));
             const today = new Date().toISOString().slice(0, 10);
             exportToExcel(dataToExport, `Todos_Alarmes_${today}`);
         });
@@ -1460,7 +1525,11 @@
                 showToast("Nenhum alarme neste nó para exportar.", true);
                 return;
             }
-            const cleanedData = dataToExport.map(({ id, lastUpdate, ...rest }) => ({...rest, lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '' }));
+            const cleanedData = dataToExport.map(({ id, lastUpdate, lastVerification, ...rest }) => ({
+                ...rest, 
+                lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '',
+                lastVerification: lastVerification?.toDate().toLocaleString('pt-BR') || ''
+            }));
             const today = new Date().toISOString().slice(0, 10);
             exportToExcel(cleanedData, `Alarmes_${currentSelectedNode.replace(' ', '_')}_${today}`);
         });
