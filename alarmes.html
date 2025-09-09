@@ -138,8 +138,17 @@
                         </div>
                     </div>
 
+                    <div class="mb-6">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
+                            <input type="search" id="dashboard-search-input" placeholder="Pesquisar em todos os alarmes..." class="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">
+                        </div>
+                    </div>
+
                     <!-- Cards de Status -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                         <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
                             <div class="bg-blue-100 p-4 rounded-full mr-4">
                                 <i class="fas fa-list-ol text-2xl text-blue-500"></i>
@@ -163,8 +172,8 @@
                                 <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
                             </div>
                             <div>
-                                <p class="text-gray-500 text-sm">Com Falha</p>
-                                <p id="inactive-alarms" class="text-3xl font-bold text-red-600">0</p>
+                                <p class="text-gray-500 text-sm">Total de Falhas</p>
+                                <p id="total-failures-alarms" class="text-3xl font-bold text-red-600">0</p>
                             </div>
                         </div>
                         <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
@@ -193,18 +202,26 @@
 
                 <!-- Visão da Lista de Alarmes por Nó -->
                 <div id="node-view" class="hidden">
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div>
                             <h1 id="node-title" class="text-3xl font-bold"></h1>
                             <p class="text-gray-600">Gerencie os alarmes cadastrados neste nó.</p>
                         </div>
-                        <div class="flex items-center space-x-2 mt-4 sm:mt-0">
-                            <button id="export-node-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-700 transition duration-300 flex items-center">
-                                <i class="fas fa-file-excel mr-2"></i> Exportar Nó
-                            </button>
-                            <button id="add-alarm-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition duration-300 flex items-center">
-                                <i class="fas fa-plus mr-2"></i> Adicionar Alarme
-                            </button>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-grow">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                                <input type="search" id="node-search-input" placeholder="Pesquisar..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="export-node-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-700 transition duration-300 flex items-center w-full sm:w-auto justify-center">
+                                    <i class="fas fa-file-excel mr-2"></i><span class="hidden sm:inline">Exportar</span>
+                                </button>
+                                <button id="add-alarm-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition duration-300 flex items-center w-full sm:w-auto justify-center">
+                                    <i class="fas fa-plus mr-2"></i><span class="hidden sm:inline">Adicionar</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <!-- Desktop Table -->
@@ -245,10 +262,16 @@
 
                  <!-- Visão de Filtro por Status -->
                 <div id="status-filter-view" class="hidden">
-                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                         <div>
                             <h1 id="status-filter-title" class="text-3xl font-bold"></h1>
                             <p class="text-gray-600">Lista de todos os alarmes com este status.</p>
+                        </div>
+                         <div class="relative w-full sm:w-auto sm:max-w-xs">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
+                            <input type="search" id="status-search-input" placeholder="Pesquisar..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
                     <div class="bg-white rounded-xl shadow-md overflow-hidden hidden md:block">
@@ -276,6 +299,41 @@
                         <p>Nenhum alarme encontrado com este status.</p>
                     </div>
                 </div>
+                
+                 <!-- Visão de Resultados de Pesquisa -->
+                <div id="search-results-view" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h1 id="search-results-title" class="text-3xl font-bold"></h1>
+                            <p class="text-gray-600">Resultados da sua busca em todos os alarmes.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hidden md:block">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Item</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Nó</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Descrição</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Localização</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Status</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Última Modificação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="search-results-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="search-results-card-view" class="md:hidden">
+                    </div>
+                     <div id="search-results-empty-state" class="text-center p-12 text-gray-500 hidden">
+                        <i class="fas fa-search text-4xl mb-4"></i>
+                        <p>Nenhum alarme encontrado para sua busca.</p>
+                    </div>
+                </div>
+
 
                 <!-- Visão de Auditoria -->
                 <div id="audit-view" class="hidden">
@@ -526,6 +584,7 @@
         let evolutionChartInstance = null;
         let selectedView = 'dashboard';
         let currentSelectedNode = null;
+        let currentSearchTerm = '';
         let unsubscribeAlarms = () => {};
         let unsubscribeNodes = () => {};
         let unsubscribeAuditLog = () => {};
@@ -537,6 +596,7 @@
         const nodeView = document.getElementById('node-view');
         const auditView = document.getElementById('audit-view');
         const statusFilterView = document.getElementById('status-filter-view');
+        const searchResultsView = document.getElementById('search-results-view');
         const alarmsTableBody = document.getElementById('alarms-table-body');
         const alarmsCardView = document.getElementById('alarms-card-view');
         const auditTableBody = document.getElementById('audit-table-body');
@@ -546,7 +606,12 @@
         const statusFilterTitle = document.getElementById('status-filter-title');
         const statusFilterTableBody = document.getElementById('status-filter-table-body');
         const statusFilterCardView = document.getElementById('status-filter-card-view');
-
+        const searchResultsTitle = document.getElementById('search-results-title');
+        const searchResultsTableBody = document.getElementById('search-results-table-body');
+        const searchResultsCardView = document.getElementById('search-results-card-view');
+        const nodeSearchInput = document.getElementById('node-search-input');
+        const statusSearchInput = document.getElementById('status-search-input');
+        const dashboardSearchInput = document.getElementById('dashboard-search-input');
         
         // --- FUNÇÕES DO MODAL DE ALARME ---
         const modal = document.getElementById('alarm-modal');
@@ -821,14 +886,13 @@
         const updateDashboardCards = () => {
             const total = alarms.length;
             const active = alarms.filter(a => a.status && a.status === 'Funcionando').length;
-            const deactivated = alarms.filter(a => a.status && a.status === 'Desativado').length;
             const failureStates = ['Não Funcionando', 'Aguardando Manutenção', 'Aguardando Peças'];
-            const inactive = alarms.filter(a => a.status && failureStates.includes(a.status)).length;
-
-
+            const totalFailures = alarms.filter(a => a.status && failureStates.includes(a.status)).length;
+            const deactivated = alarms.filter(a => a.status && a.status === 'Desativado').length;
+            
             document.getElementById('total-alarms').textContent = total;
             document.getElementById('active-alarms').textContent = active;
-            document.getElementById('inactive-alarms').textContent = inactive;
+            document.getElementById('total-failures-alarms').textContent = totalFailures;
             document.getElementById('deactivated-alarms').textContent = deactivated;
         };
         
@@ -860,7 +924,7 @@
                     datasets: [{
                         label: 'Status dos Alarmes',
                         data: data,
-                        backgroundColor: ['rgb(34, 197, 94)','rgb(239, 68, 68)','rgb(245, 158, 11)','rgb(59, 130, 246)', 'rgb(107, 114, 128)'],
+                        backgroundColor: ['rgb(34, 197, 94)','rgb(239, 68, 68)','rgb(245, 158, 11)','rgb(99, 102, 241)', 'rgb(107, 114, 128)'],
                         hoverOffset: 4
                     }]
                 },
@@ -923,7 +987,20 @@
         };
 
         const renderAlarms = (node) => {
-            const filteredAlarms = alarms.filter(alarm => alarm.node === node);
+            let filteredAlarms = alarms.filter(alarm => alarm.node === node);
+            
+            if (currentSearchTerm) {
+                const searchTerm = currentSearchTerm.toLowerCase().trim();
+                filteredAlarms = filteredAlarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(searchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(searchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(searchTerm)) ||
+                    (alarm.address && alarm.address.toLowerCase().includes(searchTerm)) ||
+                    (alarm.wing && alarm.wing.toLowerCase().includes(searchTerm)) ||
+                    (alarm.sap && alarm.sap.toLowerCase().includes(searchTerm))
+                );
+            }
+
             alarmsTableBody.innerHTML = '';
             alarmsCardView.innerHTML = '';
             
@@ -1004,9 +1081,81 @@
                 });
             }
         };
+        
+        const renderSearchResults = (searchTerm) => {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
+            let filteredAlarms = [];
+            if (lowerCaseSearchTerm) {
+                filteredAlarms = alarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.address && alarm.address.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.wing && alarm.wing.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.sap && alarm.sap.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.node && alarm.node.toLowerCase().includes(lowerCaseSearchTerm))
+                );
+            }
+
+            searchResultsTableBody.innerHTML = '';
+            searchResultsCardView.innerHTML = '';
+
+            document.getElementById('search-results-empty-state').classList.toggle('hidden', filteredAlarms.length > 0);
+
+            if (filteredAlarms.length > 0) {
+                 filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || '', undefined, { numeric: true }));
+
+                filteredAlarms.forEach(alarm => {
+                    const statusClass = getStatusClass(alarm.status);
+                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleString('pt-BR') : 'N/A';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+                    row.innerHTML = `
+                        <td class="p-4 whitespace-nowrap">${alarm.item || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.node || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.description || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.location || '-'}</td>
+                        <td class="p-4"><span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span></td>
+                        <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${lastUpdateDate}</td>
+                    `;
+                    searchResultsTableBody.appendChild(row);
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg shadow mb-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${alarm.item || 'N/A'}</h3>
+                                <p class="text-sm text-gray-600">${alarm.description || ''}</p>
+                            </div>
+                            <span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><strong class="text-gray-500">Nó:</strong> <span>${alarm.node || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Localização:</strong> <span>${alarm.location || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Modificação:</strong> <span>${lastUpdateDate}</span></div>
+                        </div>
+                    `;
+                    searchResultsCardView.appendChild(card);
+                });
+            }
+        };
+
 
         const renderStatusFilteredAlarms = (status) => {
-            const filteredAlarms = alarms.filter(alarm => alarm.status && alarm.status === status);
+            let filteredAlarms = alarms.filter(alarm => alarm.status && alarm.status === status);
+            
+            if (currentSearchTerm) {
+                const searchTerm = currentSearchTerm.toLowerCase().trim();
+                filteredAlarms = filteredAlarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(searchTerm)) ||
+                    (alarm.node && alarm.node.toLowerCase().includes(searchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(searchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(searchTerm))
+                );
+            }
+
             statusFilterTableBody.innerHTML = '';
             statusFilterCardView.innerHTML = '';
 
@@ -1108,8 +1257,13 @@
             selectedView = view;
             currentSelectedNode = view === 'node' ? data : null;
             
+            currentSearchTerm = '';
+            nodeSearchInput.value = '';
+            statusSearchInput.value = '';
+            dashboardSearchInput.value = '';
+
             document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
-            [dashboardView, nodeView, auditView, statusFilterView].forEach(v => v.classList.add('hidden'));
+            [dashboardView, nodeView, auditView, statusFilterView, searchResultsView].forEach(v => v.classList.add('hidden'));
 
             if (view === 'dashboard') {
                 dashboardView.classList.remove('hidden');
@@ -1136,6 +1290,12 @@
                 statusFilterTitle.textContent = `Alarmes: ${data}`;
                 mobileHeaderTitle.textContent = data;
                 renderStatusFilteredAlarms(data);
+            } else if (view === 'search-results') {
+                searchResultsView.classList.remove('hidden');
+                document.getElementById('dashboard-link').classList.add('active');
+                searchResultsTitle.textContent = `Resultados para: "${data}"`;
+                mobileHeaderTitle.textContent = 'Resultados da Busca';
+                renderSearchResults(data);
             }
         };
         
@@ -1168,9 +1328,11 @@
                     updateDashboardCards();
                     renderStatusChart();
                 } else if (selectedView === 'status-filter') {
-                    // Re-render the filter view if data changes
                     const currentStatus = statusFilterTitle.textContent.replace('Alarmes: ', '');
                     renderStatusFilteredAlarms(currentStatus);
+                } else if (selectedView === 'search-results') {
+                    const currentQuery = searchResultsTitle.textContent.match(/"([^"]*)"/)[1];
+                    renderSearchResults(currentQuery);
                 }
             }, (error) => console.error("Erro ao ouvir os alarmes: ", error));
         }
@@ -1727,6 +1889,26 @@
             exportToExcel(cleanedData, `Alarmes_${currentSelectedNode.replace(' ', '_')}_${today}`);
         });
 
+        nodeSearchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            renderAlarms(currentSelectedNode);
+        });
+
+        statusSearchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            const currentStatus = statusFilterTitle.textContent.replace('Alarmes: ', '');
+            renderStatusFilteredAlarms(currentStatus);
+        });
+        
+        dashboardSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            if (searchTerm.trim() !== '') {
+                switchView('search-results', searchTerm);
+            } else {
+                switchView('dashboard');
+            }
+        });
+
         // --- SIDEBAR MOBILE ---
         const sidebar = document.getElementById('sidebar');
         const hamburgerBtn = document.getElementById('hamburger-btn');
@@ -1777,4 +1959,5 @@
 
 </body>
 </html>
+"
 
