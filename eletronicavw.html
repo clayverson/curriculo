@@ -116,7 +116,7 @@
                 <!-- Seção de Entrada do Equipamento -->
                 <fieldset class="form-section">
                     <legend class="text-xl font-semibold mb-4">Dados de Entrada</legend>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label for="nomePortador" class="block text-sm font-medium text-gray-700">Nome de quem trouxe</label>
                             <input type="text" id="nomePortador" name="nomePortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nome do colaborador" required>
@@ -124,6 +124,10 @@
                         <div>
                             <label for="registroPortador" class="block text-sm font-medium text-gray-700">Registro</label>
                             <input type="text" id="registroPortador" name="registroPortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nº de registro" required>
+                        </div>
+                        <div>
+                            <label for="telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                            <input type="tel" id="telefone" name="telefone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="(XX) XXXXX-XXXX">
                         </div>
                         <div>
                             <label for="nomeEquipamento" class="block text-sm font-medium text-gray-700">Nome do Equipamento</label>
@@ -142,6 +146,10 @@
                             <input type="text" id="sap" name="sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Código SAP do equipamento">
                         </div>
                         <div>
+                            <label for="os_sap" class="block text-sm font-medium text-gray-700">O.S SAP</label>
+                            <input type="text" id="os_sap" name="os_sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Número da O.S do SAP">
+                        </div>
+                        <div>
                             <label for="setor" class="block text-sm font-medium text-gray-700">Setor</label>
                             <select id="setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                                 <option value="" disabled selected>Selecione um setor</option>
@@ -149,17 +157,19 @@
                                 <option value="pintura">Pintura</option>
                                 <option value="montagem_final">Montagem Final</option>
                                 <option value="site">Site</option>
+                                <option value="eletronica">Eletrônica</option>
+                                <option value="patrimonial">Patrimonial</option>
                             </select>
                         </div>
                         <div>
                             <label for="recebedor" class="block text-sm font-medium text-gray-700">Nome de quem recebeu</label>
                             <input type="text" id="recebedor" name="recebedor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nome do colaborador">
                         </div>
-                        <div class="md:col-span-2">
-                            <label for="nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço</label>
-                            <input type="text" id="nota" name="nota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nº da nota ou OS">
+                        <div class="md:col-span-3">
+                            <label for="nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço (Interna)</label>
+                            <input type="text" id="nota" name="nota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nº da nota ou OS interna">
                         </div>
-                        <div class="md:col-span-2">
+                        <div class="md:col-span-3">
                             <label for="problema" class="block text-sm font-medium text-gray-700">Descrição do Problema</label>
                             <textarea id="problema" name="problema" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Descreva detalhadamente o defeito apresentado pelo equipamento."></textarea>
                         </div>
@@ -176,14 +186,18 @@
             <div id="secaoRegistros" class="mt-12">
                  <h2 class="text-2xl font-bold text-gray-900 mb-4">Registros Salvos</h2>
                 <div class="form-section">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                         <div>
                              <label for="filtroId" class="block text-sm font-medium text-gray-700">Buscar por ID da O.S</label>
-                             <input type="text" id="filtroId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Ex: OS-20250101-0001">
+                             <input type="text" id="filtroId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o ID...">
                         </div>
                         <div>
                              <label for="filtroSap" class="block text-sm font-medium text-gray-700">Buscar por SAP</label>
                              <input type="text" id="filtroSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o SAP...">
+                        </div>
+                        <div>
+                             <label for="filtroOsSap" class="block text-sm font-medium text-gray-700">Buscar por O.S SAP</label>
+                             <input type="text" id="filtroOsSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite a O.S do SAP...">
                         </div>
                         <div>
                              <label for="filtroNota" class="block text-sm font-medium text-gray-700">Buscar por Nota/OS</label>
@@ -207,7 +221,7 @@
                                 <option value="Sem Reparo">Sem Reparo</option>
                             </select>
                         </div>
-                        <div class="md:col-start-3 md:col-end-4 flex space-x-2">
+                        <div class="flex space-x-2">
                              <button id="btnBuscar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Buscar</button>
                              <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
                         </div>
@@ -226,7 +240,7 @@
                                 <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
                                 <th class="text-sm font-semibold text-gray-600">Equipamento</th>
                                 <th class="text-sm font-semibold text-gray-600">SAP</th>
-                                <th class="text-sm font-semibold text-gray-600">Nota/OS</th>
+                                <th class="text-sm font-semibold text-gray-600">O.S SAP</th>
                                 <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
                                 <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
                                 <th class="text-sm font-semibold text-gray-600">Status</th>
@@ -299,6 +313,10 @@
                             <input type="text" id="edit-registroPortador" name="registroPortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         </div>
                         <div>
+                            <label for="edit-telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                            <input type="tel" id="edit-telefone" name="telefone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
                             <label for="edit-nomeEquipamento" class="block text-sm font-medium text-gray-700">Nome do Equipamento</label>
                             <input type="text" id="edit-nomeEquipamento" name="nomeEquipamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         </div>
@@ -315,12 +333,18 @@
                             <input type="text" id="edit-sap" name="sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         </div>
                         <div>
+                            <label for="edit-os_sap" class="block text-sm font-medium text-gray-700">O.S SAP</label>
+                            <input type="text" id="edit-os_sap" name="os_sap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
                             <label for="edit-setor" class="block text-sm font-medium text-gray-700">Setor</label>
                             <select id="edit-setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option value="armacao">Armação</option>
                                 <option value="pintura">Pintura</option>
                                 <option value="montagem_final">Montagem Final</option>
                                 <option value="site">Site</option>
+                                <option value="eletronica">Eletrônica</option>
+                                <option value="patrimonial">Patrimonial</option>
                             </select>
                         </div>
                         <div>
@@ -328,7 +352,7 @@
                             <input type="text" id="edit-recebedor" name="recebedor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         </div>
                         <div class="md:col-span-2">
-                            <label for="edit-nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço</label>
+                            <label for="edit-nota" class="block text-sm font-medium text-gray-700">Nota / Ordem de Serviço (Interna)</label>
                             <input type="text" id="edit-nota" name="nota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         </div>
                         <div class="md:col-span-2">
@@ -353,13 +377,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                     <div><strong class="text-gray-600 block">Trazido por:</strong> <span id="view-nomePortador"></span></div>
                     <div><strong class="text-gray-600 block">Registro:</strong> <span id="view-registroPortador"></span></div>
+                    <div><strong class="text-gray-600 block">Telefone:</strong> <span id="view-telefone"></span></div>
                     <div><strong class="text-gray-600 block">Equipamento:</strong> <span id="view-nomeEquipamento"></span></div>
                     <div><strong class="text-gray-600 block">SAP:</strong> <span id="view-sap"></span></div>
+                    <div><strong class="text-gray-600 block">O.S SAP:</strong> <span id="view-os_sap"></span></div>
                     <div><strong class="text-gray-600 block">Área:</strong> <span id="view-area"></span></div>
                     <div><strong class="text-gray-600 block">Setor:</strong> <span id="view-setor"></span></div>
                     <div><strong class="text-gray-600 block">Data de Entrada:</strong> <span id="view-dataEntrada"></span></div>
                     <div><strong class="text-gray-600 block">Recebido por:</strong> <span id="view-recebedor"></span></div>
-                    <div class="md:col-span-2"><strong class="text-gray-600 block">Nota / O.S.:</strong> <span id="view-nota"></span></div>
+                    <div class="md:col-span-2"><strong class="text-gray-600 block">Nota / O.S. (Interna):</strong> <span id="view-nota"></span></div>
                     <div class="md:col-span-2"><strong class="text-gray-600 block">Descrição do Problema:</strong> <p id="view-problema" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
                 </div>
 
@@ -514,22 +540,17 @@
         }
         
         // --- FUNÇÕES DO APLICATIVO ---
-        const renderizarTabela = (docs) => {
+        const renderizarTabela = (registrosParaRenderizar) => {
             corpoTabela.innerHTML = '';
-            registrosAtuais = [];
             document.getElementById('selectAllCheckbox').checked = false;
 
-            if(docs.length === 0) {
+            if (registrosParaRenderizar.length === 0) {
                 corpoTabela.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
-                atualizarDashboard([]);
                 return;
             }
-            
-            atualizarDashboard(docs.map(d => d.data()));
-            
-            docs.forEach(docSnapshot => {
-                const data = docSnapshot.data();
-                registrosAtuais.push({id: docSnapshot.id, ...data});
+
+            registrosParaRenderizar.forEach(data => {
+                const docId = data.id;
                 const tr = document.createElement('tr');
                 
                 let statusClass = 'bg-gray-100 text-gray-800';
@@ -545,33 +566,33 @@
                 const podeEditar = currentUser.role === 'admin';
 
                 if ((!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') && podeAssumir) {
-                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
+                    acoesHtml += `<button data-id="${docId}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
                 } else if (data.tecnicoAtribuido && data.tecnicoAtribuido !== 'Geral') {
                     if ((data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes') && podeFinalizar) {
                         const buttonText = data.statusGeral === 'Aguardando Componentes' ? 'Continuar' : 'Finalizar';
-                        acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
+                        acoesHtml += `<button data-id="${docId}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
                     } else {
                          acoesHtml += `<span class="text-gray-400 text-sm">Concluído</span>`;
                     }
 
                     if (podeTransferir) {
-                        acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-transferir text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Transferir</button>`;
+                        acoesHtml += `<button data-id="${docId}" class="btn-transferir text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Transferir</button>`;
                     }
                 }
                 
-                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-visualizar text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Visualizar</button>`;
-                acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-imprimir-os text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Imprimir OS</button>`;
+                acoesHtml += `<button data-id="${docId}" class="btn-visualizar text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Visualizar</button>`;
+                acoesHtml += `<button data-id="${docId}" class="btn-imprimir-os text-gray-600 hover:text-gray-900 text-sm font-medium ml-3">Imprimir OS</button>`;
 
                 if (podeEditar) {
-                    acoesHtml += `<button data-id="${docSnapshot.id}" class="btn-editar text-yellow-600 hover:text-yellow-900 text-sm font-medium ml-3">Editar</button>`;
+                    acoesHtml += `<button data-id="${docId}" class="btn-editar text-yellow-600 hover:text-yellow-900 text-sm font-medium ml-3">Editar</button>`;
                 }
 
                 tr.innerHTML = `
-                    <td class="text-center"><input type="checkbox" class="row-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docSnapshot.id}"></td>
+                    <td class="text-center"><input type="checkbox" class="row-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docId}"></td>
                     <td>${data.osId || ''}</td>
                     <td>${data.nomeEquipamento || ''}</td>
                     <td>${data.sap || ''}</td>
-                    <td>${data.nota || ''}</td>
+                    <td>${data.os_sap || ''}</td>
                     <td>${data.dataEntrada ? new Date(data.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</td>
                     <td>${data.tecnicoAtribuido || 'N/A'}</td>
                     <td><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${data.statusGeral || 'N/A'}</span></td>
@@ -583,9 +604,13 @@
             });
         }
         
-        const carregarRegistros = (q = colRef) => {
+        const carregarRegistros = () => {
             if (unsubscribe) unsubscribe();
-            unsubscribe = onSnapshot(q, (snapshot) => renderizarTabela(snapshot.docs), (error) => {
+            unsubscribe = onSnapshot(colRef, (snapshot) => {
+                registrosAtuais = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderizarTabela(registrosAtuais);
+                atualizarDashboard(registrosAtuais);
+            }, (error) => {
                 console.error("Erro ao carregar registros:", error);
             });
         }
@@ -785,8 +810,10 @@
 
             document.getElementById('view-nomePortador').textContent = osData.nomePortador || 'N/A';
             document.getElementById('view-registroPortador').textContent = osData.registroPortador || 'N/A';
+            document.getElementById('view-telefone').textContent = osData.telefone || 'N/A';
             document.getElementById('view-nomeEquipamento').textContent = osData.nomeEquipamento || 'N/A';
             document.getElementById('view-sap').textContent = osData.sap || 'N/A';
+            document.getElementById('view-os_sap').textContent = osData.os_sap || 'N/A';
             document.getElementById('view-area').textContent = osData.area || 'N/A';
             document.getElementById('view-setor').textContent = osData.setor || 'N/A';
             document.getElementById('view-dataEntrada').textContent = osData.dataEntrada ? new Date(osData.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
@@ -873,8 +900,10 @@
                     <div class="grid-container">
                         <div class="grid-item"><label>Trazido por:</label> <span>${osData.nomePortador || ''}</span></div>
                         <div class="grid-item"><label>Registro:</label> <span>${osData.registroPortador || ''}</span></div>
+                        <div class="grid-item"><label>Telefone:</label> <span>${osData.telefone || ''}</span></div>
                         <div class="grid-item"><label>Equipamento:</label> <span>${osData.nomeEquipamento || ''}</span></div>
                         <div class="grid-item"><label>SAP:</label> <span>${osData.sap || ''}</span></div>
+                        <div class="grid-item"><label>O.S SAP:</label> <span>${osData.os_sap || ''}</span></div>
                         <div class="grid-item"><label>Área:</label> <span>${osData.area || ''}</span></div>
                         <div class="grid-item"><label>Setor:</label> <span>${osData.setor || ''}</span></div>
                         <div class="grid-item"><label>Data de Entrada:</label> <span>${osData.dataEntrada ? new Date(osData.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</span></div>
@@ -950,38 +979,38 @@
         });
 
         document.getElementById('btnBuscar').addEventListener('click', () => {
-            const osId = document.getElementById('filtroId').value.trim();
-            const sap = document.getElementById('filtroSap').value.trim();
-            const nota = document.getElementById('filtroNota').value.trim();
-            const tecnico = document.getElementById('filtroTecnico').value.trim();
+            const osId = document.getElementById('filtroId').value.trim().toLowerCase();
+            const sap = document.getElementById('filtroSap').value.trim().toLowerCase();
+            const osSap = document.getElementById('filtroOsSap').value.trim().toLowerCase();
+            const nota = document.getElementById('filtroNota').value.trim().toLowerCase();
+            const tecnico = document.getElementById('filtroTecnico').value.trim().toLowerCase();
             const data = document.getElementById('filtroData').value;
             const status = document.getElementById('filtroStatus').value;
             
-            let q;
-            const constraints = [];
-            if (osId) constraints.push(where("osId", "==", osId));
-            if (sap) constraints.push(where("sap", "==", sap));
-            if (nota) constraints.push(where("nota", "==", nota));
-            if (tecnico) constraints.push(where("tecnicoAtribuido", "==", tecnico));
-            if (data) constraints.push(where("dataEntrada", "==", data));
-            if (status) constraints.push(where("statusGeral", "==", status));
+            const registrosFiltrados = registrosAtuais.filter(reg => {
+                const matchOsId = osId ? (reg.osId || '').toLowerCase().includes(osId) : true;
+                const matchSap = sap ? (reg.sap || '').toLowerCase().includes(sap) : true;
+                const matchOsSap = osSap ? (reg.os_sap || '').toLowerCase().includes(osSap) : true;
+                const matchNota = nota ? (reg.nota || '').toLowerCase().includes(nota) : true;
+                const matchTecnico = tecnico ? (reg.tecnicoAtribuido || '').toLowerCase().includes(tecnico) : true;
+                const matchData = data ? reg.dataEntrada === data : true;
+                const matchStatus = status ? reg.statusGeral === status : true;
+
+                return matchOsId && matchSap && matchOsSap && matchNota && matchTecnico && matchData && matchStatus;
+            });
             
-            if (constraints.length > 0) {
-                 q = query(colRef, ...constraints);
-            } else {
-                 q = colRef;
-            }
-            carregarRegistros(q);
+            renderizarTabela(registrosFiltrados);
         });
 
         document.getElementById('btnLimpar').addEventListener('click', () => {
             document.getElementById('filtroId').value = '';
             document.getElementById('filtroSap').value = '';
+            document.getElementById('filtroOsSap').value = '';
             document.getElementById('filtroNota').value = '';
             document.getElementById('filtroTecnico').value = '';
             document.getElementById('filtroData').value = '';
             document.getElementById('filtroStatus').value = '';
-            carregarRegistros();
+            renderizarTabela(registrosAtuais);
         });
 
         document.getElementById('btnImprimir').addEventListener('click', () => window.print());
@@ -997,17 +1026,19 @@
 
             if (registrosParaExportar.length === 0) return alert("Nenhum dado válido selecionado para exportar.");
             
-            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
+            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
             let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
             registrosParaExportar.forEach(reg => {
                 const rowData = {
                     ID_OS: reg.osId,
                     NomePortador: reg.nomePortador,
                     RegistroPortador: reg.registroPortador,
+                    Telefone: reg.telefone,
                     Equipamento: reg.nomeEquipamento,
                     Area: reg.area,
                     DataEntrada: reg.dataEntrada,
                     SAP: reg.sap,
+                    OS_SAP: reg.os_sap,
                     Setor: reg.setor,
                     Recebedor: reg.recebedor,
                     TecnicoAtribuido: reg.tecnicoAtribuido,
@@ -1020,7 +1051,7 @@
                     DescricaoReparo: reg.descricaoReparo,
                     MotivoSemReparo: reg.motivoSemReparo
                 };
-                const row = headers.map(header => `"${rowData[header] || ''}"`);
+                const row = headers.map(header => `"${(rowData[header] || '').toString().replace(/"/g, '""')}"`);
                 csvContent += row.join(";") + "\n";
             });
             const link = document.createElement("a");
