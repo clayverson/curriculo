@@ -1319,15 +1319,17 @@
                 const matchData = data ? reg.dataEntrada === data : true;
                 
                 let matchStatus = true;
-                if(status){
-                    if(status === 'Finalizado' || status === 'Sem Reparo'){
-                        matchStatus = reg.statusGeral === status;
+                if (status) {
+                    // This maps the filter value to the database value
+                    if (status === "Finalizado (Aguardando Retirada)") {
+                        matchStatus = reg.statusGeral === "Finalizado";
+                    } else if (status === "Sem Reparo (Aguardando Retirada)") {
+                        matchStatus = reg.statusGeral === "Sem Reparo";
                     } else {
-                         matchStatus = reg.statusGeral === status;
+                        matchStatus = reg.statusGeral === status;
                     }
                 }
                 
-
                 let matchBusca = true;
                 if (termoBusca) {
                     const searchableFields = [
@@ -1351,6 +1353,20 @@
             });
             
             renderizarDados(registrosFiltrados);
+
+            if (status && registrosFiltrados.length > 0) {
+                const firstResultStatus = registrosFiltrados[0].statusGeral;
+                const statusAtivos = ['Em Andamento', 'Aguardando Componentes'];
+                const statusConcluidos = ['Finalizado', 'Sem Reparo', 'Sucateado'];
+
+                if (statusAtivos.includes(firstResultStatus)) {
+                    switchTab('ativas');
+                } else if (statusConcluidos.includes(firstResultStatus)) {
+                    switchTab('concluidas');
+                } else if (firstResultStatus === 'Entregue') {
+                    switchTab('entregues');
+                }
+            }
         };
 
         document.getElementById('filtroGeral').addEventListener('input', aplicarFiltros);
