@@ -28,23 +28,33 @@
         .component-row {
             transition: opacity 0.3s ease-in-out;
         }
-        #tabelaRegistros th, #tabelaRegistros td {
+        #tabelaRegistrosAtivos th, #tabelaRegistrosAtivos td,
+        #tabelaRegistrosConcluidos th, #tabelaRegistrosConcluidos td,
+        #tabelaRegistrosEntregues th, #tabelaRegistrosEntregues td {
             padding: 0.75rem;
             text-align: left;
             border-bottom: 1px solid #e2e8f0;
         }
-        #tabelaRegistros th {
+        #tabelaRegistrosAtivos th, #tabelaRegistrosConcluidos th, #tabelaRegistrosEntregues th {
             background-color: #f8fafc;
+        }
+        .tab-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-button.active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
         }
         /* Estilos para impressão */
         @media print {
             body * {
                 visibility: hidden;
             }
-            #secaoImpressao, #secaoImpressao * {
+            .printable-section, .printable-section * {
                 visibility: visible;
             }
-            #secaoImpressao {
+            .printable-section {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -52,6 +62,9 @@
             }
             th, td {
                 font-size: 10pt;
+            }
+            .no-print {
+                display: none;
             }
         }
     </style>
@@ -182,115 +195,183 @@
                 </div>
             </form>
 
-            <!-- Seção de Registros Salvos e Filtros -->
-            <div id="secaoRegistros" class="mt-12">
-                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Registros Salvos</h2>
+            <!-- Seção de Registros Salvos -->
+            <div class="mt-12">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Registros Salvos</h2>
+
+                <!-- Filtros -->
                 <div class="form-section">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                        <div>
-                             <label for="filtroId" class="block text-sm font-medium text-gray-700">Buscar por ID da O.S</label>
-                             <input type="text" id="filtroId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o ID...">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+                        <div class="md:col-span-2">
+                             <label for="filtroGeral" class="block text-sm font-medium text-gray-700">Busca Geral</label>
+                             <input type="text" id="filtroGeral" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Busque por qualquer campo...">
                         </div>
                         <div>
-                             <label for="filtroSap" class="block text-sm font-medium text-gray-700">Buscar por SAP</label>
-                             <input type="text" id="filtroSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o SAP...">
-                        </div>
-                        <div>
-                             <label for="filtroOsSap" class="block text-sm font-medium text-gray-700">Buscar por O.S SAP</label>
-                             <input type="text" id="filtroOsSap" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite a O.S do SAP...">
-                        </div>
-                        <div>
-                             <label for="filtroNota" class="block text-sm font-medium text-gray-700">Buscar por Nota/OS</label>
-                             <input type="text" id="filtroNota" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite a Nota/OS...">
-                        </div>
-                        <div>
-                             <label for="filtroTecnico" class="block text-sm font-medium text-gray-700">Buscar por Técnico</label>
-                             <input type="text" id="filtroTecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o nome...">
-                        </div>
-                        <div>
-                            <label for="filtroData" class="block text-sm font-medium text-gray-700">Buscar por Data</label>
+                            <label for="filtroData" class="block text-sm font-medium text-gray-700">Data de Entrada</label>
                             <input type="date" id="filtroData" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                        </div>
                        <div>
-                            <label for="filtroStatus" class="block text-sm font-medium text-gray-700">Buscar por Status</label>
-                            <select id="filtroStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label for="filtroStatus" class="block text-sm font-medium text-gray-700">Status</label>
+                            <select id="filtroStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                                 <option value="">Todos</option>
                                 <option value="Em Andamento">Em Andamento</option>
                                 <option value="Aguardando Componentes">Aguardando Componentes</option>
-                                <option value="Finalizado">Finalizado</option>
-                                <option value="Sem Reparo">Sem Reparo</option>
+                                <option value="Finalizado">Finalizado (Aguardando Retirada)</option>
+                                <option value="Sem Reparo">Sem Reparo (Aguardando Retirada)</option>
+                                <option value="Entregue">Entregue</option>
+                                <option value="Sucateado">Sucateado</option>
                             </select>
                         </div>
                         <div class="flex space-x-2">
-                             <button id="btnBuscar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-white bg-blue-600 hover:bg-blue-700">Buscar</button>
                              <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
                         </div>
                     </div>
-                    <div class="flex justify-end space-x-3 mt-6">
-                        <button id="btnImprimir" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">Imprimir Relatório</button>
-                        <button id="btnExportar" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Selecionados</button>
+                </div>
+
+                <!-- Abas de Navegação -->
+                <div class="border-b border-gray-200 mb-4">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button id="tabAtivas" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                            O.S Ativas
+                        </button>
+                        <button id="tabConcluidas" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            O.S Concluídas
+                        </button>
+                        <button id="tabEntregues" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                            O.S Entregues
+                        </button>
+                    </nav>
+                </div>
+                
+                 <div class="flex justify-end space-x-3 mb-4 no-print">
+                    <button id="btnImprimir" class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">Imprimir Relatório</button>
+                    <button id="btnExportar" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">Exportar Selecionados</button>
+                </div>
+
+                <!-- Conteúdo das Abas -->
+                <div id="tabContentAtivas" class="printable-section">
+                    <div class="mt-6 overflow-x-auto">
+                        <table id="tabelaRegistrosAtivos" class="min-w-full bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="w-12 text-center no-print"><input type="checkbox" id="selectAllCheckboxAtivos" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
+                                    <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
+                                    <th class="text-sm font-semibold text-gray-600">Equipamento</th>
+                                    <th class="text-sm font-semibold text-gray-600">SAP</th>
+                                    <th class="text-sm font-semibold text-gray-600">O.S SAP</th>
+                                    <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
+                                    <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
+                                    <th class="text-sm font-semibold text-gray-600">Status</th>
+                                    <th class="text-sm font-semibold text-gray-600 no-print">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaAtivos">
+                               <!-- Dados do Firestore serão inseridos aqui -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <div id="secaoImpressao" class="mt-6 overflow-x-auto">
-                    <table id="tabelaRegistros" class="min-w-full bg-white">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="w-12 text-center"><input type="checkbox" id="selectAllCheckbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
-                                <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
-                                <th class="text-sm font-semibold text-gray-600">Equipamento</th>
-                                <th class="text-sm font-semibold text-gray-600">SAP</th>
-                                <th class="text-sm font-semibold text-gray-600">O.S SAP</th>
-                                <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
-                                <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
-                                <th class="text-sm font-semibold text-gray-600">Status</th>
-                                <th class="text-sm font-semibold text-gray-600">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="corpoTabela">
-                           <!-- Dados do Firestore serão inseridos aqui -->
-                        </tbody>
-                    </table>
+                <div id="tabContentConcluidas" class="hidden printable-section">
+                     <div class="mt-6 overflow-x-auto">
+                        <table id="tabelaRegistrosConcluidos" class="min-w-full bg-white">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="w-12 text-center no-print"><input type="checkbox" id="selectAllCheckboxConcluidos" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
+                                    <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
+                                    <th class="text-sm font-semibold text-gray-600">Equipamento</th>
+                                    <th class="text-sm font-semibold text-gray-600">SAP</th>
+                                    <th class="text-sm font-semibold text-gray-600">O.S SAP</th>
+                                    <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
+                                    <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
+                                    <th class="text-sm font-semibold text-gray-600">Status</th>
+                                    <th class="text-sm font-semibold text-gray-600 no-print">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpoTabelaConcluidos">
+                               <!-- Dados do Firestore serão inseridos aqui -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
+
+                <div id="tabContentEntregues" class="hidden printable-section">
+                    <div class="mt-6 overflow-x-auto">
+                       <table id="tabelaRegistrosEntregues" class="min-w-full bg-white">
+                           <thead class="bg-gray-50">
+                               <tr>
+                                   <th class="w-12 text-center no-print"><input type="checkbox" id="selectAllCheckboxEntregues" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"></th>
+                                   <th class="text-sm font-semibold text-gray-600">ID da O.S</th>
+                                   <th class="text-sm font-semibold text-gray-600">Equipamento</th>
+                                   <th class="text-sm font-semibold text-gray-600">SAP</th>
+                                   <th class="text-sm font-semibold text-gray-600">O.S SAP</th>
+                                   <th class="text-sm font-semibold text-gray-600">Data Entrada</th>
+                                   <th class="text-sm font-semibold text-gray-600">Técnico Atribuído</th>
+                                   <th class="text-sm font-semibold text-gray-600">Status</th>
+                                   <th class="text-sm font-semibold text-gray-600 no-print">Ações</th>
+                               </tr>
+                           </thead>
+                           <tbody id="corpoTabelaEntregues">
+                              <!-- Dados do Firestore serão inseridos aqui -->
+                           </tbody>
+                       </table>
+                   </div>
+               </div>
+
             </div>
         </main>
     </div>
     
-    <!-- Modal de Saída -->
+    <!-- Modal de Saída (Técnico) -->
     <div id="saidaModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
         <div class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <form id="saidaForm">
                 <input type="hidden" id="editDocId">
                 <fieldset>
-                    <legend class="text-2xl font-bold mb-6 text-gray-800">Finalizar e Dar Saída no Equipamento</legend>
+                    <legend class="text-2xl font-bold mb-6 text-gray-800">Finalizar Análise Técnica</legend>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label for="dataSaida" class="block text-sm font-medium text-gray-700">Data da Saída</label>
+                            <label for="dataSaida" class="block text-sm font-medium text-gray-700">Data da Finalização</label>
                             <input type="date" id="dataSaida" name="dataSaida" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         </div>
                         <div>
-                            <label for="tecnico" class="block text-sm font-medium text-gray-700">Nome do Técnico Finalizador</label>
+                            <label for="tecnico" class="block text-sm font-medium text-gray-700">Nome do Técnico</label>
                             <input type="text" id="tecnico" name="tecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Técnico responsável" required>
                         </div>
                     </div>
                     <div class="mt-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Status Final do Reparo</label>
-                        <div class="flex flex-col sm:flex-row gap-4">
+                        <div class="flex flex-wrap gap-4">
                             <div class="flex items-center"><input id="statusReparado" name="statusReparo" type="radio" value="reparado" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusReparado" class="ml-3 block text-sm">Com Reparo</label></div>
                             <div class="flex items-center"><input id="statusComponente" name="statusReparo" type="radio" value="componente" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusComponente" class="ml-3 block text-sm">Aguardando Componente</label></div>
                             <div class="flex items-center"><input id="statusSemReparo" name="statusReparo" type="radio" value="sem_reparo" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusSemReparo" class="ml-3 block text-sm">Sem Reparo</label></div>
+                            <div class="flex items-center"><input id="statusReparoExterno" name="statusReparo" type="radio" value="externo" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="statusReparoExterno" class="ml-3 block text-sm">Reparo Externo</label></div>
                         </div>
                     </div>
                     <div id="reparoSection" class="hidden mt-6">
                         <label for="descricaoReparo" class="block text-sm font-medium">Descrição do Reparo</label>
                         <textarea id="descricaoReparo" name="descricaoReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Descreva o serviço realizado..."></textarea>
                     </div>
+                     <div id="externoSection" class="hidden mt-6">
+                        <label for="observacaoReparoExterno" class="block text-sm font-medium">Observações do Reparo Externo</label>
+                        <textarea id="observacaoReparoExterno" name="observacaoReparoExterno" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Descreva o motivo do reparo ser externo..."></textarea>
+                    </div>
                     <div id="componentesSection" class="hidden mt-6 p-4 bg-gray-50 border rounded-lg"><h3 class="text-lg font-medium mb-4">Componentes Solicitados</h3><div id="listaComponentes" class="space-y-4"></div><button type="button" id="addComponenteBtn" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Adicionar</button></div>
-                    <div id="semReparoSection" class="hidden mt-6"><label for="motivoSemReparo" class="block text-sm font-medium">Motivo de não ter reparo</label><textarea id="motivoSemReparo" name="motivoSemReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea></div>
+                    <div id="semReparoSection" class="hidden mt-6">
+                        <label for="motivoSemReparo" class="block text-sm font-medium">Motivo de não ter reparo</label>
+                        <textarea id="motivoSemReparo" name="motivoSemReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                        <div class="mt-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Destino do Equipamento</label>
+                             <div class="flex items-center gap-4">
+                                <div class="flex items-center"><input id="destinoSucata" name="destinoSemReparo" type="radio" value="sucata" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="destinoSucata" class="ml-3 block text-sm">Vira Sucata</label></div>
+                                <div class="flex items-center"><input id="destinoRetirada" name="destinoSemReparo" type="radio" value="retirada" class="h-4 w-4 text-indigo-600 border-gray-300" checked><label for="destinoRetirada" class="ml-3 block text-sm">Dono Irá Retirar</label></div>
+                            </div>
+                        </div>
+                    </div>
                 </fieldset>
                 <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
                     <button type="button" id="cancelarSaidaBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
-                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar Saída</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar</button>
                 </div>
             </form>
         </div>
@@ -391,11 +472,26 @@
 
                 <div class="mt-6 pt-4 border-t">
                     <h3 class="text-lg font-semibold mb-2 text-gray-700">Dados de Finalização</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                    <div id="view-detalhes-finalizacao" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
                         <div><strong class="text-gray-600 block">Status:</strong> <span id="view-statusGeral"></span></div>
                         <div><strong class="text-gray-600 block">Técnico Finalizador:</strong> <span id="view-tecnico"></span></div>
-                        <div><strong class="text-gray-600 block">Data de Saída:</strong> <span id="view-dataSaida"></span></div>
-                        <div id="view-detalhes-finalizacao" class="md:col-span-2"></div>
+                        <div><strong class="text-gray-600 block">Data de Finalização:</strong> <span id="view-dataSaida"></span></div>
+                        <div class="md:col-span-2"><strong class="text-gray-600 block">Tipo de Reparo:</strong> <span id="view-tipoReparo"></span></div>
+                        <div class="md:col-span-2" id="view-descricao-reparo-container"><strong class="text-gray-600 block">Descrição do Reparo:</strong> <p id="view-descricaoReparo" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
+                        <div class="md:col-span-2" id="view-observacao-reparo-externo-container"><strong class="text-gray-600 block">Observação (Reparo Externo):</strong> <p id="view-observacaoReparoExterno" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
+                        <div class="md:col-span-2" id="view-componentes-container"><strong class="text-gray-600 block">Componentes Solicitados:</strong> <div id="view-componentes" class="mt-1"></div></div>
+                        <div class="md:col-span-2" id="view-motivo-sem-reparo-container"><strong class="text-gray-600 block">Motivo (Sem Reparo):</strong> <p id="view-motivoSemReparo" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
+                        <div class="md:col-span-2" id="view-destino-sem-reparo-container"><strong class="text-gray-600 block">Destino (Sem Reparo):</strong> <span id="view-destinoSemReparo"></span></div>
+                    </div>
+                </div>
+
+                <div id="view-retirada-section" class="hidden mt-6 pt-4 border-t">
+                    <h3 class="text-lg font-semibold mb-2 text-gray-700">Dados de Retirada</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                        <div><strong class="text-gray-600 block">Retirado por:</strong> <span id="view-retiradaPorNome"></span></div>
+                        <div><strong class="text-gray-600 block">Registro:</strong> <span id="view-retiradaPorRegistro"></span></div>
+                        <div><strong class="text-gray-600 block">Telefone:</strong> <span id="view-retiradaPorTelefone"></span></div>
+                        <div><strong class="text-gray-600 block">Data da Retirada:</strong> <span id="view-dataRetirada"></span></div>
                     </div>
                 </div>
 
@@ -409,23 +505,57 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modal de Retirada -->
+    <div id="retiradaModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <form id="retiradaForm">
+                <input type="hidden" id="retiradaDocId">
+                <fieldset>
+                    <legend class="text-2xl font-bold mb-6 text-gray-800">Registrar Retirada do Equipamento</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="retiradaNome" class="block text-sm font-medium text-gray-700">Nome de quem está retirando</label>
+                            <input type="text" id="retiradaNome" name="retiradaNome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="retiradaRegistro" class="block text-sm font-medium text-gray-700">Registro</label>
+                            <input type="text" id="retiradaRegistro" name="retiradaRegistro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="retiradaTelefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                            <input type="tel" id="retiradaTelefone" name="retiradaTelefone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="dataRetirada" class="block text-sm font-medium text-gray-700">Data da Retirada</label>
+                            <input type="date" id="dataRetirada" name="dataRetirada" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
+                    <button type="button" id="cancelarRetiradaBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-green-600 text-white rounded-md hover:bg-green-700">Confirmar Retirada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <!-- Scripts do Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-		const firebaseConfig = {
-		  apiKey: "AIzaSyD_xbg_Q8gEf1H6jiU9KjdctF8DOdRcnG4",
-		  authDomain: "entradaesaida-dbf99.firebaseapp.com",
-		  projectId: "entradaesaida-dbf99",
-		  storageBucket: "entradaesaida-dbf99.firebasestorage.app",
-		  messagingSenderId: "643296157874",
-		  appId: "1:643296157874:web:58e92ad4e0736ad989a9ab",
-		  measurementId: "G-1278PJ8NT8"
-		};
+        const firebaseConfig = {
+            apiKey: "AIzaSyD_xbg_Q8gEf1H6jiU9KjdctF8DOdRcnG4",
+            authDomain: "entradaesaida-dbf99.firebaseapp.com",
+            projectId: "entradaesaida-dbf99",
+            storageBucket: "entradaesaida-dbf99.firebasestorage.app",
+            messagingSenderId: "643296157874",
+            appId: "1:643296157874:web:58e92ad4e0736ad989a9ab",
+            measurementId: "G-1278PJ8NT8"
+        };
         
         // --- INICIALIZAÇÃO E LÓGICA PRINCIPAL ---
         const app = initializeApp(firebaseConfig);
@@ -441,7 +571,6 @@
         const mainContent = document.getElementById('mainContent');
         const loginForm = document.getElementById('loginForm');
         const logoutButton = document.getElementById('logoutButton');
-        const corpoTabela = document.getElementById('corpoTabela');
         const maintenanceForm = document.getElementById('maintenanceForm');
         const saidaModal = document.getElementById('saidaModal');
         const saidaForm = document.getElementById('saidaForm');
@@ -452,11 +581,25 @@
         const cancelEditBtn = document.getElementById('cancelarEditBtn');
         const viewModal = document.getElementById('viewModal');
         const fecharViewBtn = document.getElementById('fecharViewBtn');
+        const retiradaModal = document.getElementById('retiradaModal');
+        const retiradaForm = document.getElementById('retiradaForm');
+        const cancelarRetiradaBtn = document.getElementById('cancelarRetiradaBtn');
+        
+        const tabAtivas = document.getElementById('tabAtivas');
+        const tabConcluidas = document.getElementById('tabConcluidas');
+        const tabEntregues = document.getElementById('tabEntregues');
+        const tabContentAtivas = document.getElementById('tabContentAtivas');
+        const tabContentConcluidas = document.getElementById('tabContentConcluidas');
+        const tabContentEntregues = document.getElementById('tabContentEntregues');
+        const corpoTabelaAtivos = document.getElementById('corpoTabelaAtivos');
+        const corpoTabelaConcluidos = document.getElementById('corpoTabelaConcluidos');
+        const corpoTabelaEntregues = document.getElementById('corpoTabelaEntregues');
 
 
         let registrosAtuais = []; 
         let unsubscribe = null; 
         let statusChartInstance = null;
+        let activeTab = 'ativas';
         
         // --- CONTROLE DE AUTENTICAÇÃO E PERMISSÕES ---
         onAuthStateChanged(auth, async (user) => {
@@ -537,16 +680,42 @@
         function renderStatusChart(data) {
             const ctx = document.getElementById('statusChart').getContext('2d');
             if (statusChartInstance) statusChartInstance.destroy();
-            statusChartInstance = new Chart(ctx, { type: 'pie', data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: ['rgba(251, 191, 36, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(107, 114, 128, 0.7)'], borderColor: ['rgba(251, 191, 36, 1)', 'rgba(59, 130, 246, 1)', 'rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(107, 114, 128, 1)'], borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false } });
+            const colors = ['rgba(251, 191, 36, 0.7)', 'rgba(59, 130, 246, 0.7)', 'rgba(16, 185, 129, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(107, 114, 128, 0.7)', 'rgba(129, 140, 248, 0.7)'];
+            const borders = ['rgba(251, 191, 36, 1)', 'rgba(59, 130, 246, 1)', 'rgba(16, 185, 129, 1)', 'rgba(239, 68, 68, 1)', 'rgba(107, 114, 128, 1)', 'rgba(129, 140, 248, 1)'];
+            statusChartInstance = new Chart(ctx, { type: 'pie', data: { labels: Object.keys(data), datasets: [{ data: Object.values(data), backgroundColor: colors, borderColor: borders, borderWidth: 1 }] }, options: { responsive: true, maintainAspectRatio: false } });
         }
         
-        // --- FUNÇÕES DO APLICATIVO ---
-        const renderizarTabela = (registrosParaRenderizar) => {
-            corpoTabela.innerHTML = '';
-            document.getElementById('selectAllCheckbox').checked = false;
+        // --- LÓGICA DAS ABAS ---
+        function switchTab(tabName) {
+            activeTab = tabName;
+            tabContentAtivas.classList.add('hidden');
+            tabContentConcluidas.classList.add('hidden');
+            tabContentEntregues.classList.add('hidden');
+            tabAtivas.classList.remove('active');
+            tabConcluidas.classList.remove('active');
+            tabEntregues.classList.remove('active');
 
+            if (tabName === 'ativas') {
+                tabContentAtivas.classList.remove('hidden');
+                tabAtivas.classList.add('active');
+            } else if (tabName === 'concluidas') {
+                tabContentConcluidas.classList.remove('hidden');
+                tabConcluidas.classList.add('active');
+            } else if (tabName === 'entregues') {
+                tabContentEntregues.classList.remove('hidden');
+                tabEntregues.classList.add('active');
+            }
+        }
+        tabAtivas.addEventListener('click', () => switchTab('ativas'));
+        tabConcluidas.addEventListener('click', () => switchTab('concluidas'));
+        tabEntregues.addEventListener('click', () => switchTab('entregues'));
+
+
+        // --- FUNÇÕES DO APLICATIVO ---
+        const popularTabela = (tbody, registrosParaRenderizar) => {
+            tbody.innerHTML = '';
             if (registrosParaRenderizar.length === 0) {
-                corpoTabela.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4">Nenhum registro encontrado.</td></tr>`;
                 return;
             }
 
@@ -555,29 +724,45 @@
                 const tr = document.createElement('tr');
                 
                 let statusClass = 'bg-gray-100 text-gray-800';
-                if (data.statusGeral === 'Em Andamento') statusClass = 'bg-yellow-100 text-yellow-800';
-                else if (data.statusGeral === 'Finalizado') statusClass = 'bg-green-100 text-green-800';
-                else if (data.statusGeral === 'Aguardando Componentes') statusClass = 'bg-blue-100 text-blue-800';
-                else if (data.statusGeral === 'Sem Reparo') statusClass = 'bg-red-100 text-red-800';
+                let statusText = data.statusGeral || 'N/A';
+
+                if (data.statusGeral === 'Em Andamento') {
+                    statusClass = 'bg-yellow-100 text-yellow-800';
+                } else if (data.statusGeral === 'Aguardando Componentes') {
+                    statusClass = 'bg-blue-100 text-blue-800';
+                } else if (data.statusGeral === 'Finalizado') {
+                    statusClass = 'bg-green-100 text-green-800';
+                    statusText = 'Finalizado (Aguardando Retirada)';
+                } else if (data.statusGeral === 'Sem Reparo') {
+                    statusClass = 'bg-red-100 text-red-800';
+                    statusText = 'Sem Reparo (Aguardando Retirada)';
+                } else if (data.statusGeral === 'Entregue') {
+                    statusClass = 'bg-indigo-100 text-indigo-800';
+                } else if (data.statusGeral === 'Sucateado') {
+                    statusClass = 'bg-gray-400 text-white';
+                }
+
 
                 let acoesHtml = '';
-                const podeAssumir = currentUser.role === 'tecnico' || currentUser.role === 'admin';
                 const podeFinalizar = currentUser.role === 'tecnico' || currentUser.role === 'admin';
+                const podeAssumir = currentUser.role === 'tecnico' || currentUser.role === 'admin';
+                const podeRegistrarSaida = currentUser.role === 'inserir' || currentUser.role === 'admin' || currentUser.role === 'tecnico';
                 const podeTransferir = currentUser.role === 'admin';
                 const podeEditar = currentUser.role === 'admin';
-
-                if ((!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') && podeAssumir) {
+                
+                if ((data.statusGeral === 'Finalizado' || data.statusGeral === 'Sem Reparo') && podeRegistrarSaida) {
+                    acoesHtml += `<button data-id="${docId}" class="btn-retirada text-green-600 hover:text-green-900 text-sm font-medium">Registrar Retirada</button>`;
+                } else if (data.statusGeral === 'Entregue' || data.statusGeral === 'Sucateado') {
+                    acoesHtml += `<span class="text-gray-400 text-sm">Processo Concluído</span>`;
+                } else if ((!data.tecnicoAtribuido || data.tecnicoAtribuido === 'Geral') && podeAssumir) {
                     acoesHtml += `<button data-id="${docId}" class="btn-assumir text-green-600 hover:text-green-900 text-sm font-medium">Assumir</button>`;
                 } else if (data.tecnicoAtribuido && data.tecnicoAtribuido !== 'Geral') {
                     if ((data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes') && podeFinalizar) {
                         const buttonText = data.statusGeral === 'Aguardando Componentes' ? 'Continuar' : 'Finalizar';
                         acoesHtml += `<button data-id="${docId}" class="btn-finalizar text-indigo-600 hover:text-indigo-900 text-sm font-medium">${buttonText}</button>`;
-                    } else {
-                         acoesHtml += `<span class="text-gray-400 text-sm">Concluído</span>`;
                     }
-
-                    if (podeTransferir) {
-                        acoesHtml += `<button data-id="${docId}" class="btn-transferir text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Transferir</button>`;
+                    if (podeTransferir && (data.statusGeral === 'Em Andamento' || data.statusGeral === 'Aguardando Componentes')) {
+                         acoesHtml += `<button data-id="${docId}" class="btn-transferir text-blue-600 hover:text-blue-900 text-sm font-medium ml-3">Transferir</button>`;
                     }
                 }
                 
@@ -587,34 +772,50 @@
                 if (podeEditar) {
                     acoesHtml += `<button data-id="${docId}" class="btn-editar text-yellow-600 hover:text-yellow-900 text-sm font-medium ml-3">Editar</button>`;
                 }
+                
+                const checkboxId = tbody.id.replace('corpoTabela', '').toLowerCase();
 
                 tr.innerHTML = `
-                    <td class="text-center"><input type="checkbox" class="row-checkbox h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docId}"></td>
+                    <td class="text-center no-print"><input type="checkbox" class="row-checkbox-${checkboxId} h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" data-id="${docId}"></td>
                     <td>${data.osId || ''}</td>
                     <td>${data.nomeEquipamento || ''}</td>
                     <td>${data.sap || ''}</td>
                     <td>${data.os_sap || ''}</td>
                     <td>${data.dataEntrada ? new Date(data.dataEntrada).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : ''}</td>
                     <td>${data.tecnicoAtribuido || 'N/A'}</td>
-                    <td><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${data.statusGeral || 'N/A'}</span></td>
-                    <td>
+                    <td><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${statusText}</span></td>
+                    <td class="no-print">
                        ${acoesHtml}
                     </td>
                 `;
-                corpoTabela.appendChild(tr);
+                tbody.appendChild(tr);
             });
-        }
+        };
+
+        const renderizarDados = (listaDeRegistros) => {
+            const statusAtivos = ['Em Andamento', 'Aguardando Componentes'];
+            const statusConcluidos = ['Finalizado', 'Sem Reparo', 'Sucateado'];
+            
+            const registrosAtivos = listaDeRegistros.filter(r => statusAtivos.includes(r.statusGeral));
+            const registrosConcluidos = listaDeRegistros.filter(r => statusConcluidos.includes(r.statusGeral));
+            const registrosEntregues = listaDeRegistros.filter(r => r.statusGeral === 'Entregue');
+
+            popularTabela(corpoTabelaAtivos, registrosAtivos);
+            popularTabela(corpoTabelaConcluidos, registrosConcluidos);
+            popularTabela(corpoTabelaEntregues, registrosEntregues);
+
+            atualizarDashboard(listaDeRegistros);
+        };
         
         const carregarRegistros = () => {
             if (unsubscribe) unsubscribe();
             unsubscribe = onSnapshot(colRef, (snapshot) => {
                 registrosAtuais = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                renderizarTabela(registrosAtuais);
-                atualizarDashboard(registrosAtuais);
+                aplicarFiltros(); 
             }, (error) => {
                 console.error("Erro ao carregar registros:", error);
             });
-        }
+        };
 
         maintenanceForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -644,13 +845,21 @@
                 alert('Equipamento registrado com sucesso!');
                 maintenanceForm.reset();
                 document.getElementById('dataEntrada').valueAsDate = new Date();
+                switchTab('ativas');
             } catch (err) {
                 console.error(err);
                 alert('Erro ao registrar equipamento.');
             }
         });
         
-        corpoTabela.addEventListener('click', async (e) => {
+        function abrirModalRetirada(docId) {
+            retiradaForm.reset();
+            retiradaForm.querySelector('#retiradaDocId').value = docId;
+            retiradaForm.querySelector('#dataRetirada').valueAsDate = new Date();
+            retiradaModal.classList.remove('hidden');
+        }
+        
+        const handleTableClick = async (e) => {
             const target = e.target;
             const docId = target.dataset.id;
             if (!docId) return;
@@ -693,8 +902,14 @@
                 abrirModalEdicao(docId);
             } else if (target.classList.contains('btn-visualizar')) {
                 abrirModalVisualizacao(docId);
+            } else if (target.classList.contains('btn-retirada')) {
+                abrirModalRetirada(docId);
             }
-        });
+        };
+
+        corpoTabelaAtivos.addEventListener('click', handleTableClick);
+        corpoTabelaConcluidos.addEventListener('click', handleTableClick);
+        corpoTabelaEntregues.addEventListener('click', handleTableClick);
 
         // --- LÓGICA DE EDIÇÃO (ADMIN) ---
         function abrirModalEdicao(docId) {
@@ -759,7 +974,7 @@
             }
         });
         
-        // --- LÓGICA DO MODAL DE SAÍDA ---
+        // --- LÓGICA DO MODAL DE SAÍDA (TÉCNICO) ---
         saidaForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const docId = document.getElementById('editDocId').value;
@@ -772,9 +987,13 @@
             };
 
             const statusReparo = dataToUpdate.statusReparo;
-            if (statusReparo === 'reparado') {
+            dataToUpdate.tipoReparo = statusReparo;
+
+            if (statusReparo === 'reparado' || statusReparo === 'externo') {
                 dataToUpdate.statusGeral = 'Finalizado';
-                dataToUpdate.descricaoReparo = saidaForm.querySelector('#descricaoReparo').value;
+                if(statusReparo === 'reparado') dataToUpdate.descricaoReparo = saidaForm.querySelector('#descricaoReparo').value;
+                if(statusReparo === 'externo') dataToUpdate.observacaoReparoExterno = saidaForm.querySelector('#observacaoReparoExterno').value;
+
             } else if (statusReparo === 'componente') {
                 dataToUpdate.statusGeral = 'Aguardando Componentes';
                 const componentes = [];
@@ -786,21 +1005,63 @@
                     }
                 });
                 dataToUpdate.componentes = componentes;
+
             } else if (statusReparo === 'sem_reparo') {
-                dataToUpdate.statusGeral = 'Sem Reparo';
                 dataToUpdate.motivoSemReparo = saidaForm.querySelector('#motivoSemReparo').value;
+                const destino = saidaForm.querySelector('input[name="destinoSemReparo"]:checked').value;
+                dataToUpdate.destinoSemReparo = destino;
+                if(destino === 'sucata'){
+                    dataToUpdate.statusGeral = 'Sucateado';
+                } else {
+                    dataToUpdate.statusGeral = 'Sem Reparo';
+                }
             }
             
-            const logEntry = { acao: 'Finalização', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Status alterado para '${dataToUpdate.statusGeral}'. Finalizado por ${dataToUpdate.tecnico}.` };
+            const logEntry = { acao: 'Finalização Técnica', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Status alterado para '${dataToUpdate.statusGeral}'. Finalizado por ${dataToUpdate.tecnico}.` };
 
             try {
                 await updateDoc(doc(db, "equipamentos", docId), { ...dataToUpdate, historico: arrayUnion(logEntry) });
-                alert('Registro de saída salvo com sucesso!');
+                alert('Análise técnica salva com sucesso!');
                 saidaModal.classList.add('hidden');
             } catch (err) {
-                alert('Erro ao salvar a saída.');
+                console.error(err);
+                alert('Erro ao salvar a análise.');
             }
         });
+        
+        // --- LÓGICA DO MODAL DE RETIRADA (ENTREGA) ---
+        cancelarRetiradaBtn.addEventListener('click', () => retiradaModal.classList.add('hidden'));
+
+        retiradaForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = retiradaForm.querySelector('#retiradaDocId').value;
+            if (!docId) return;
+
+            const dadosRetirada = {
+                retiradaPorNome: retiradaForm.querySelector('#retiradaNome').value,
+                retiradaPorRegistro: retiradaForm.querySelector('#retiradaRegistro').value,
+                retiradaPorTelefone: retiradaForm.querySelector('#retiradaTelefone').value,
+                dataRetirada: retiradaForm.querySelector('#dataRetirada').value,
+                statusGeral: 'Entregue'
+            };
+            
+            const logEntry = { 
+                acao: 'Retirada', 
+                usuario: currentUser.email, 
+                data: new Date().toISOString(), 
+                detalhes: `Equipamento retirado por ${dadosRetirada.retiradaPorNome} (Reg: ${dadosRetirada.retiradaPorRegistro}). Status alterado para 'Entregue'.` 
+            };
+
+            try {
+                await updateDoc(doc(db, "equipamentos", docId), { ...dadosRetirada, historico: arrayUnion(logEntry) });
+                alert('Retirada registrada com sucesso!');
+                retiradaModal.classList.add('hidden');
+            } catch (err) {
+                console.error(err);
+                alert('Erro ao registrar a retirada.');
+            }
+        });
+
 
         // --- LÓGICA DE VISUALIZAÇÃO ---
         function abrirModalVisualizacao(docId) {
@@ -808,7 +1069,6 @@
             if (!osData) return;
 
             document.getElementById('viewModalTitle').textContent = `Detalhes da Ordem de Serviço - ${osData.osId || 'N/A'}`;
-
             document.getElementById('view-nomePortador').textContent = osData.nomePortador || 'N/A';
             document.getElementById('view-registroPortador').textContent = osData.registroPortador || 'N/A';
             document.getElementById('view-telefone').textContent = osData.telefone || 'N/A';
@@ -821,20 +1081,60 @@
             document.getElementById('view-recebedor').textContent = osData.recebedor || 'N/A';
             document.getElementById('view-nota').textContent = osData.nota || 'N/A';
             document.getElementById('view-problema').textContent = osData.problema || 'N/A';
-            document.getElementById('view-statusGeral').textContent = osData.statusGeral || 'Em Andamento';
+            
+            let statusTextModal = osData.statusGeral || 'Em Andamento';
+            if (osData.statusGeral === 'Finalizado') {
+                statusTextModal = 'Finalizado (Aguardando Retirada)';
+            } else if (osData.statusGeral === 'Sem Reparo') {
+                statusTextModal = 'Sem Reparo (Aguardando Retirada)';
+            }
+            document.getElementById('view-statusGeral').textContent = statusTextModal;
+
             document.getElementById('view-tecnico').textContent = osData.tecnico || 'N/A';
             document.getElementById('view-dataSaida').textContent = osData.dataSaida ? new Date(osData.dataSaida).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A';
             
-            const detalhesFinalizacao = document.getElementById('view-detalhes-finalizacao');
-            detalhesFinalizacao.innerHTML = '';
-            if (osData.statusGeral === 'Finalizado') {
-                detalhesFinalizacao.innerHTML = `<strong class="text-gray-600 block">Descrição do Reparo:</strong> <p class="mt-1 p-2 bg-gray-50 rounded">${osData.descricaoReparo || ''}</p>`;
-            } else if (osData.statusGeral === 'Aguardando Componentes' && osData.componentes && osData.componentes.length > 0) {
-                 let compHtml = '<strong class="text-gray-600 block">Componentes Solicitados:</strong>';
-                 osData.componentes.forEach(c => { compHtml += `<div> - Cód: ${c.codigo || ''}, Desc: ${c.descricao || ''}</div>`; });
-                 detalhesFinalizacao.innerHTML = compHtml;
-            } else if (osData.statusGeral === 'Sem Reparo') {
-                detalhesFinalizacao.innerHTML = `<strong class="text-gray-600 block">Motivo (Sem Reparo):</strong> <p class="mt-1 p-2 bg-gray-50 rounded">${osData.motivoSemReparo || ''}</p>`;
+            const tipoReparoText = (osData.tipoReparo || 'interno').replace('reparado', 'interno');
+            document.getElementById('view-tipoReparo').textContent = tipoReparoText.charAt(0).toUpperCase() + tipoReparoText.slice(1);
+            
+            document.getElementById('view-descricao-reparo-container').style.display = 'none';
+            document.getElementById('view-observacao-reparo-externo-container').style.display = 'none';
+            document.getElementById('view-componentes-container').style.display = 'none';
+            document.getElementById('view-motivo-sem-reparo-container').style.display = 'none';
+            document.getElementById('view-destino-sem-reparo-container').style.display = 'none';
+
+            if ((osData.statusGeral === 'Finalizado' || osData.statusGeral === 'Entregue') && osData.tipoReparo === 'reparado' && osData.descricaoReparo) {
+                document.getElementById('view-descricaoReparo').textContent = osData.descricaoReparo;
+                document.getElementById('view-descricao-reparo-container').style.display = 'block';
+            }
+            if ((osData.statusGeral === 'Finalizado' || osData.statusGeral === 'Entregue') && osData.tipoReparo === 'externo' && osData.observacaoReparoExterno) {
+                document.getElementById('view-observacaoReparoExterno').textContent = osData.observacaoReparoExterno;
+                document.getElementById('view-observacao-reparo-externo-container').style.display = 'block';
+            }
+            if (osData.statusGeral === 'Aguardando Componentes' && osData.componentes && osData.componentes.length > 0) {
+                 let compHtml = '';
+                 osData.componentes.forEach(c => { compHtml += `<div class="text-sm"> - Cód: ${c.codigo || 'N/A'}, Desc: ${c.descricao || 'N/A'}</div>`; });
+                 document.getElementById('view-componentes').innerHTML = compHtml;
+                 document.getElementById('view-componentes-container').style.display = 'block';
+            }
+            if ((osData.statusGeral === 'Sem Reparo' || osData.statusGeral === 'Entregue' || osData.statusGeral === 'Sucateado') && osData.motivoSemReparo) {
+                document.getElementById('view-motivoSemReparo').textContent = osData.motivoSemReparo;
+                document.getElementById('view-motivo-sem-reparo-container').style.display = 'block';
+                 if(osData.destinoSemReparo){
+                    document.getElementById('view-destinoSemReparo').textContent = osData.destinoSemReparo === 'sucata' ? 'Vira Sucata' : 'Dono Irá Retirar';
+                    document.getElementById('view-destino-sem-reparo-container').style.display = 'block';
+                 }
+            }
+
+
+            const retiradaSection = document.getElementById('view-retirada-section');
+            if (osData.dataRetirada) {
+                document.getElementById('view-retiradaPorNome').textContent = osData.retiradaPorNome || 'N/A';
+                document.getElementById('view-retiradaPorRegistro').textContent = osData.retiradaPorRegistro || 'N/A';
+                document.getElementById('view-retiradaPorTelefone').textContent = osData.retiradaPorTelefone || 'N/A';
+                document.getElementById('view-dataRetirada').textContent = new Date(osData.dataRetirada).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
+                retiradaSection.classList.remove('hidden');
+            } else {
+                retiradaSection.classList.add('hidden');
             }
 
             const historicoContainer = document.getElementById('view-historico');
@@ -872,6 +1172,26 @@
                     </div>`;
                 });
                 historicoHtml += `</div>`;
+            }
+
+            let retiradaHtml = '';
+            if (osData.dataRetirada) {
+                retiradaHtml = `
+                    <h2 class="section-title">Dados de Retirada</h2>
+                    <div class="grid-container">
+                        <div class="grid-item"><label>Retirado por:</label> <span>${osData.retiradaPorNome || ''}</span></div>
+                        <div class="grid-item"><label>Registro:</label> <span>${osData.retiradaPorRegistro || ''}</span></div>
+                        <div class="grid-item"><label>Telefone:</label> <span>${osData.retiradaPorTelefone || ''}</span></div>
+                        <div class="grid-item"><label>Data da Retirada:</label> <span>${new Date(osData.dataRetirada).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</span></div>
+                    </div>
+                `;
+            }
+
+            let statusTextPrint = osData.statusGeral || 'Em Andamento';
+            if (osData.statusGeral === 'Finalizado') {
+                statusTextPrint = 'Finalizado (Aguardando Retirada)';
+            } else if (osData.statusGeral === 'Sem Reparo') {
+                statusTextPrint = 'Sem Reparo (Aguardando Retirada)';
             }
 
             let printHtml = `
@@ -914,13 +1234,18 @@
                     </div>
                     <h2 class="section-title">Dados de Finalização</h2>
                     <div class="grid-container">
-                        <div class="grid-item"><label>Status Geral:</label> <span>${osData.statusGeral || 'Em Andamento'}</span></div>
+                        <div class="grid-item"><label>Status Geral:</label> <span>${statusTextPrint}</span></div>
                         <div class="grid-item"><label>Técnico Finalizador:</label> <span>${osData.tecnico || 'N/A'}</span></div>
-                        <div class="grid-item"><label>Data de Saída:</label> <span>${osData.dataSaida ? new Date(osData.dataSaida).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</span></div>
+                        <div class="grid-item"><label>Data de Finalização:</label> <span>${osData.dataSaida ? new Date(osData.dataSaida).toLocaleDateString('pt-BR', {timeZone: 'UTC'}) : 'N/A'}</span></div>
             `;
 
-            if (osData.statusGeral === 'Finalizado') {
-                printHtml += `<div class="grid-item full-width"><label>Descrição do Reparo:</label> <span>${osData.descricaoReparo || ''}</span></div>`;
+            if (osData.statusGeral === 'Finalizado' || osData.statusGeral === 'Entregue') {
+                 if (osData.descricaoReparo) {
+                    printHtml += `<div class="grid-item full-width"><label>Descrição do Reparo:</label> <span>${osData.descricaoReparo}</span></div>`;
+                 }
+                 if (osData.observacaoReparoExterno) {
+                    printHtml += `<div class="grid-item full-width"><label>Observação (Reparo Externo):</label> <span>${osData.observacaoReparoExterno}</span></div>`;
+                }
             }
             if (osData.statusGeral === 'Aguardando Componentes') {
                 printHtml += `<div class="grid-item full-width"><label>Componentes Solicitados:</label>`;
@@ -933,12 +1258,16 @@
                 }
                 printHtml += `</div>`;
             }
-            if (osData.statusGeral === 'Sem Reparo') {
-                 printHtml += `<div class="grid-item full-width"><label>Motivo (Sem Reparo):</label> <span>${osData.motivoSemReparo || ''}</span></div>`;
+            if ((osData.statusGeral === 'Sem Reparo' || osData.statusGeral === 'Entregue' || osData.statusGeral === 'Sucateado') && osData.motivoSemReparo) {
+                 printHtml += `<div class="grid-item full-width"><label>Motivo (Sem Reparo):</label> <span>${osData.motivoSemReparo}</span></div>`;
+                 if(osData.destinoSemReparo){
+                    printHtml += `<div class="grid-item"><label>Destino (Sem Reparo):</label> <span>${osData.destinoSemReparo === 'sucata' ? 'Vira Sucata' : 'Dono Irá Retirar'}</span></div>`
+                 }
             }
 
             printHtml += `
                     </div>
+                    ${retiradaHtml}
                     ${historicoHtml}
                 </div>
             </body>
@@ -962,12 +1291,14 @@
         const reparoSection = document.getElementById('reparoSection');
         const componentesSection = document.getElementById('componentesSection');
         const semReparoSection = document.getElementById('semReparoSection');
+        const externoSection = document.getElementById('externoSection');
 
         function toggleSaidaSections() {
             const selected = document.querySelector('input[name="statusReparo"]:checked')?.value;
             reparoSection.classList.toggle('hidden', selected !== 'reparado');
             componentesSection.classList.toggle('hidden', selected !== 'componente');
             semReparoSection.classList.toggle('hidden', selected !== 'sem_reparo');
+            externoSection.classList.toggle('hidden', selected !== 'externo');
         }
         statusRadios.forEach(radio => radio.addEventListener('change', toggleSaidaSections));
 
@@ -979,45 +1310,75 @@
             newRow.querySelector('.remover-componente-btn').addEventListener('click', () => newRow.remove());
         });
 
-        document.getElementById('btnBuscar').addEventListener('click', () => {
-            const osId = document.getElementById('filtroId').value.trim().toLowerCase();
-            const sap = document.getElementById('filtroSap').value.trim().toLowerCase();
-            const osSap = document.getElementById('filtroOsSap').value.trim().toLowerCase();
-            const nota = document.getElementById('filtroNota').value.trim().toLowerCase();
-            const tecnico = document.getElementById('filtroTecnico').value.trim().toLowerCase();
+        const aplicarFiltros = () => {
+            const termoBusca = document.getElementById('filtroGeral').value.trim().toLowerCase();
             const data = document.getElementById('filtroData').value;
             const status = document.getElementById('filtroStatus').value;
             
             const registrosFiltrados = registrosAtuais.filter(reg => {
-                const matchOsId = osId ? (reg.osId || '').toLowerCase().includes(osId) : true;
-                const matchSap = sap ? (reg.sap || '').toLowerCase().includes(sap) : true;
-                const matchOsSap = osSap ? (reg.os_sap || '').toLowerCase().includes(osSap) : true;
-                const matchNota = nota ? (reg.nota || '').toLowerCase().includes(nota) : true;
-                const matchTecnico = tecnico ? (reg.tecnicoAtribuido || '').toLowerCase().includes(tecnico) : true;
                 const matchData = data ? reg.dataEntrada === data : true;
-                const matchStatus = status ? reg.statusGeral === status : true;
+                
+                let matchStatus = true;
+                if(status){
+                    if(status === 'Finalizado' || status === 'Sem Reparo'){
+                        matchStatus = reg.statusGeral === status;
+                    } else {
+                         matchStatus = reg.statusGeral === status;
+                    }
+                }
+                
 
-                return matchOsId && matchSap && matchOsSap && matchNota && matchTecnico && matchData && matchStatus;
+                let matchBusca = true;
+                if (termoBusca) {
+                    const searchableFields = [
+                        reg.osId,
+                        reg.nomeEquipamento,
+                        reg.sap,
+                        reg.os_sap,
+                        reg.nota,
+                        reg.tecnicoAtribuido,
+                        reg.nomePortador,
+                        reg.registroPortador,
+                        reg.problema
+                    ];
+                    
+                    matchBusca = searchableFields.some(field => 
+                        field && field.toString().toLowerCase().includes(termoBusca)
+                    );
+                }
+
+                return matchData && matchStatus && matchBusca;
             });
             
-            renderizarTabela(registrosFiltrados);
-        });
+            renderizarDados(registrosFiltrados);
+        };
+
+        document.getElementById('filtroGeral').addEventListener('input', aplicarFiltros);
+        document.getElementById('filtroData').addEventListener('change', aplicarFiltros);
+        document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
 
         document.getElementById('btnLimpar').addEventListener('click', () => {
-            document.getElementById('filtroId').value = '';
-            document.getElementById('filtroSap').value = '';
-            document.getElementById('filtroOsSap').value = '';
-            document.getElementById('filtroNota').value = '';
-            document.getElementById('filtroTecnico').value = '';
+            document.getElementById('filtroGeral').value = '';
             document.getElementById('filtroData').value = '';
             document.getElementById('filtroStatus').value = '';
-            renderizarTabela(registrosAtuais);
+            renderizarDados(registrosAtuais);
         });
 
-        document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+        document.getElementById('btnImprimir').addEventListener('click', () => {
+             const activeContent = document.querySelector('.printable-section:not(.hidden)');
+             if (activeContent) {
+                 // Temporarily hide non-active content for printing
+                 document.querySelectorAll('.printable-section.hidden').forEach(el => el.style.display = 'none');
+                 window.print();
+                 // Restore visibility
+                 document.querySelectorAll('.printable-section.hidden').forEach(el => el.style.display = '');
+             }
+        });
         
         document.getElementById('btnExportar').addEventListener('click', () => {
-            const checkedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+            const checkboxClass = activeTab === 'ativas' ? '.row-checkbox-ativas' : (activeTab === 'concluidas' ? '.row-checkbox-concluidos' : '.row-checkbox-entregues');
+            const checkedCheckboxes = document.querySelectorAll(checkboxClass);
+
             if (checkedCheckboxes.length === 0) {
                 return alert("Por favor, selecione pelo menos um registro para exportar.");
             }
@@ -1027,7 +1388,7 @@
 
             if (registrosParaExportar.length === 0) return alert("Nenhum dado válido selecionado para exportar.");
             
-            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'StatusReparo', 'DescricaoReparo', 'MotivoSemReparo'];
+            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'TipoReparo', 'DescricaoReparo', 'ObservacaoReparoExterno', 'MotivoSemReparo', 'DestinoSemReparo', 'RetiradaPorNome', 'RetiradaPorRegistro', 'RetiradaPorTelefone', 'DataRetirada'];
             let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
             registrosParaExportar.forEach(reg => {
                 const rowData = {
@@ -1048,47 +1409,67 @@
                     StatusGeral: reg.statusGeral,
                     DataSaida: reg.dataSaida,
                     Tecnico: reg.tecnico,
-                    StatusReparo: reg.statusReparo,
+                    TipoReparo: reg.tipoReparo,
                     DescricaoReparo: reg.descricaoReparo,
-                    MotivoSemReparo: reg.motivoSemReparo
+                    ObservacaoReparoExterno: reg.observacaoReparoExterno,
+                    MotivoSemReparo: reg.motivoSemReparo,
+                    DestinoSemReparo: reg.destinoSemReparo,
+                    RetiradaPorNome: reg.retiradaPorNome,
+                    RetiradaPorRegistro: reg.retiradaPorRegistro,
+                    RetiradaPorTelefone: reg.retiradaPorTelefone,
+                    DataRetirada: reg.dataRetirada
                 };
                 const row = headers.map(header => `"${(rowData[header] || '').toString().replace(/"/g, '""')}"`);
                 csvContent += row.join(";") + "\n";
             });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
-            link.setAttribute("download", "relatorio_manutencao_selecionado.csv");
+            link.setAttribute("download", `relatorio_${activeTab}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         });
         
-        document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
-            document.querySelectorAll('.row-checkbox').forEach(checkbox => {
-                checkbox.checked = e.target.checked;
+        function setupSelectAll(checkboxId, rowCheckboxClass) {
+            const selectAllCheckbox = document.getElementById(checkboxId);
+            selectAllCheckbox.addEventListener('change', (e) => {
+                document.querySelectorAll(`.${rowCheckboxClass}`).forEach(checkbox => {
+                    checkbox.checked = e.target.checked;
+                });
             });
-        });
-
-        corpoTabela.addEventListener('change', (e) => {
-            if (e.target.classList.contains('row-checkbox')) {
-                const allCheckboxes = document.querySelectorAll('.row-checkbox');
-                const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
-                const selectAll = document.getElementById('selectAllCheckbox');
-                
-                if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
-                    selectAll.checked = true;
-                    selectAll.indeterminate = false;
-                } else if (checkedCount > 0) {
-                    selectAll.checked = false;
-                    selectAll.indeterminate = true;
-                } else {
-                    selectAll.checked = false;
-                    selectAll.indeterminate = false;
+        }
+        
+        setupSelectAll('selectAllCheckboxAtivos', 'row-checkbox-ativas');
+        setupSelectAll('selectAllCheckboxConcluidos', 'row-checkbox-concluidos');
+        setupSelectAll('selectAllCheckboxEntregues', 'row-checkbox-entregues');
+        
+        function setupRowCheckboxListener(tbody, checkboxClass, selectAllId) {
+             tbody.addEventListener('change', (e) => {
+                if (e.target.classList.contains(checkboxClass)) {
+                    const allCheckboxes = document.querySelectorAll(`.${checkboxClass}`);
+                    const checkedCount = document.querySelectorAll(`.${checkboxClass}:checked`).length;
+                    const selectAll = document.getElementById(selectAllId);
+                    
+                    if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+                        selectAll.checked = true;
+                        selectAll.indeterminate = false;
+                    } else if (checkedCount > 0) {
+                        selectAll.checked = false;
+                        selectAll.indeterminate = true;
+                    } else {
+                        selectAll.checked = false;
+                        selectAll.indeterminate = false;
+                    }
                 }
-            }
-        });
+            });
+        }
+        
+        setupRowCheckboxListener(corpoTabelaAtivos, 'row-checkbox-ativas', 'selectAllCheckboxAtivos');
+        setupRowCheckboxListener(corpoTabelaConcluidos, 'row-checkbox-concluidos', 'selectAllCheckboxConcluidos');
+        setupRowCheckboxListener(corpoTabelaEntregues, 'row-checkbox-entregues', 'selectAllCheckboxEntregues');
         
         document.getElementById('dataEntrada').valueAsDate = new Date();
+        switchTab('ativas'); // Inicia na aba de ativas
     </script>
 </body>
 </html>
