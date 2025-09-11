@@ -100,6 +100,7 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Entrada e Saída de Equipamentos</h1>
             <div class="flex justify-center items-center mt-2 space-x-4">
                 <p id="userInfo" class="text-gray-600"></p>
+                <button id="gerenciarTecnicosBtn" class="hidden py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700">Gerenciar Técnicos</button>
                 <button id="logoutButton" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">Sair</button>
             </div>
         </header>
@@ -539,6 +540,43 @@
             </form>
         </div>
     </div>
+    
+    <!-- Modal de Gerenciamento de Técnicos (Admin) -->
+    <div id="gerenciarTecnicosModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <h2 class="text-2xl font-bold mb-4">Gerenciar Técnicos</h2>
+            <form id="addTecnicoForm" class="flex gap-2 mb-4">
+                <input type="text" id="nomeTecnicoInput" class="flex-grow block w-full rounded-md border-gray-300 shadow-sm" placeholder="Nome do novo técnico" required>
+                <button type="submit" class="py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700">Adicionar</button>
+            </form>
+            <div id="listaTecnicos" class="max-h-64 overflow-y-auto">
+                <!-- Lista de técnicos será populada aqui -->
+            </div>
+            <div class="flex justify-end pt-4 mt-4 border-t">
+                <button type="button" id="fecharGerenciarTecnicosBtn" class="py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Assumir OS -->
+    <div id="assumirModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-sm shadow-lg rounded-md bg-white">
+             <h2 class="text-2xl font-bold mb-4">Atribuir Técnico</h2>
+            <form id="assumirForm">
+                <input type="hidden" id="assumirDocId">
+                <div>
+                    <label for="selectTecnico" class="block text-sm font-medium text-gray-700">Selecione o técnico</label>
+                    <select id="selectTecnico" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        <option value="">Selecione...</option>
+                    </select>
+                </div>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-4 border-t">
+                    <button type="button" id="cancelarAssumirBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-green-600 text-white rounded-md hover:bg-green-700">Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 
     <!-- Scripts do Firebase -->
@@ -563,6 +601,7 @@
         const auth = getAuth(app);
         const colRef = collection(db, "equipamentos");
         const usersColRef = collection(db, "users");
+        const tecnicosColRef = collection(db, "tecnicos");
         
         let currentUser = { role: null, email: null };
 
@@ -584,7 +623,16 @@
         const retiradaModal = document.getElementById('retiradaModal');
         const retiradaForm = document.getElementById('retiradaForm');
         const cancelarRetiradaBtn = document.getElementById('cancelarRetiradaBtn');
-        
+        const gerenciarTecnicosBtn = document.getElementById('gerenciarTecnicosBtn');
+        const gerenciarTecnicosModal = document.getElementById('gerenciarTecnicosModal');
+        const fecharGerenciarTecnicosBtn = document.getElementById('fecharGerenciarTecnicosBtn');
+        const addTecnicoForm = document.getElementById('addTecnicoForm');
+        const listaTecnicos = document.getElementById('listaTecnicos');
+        const assumirModal = document.getElementById('assumirModal');
+        const assumirForm = document.getElementById('assumirForm');
+        const cancelarAssumirBtn = document.getElementById('cancelarAssumirBtn');
+        const selectTecnico = document.getElementById('selectTecnico');
+
         const tabAtivas = document.getElementById('tabAtivas');
         const tabConcluidas = document.getElementById('tabConcluidas');
         const tabEntregues = document.getElementById('tabEntregues');
@@ -598,6 +646,7 @@
 
         let registrosAtuais = []; 
         let unsubscribe = null; 
+        let unsubscribeTecnicos = null;
         let statusChartInstance = null;
         let activeTab = 'ativas';
         
@@ -619,6 +668,8 @@
                 mainContent.classList.remove('hidden');
                 userInfo.textContent = `Usuário: ${currentUser.email} (Nível: ${currentUser.role})`;
                 
+                gerenciarTecnicosBtn.classList.toggle('hidden', currentUser.role !== 'admin');
+
                 if(currentUser.role === 'inserir' || currentUser.role === 'tecnico' || currentUser.role === 'admin') {
                     maintenanceForm.classList.remove('hidden');
                 } else {
@@ -631,9 +682,8 @@
                 loginScreen.classList.remove('hidden');
                 mainContent.classList.add('hidden');
 
-                if (unsubscribe) {
-                    unsubscribe();
-                }
+                if (unsubscribe) unsubscribe();
+                if (unsubscribeTecnicos) unsubscribeTecnicos();
             }
         });
 
@@ -865,16 +915,7 @@
             if (!docId) return;
 
             if (target.classList.contains('btn-assumir')) {
-                const tecnicoNome = prompt("Por favor, digite seu nome para assumir esta O.S.:");
-                if (tecnicoNome && tecnicoNome.trim() !== '') {
-                    const logEntry = { acao: 'Assumiu', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Técnico '${tecnicoNome.trim()}' assumiu a O.S.` };
-                    try {
-                        await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: tecnicoNome.trim(), historico: arrayUnion(logEntry) });
-                        alert(`O.S. atribuída a ${tecnicoNome.trim()} com sucesso!`);
-                    } catch (err) {
-                        alert("Ocorreu um erro ao tentar assumir a O.S.");
-                    }
-                }
+                abrirModalAssumir(docId);
             } else if (target.classList.contains('btn-finalizar')) {
                 saidaForm.reset();
                 document.getElementById('editDocId').value = docId;
@@ -1483,6 +1524,89 @@
         setupRowCheckboxListener(corpoTabelaAtivos, 'row-checkbox-ativas', 'selectAllCheckboxAtivos');
         setupRowCheckboxListener(corpoTabelaConcluidos, 'row-checkbox-concluidos', 'selectAllCheckboxConcluidos');
         setupRowCheckboxListener(corpoTabelaEntregues, 'row-checkbox-entregues', 'selectAllCheckboxEntregues');
+
+        // --- Gerenciamento de Técnicos ---
+        gerenciarTecnicosBtn.addEventListener('click', () => {
+            gerenciarTecnicosModal.classList.remove('hidden');
+            if(unsubscribeTecnicos) unsubscribeTecnicos();
+            unsubscribeTecnicos = onSnapshot(tecnicosColRef, (snapshot) => {
+                listaTecnicos.innerHTML = '';
+                snapshot.docs.forEach(doc => {
+                    const tecnico = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'flex justify-between items-center p-2 border-b';
+                    div.innerHTML = `<span>${tecnico.nome}</span><button data-id="${doc.id}" class="remover-tecnico-btn text-red-500 hover:text-red-700">Remover</button>`;
+                    listaTecnicos.appendChild(div);
+                });
+            });
+        });
+
+        listaTecnicos.addEventListener('click', async (e) => {
+            if(e.target.classList.contains('remover-tecnico-btn')){
+                const id = e.target.dataset.id;
+                if(confirm('Tem certeza que deseja remover este técnico?')){
+                    await deleteDoc(doc(db, "tecnicos", id));
+                }
+            }
+        });
+
+        fecharGerenciarTecnicosBtn.addEventListener('click', () => {
+            gerenciarTecnicosModal.classList.add('hidden');
+            if(unsubscribeTecnicos) unsubscribeTecnicos();
+        });
+
+        addTecnicoForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nomeInput = document.getElementById('nomeTecnicoInput');
+            const nome = nomeInput.value.trim();
+            if(nome){
+                await addDoc(tecnicosColRef, { nome });
+                nomeInput.value = '';
+            }
+        });
+
+        // --- Assumir OS Modal ---
+        async function abrirModalAssumir(docId) {
+            assumirForm.reset();
+            assumirForm.querySelector('#assumirDocId').value = docId;
+            
+            selectTecnico.innerHTML = '<option value="">Carregando...</option>';
+            const snapshot = await getDocs(tecnicosColRef);
+            selectTecnico.innerHTML = '<option value="">Selecione...</option>';
+            snapshot.docs.forEach(doc => {
+                const tecnico = doc.data();
+                const option = document.createElement('option');
+                option.value = tecnico.nome;
+                option.textContent = tecnico.nome;
+                selectTecnico.appendChild(option);
+            });
+
+            assumirModal.classList.remove('hidden');
+        }
+
+        cancelarAssumirBtn.addEventListener('click', () => {
+            assumirModal.classList.add('hidden');
+        });
+
+        assumirForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('assumirDocId').value;
+            const tecnicoNome = selectTecnico.value;
+
+            if (tecnicoNome && docId) {
+                const logEntry = { acao: 'Assumiu', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Técnico '${tecnicoNome}' assumiu a O.S.` };
+                try {
+                    await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: tecnicoNome, historico: arrayUnion(logEntry) });
+                    alert(`O.S. atribuída a ${tecnicoNome} com sucesso!`);
+                    assumirModal.classList.add('hidden');
+                } catch (err) {
+                    alert("Ocorreu um erro ao tentar assumir a O.S.");
+                    console.error(err);
+                }
+            } else {
+                alert('Por favor, selecione um técnico.');
+            }
+        });
         
         document.getElementById('dataEntrada').valueAsDate = new Date();
         switchTab('ativas'); // Inicia na aba de ativas
