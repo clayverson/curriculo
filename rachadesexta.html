@@ -64,7 +64,6 @@
                 <button data-tab="players" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Jogadores</button>
                 <button data-tab="teams" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Sorteio de Times</button>
                 <button data-tab="finance" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Financeiro</button>
-                <button data-tab="admins" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Admins</button>
             </nav>
         </div>
 
@@ -196,16 +195,6 @@
                             </thead>
                             <tbody id="transactions-table"></tbody>
                         </table>
-                    </div>
-                </div>
-            </div>
-
-             <!-- Aba Administradores -->
-             <div id="tab-admins" class="tab-content hidden">
-                <div class="bg-white shadow-md rounded-xl p-6">
-                    <h2 class="text-2xl font-semibold mb-4">Administradores do Grupo</h2>
-                    <div id="admins-list" class="space-y-2">
-                        <p class="text-gray-500">Carregando administradores...</p>
                     </div>
                 </div>
             </div>
@@ -841,7 +830,6 @@
                 playerEl.textContent = `${counter}. ${player.name}`;
                 playerEl.addEventListener('dragstart', e => {
                     e.dataTransfer.setData('text/plain', e.target.id);
-                    e.dataTransfer.effectAllowed = 'move';
                 });
                 return playerEl;
             };
@@ -876,36 +864,6 @@
                 });
             });
         }
-        
-        function listenAndRenderAdmins() {
-            onSnapshot(query(adminsCol), (snapshot) => {
-                const listEl = document.getElementById('admins-list');
-                if (snapshot.empty) {
-                    listEl.innerHTML = '<p class="text-gray-500">Nenhum administrador configurado.</p>';
-                    return;
-                }
-
-                const adminEmails = snapshot.docs.map(doc => doc.data().email).filter(Boolean); // filter(Boolean) removes null/undefined emails
-                
-                if (adminEmails.length === 0) {
-                        listEl.innerHTML = '<p class="text-gray-500">Administradores encontrados, mas sem email cadastrado no banco de dados.</p>';
-                        return;
-                }
-
-                listEl.innerHTML = '<ul class="divide-y divide-gray-200"></ul>';
-                const ul = listEl.querySelector('ul');
-                adminEmails.forEach(email => {
-                    const li = document.createElement('li');
-                    li.className = "py-3 flex items-center";
-                    li.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                        <span class="font-medium">${email}</span>
-                    `;
-                    ul.appendChild(li);
-                });
-            });
-        }
-
 
         // Listeners e Ações Globais
         function attachAppListeners() {
@@ -915,7 +873,6 @@
             listenToCurrentGame();
             listenToPlayers();
             listenToFinancials();
-            listenAndRenderAdmins();
             setupDropZones();
 
             document.getElementById('mode-toggle').addEventListener('change', (e) => {
