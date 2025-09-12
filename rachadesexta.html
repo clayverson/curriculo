@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Futebol Society</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
+        .tab-button.active { border-color: #3b82f6; color: #3b82f6; font-weight: 600; }
+        .modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
+        .star { cursor: pointer; color: #d1d5db; transition: color 0.2s; }
+        .star.filled { color: #f59e0b; }
+        /* Toggle Switch */
+        #mode-toggle:checked ~ .dot { transform: translateX(100%); }
+        #mode-toggle:checked ~ .block { background-color: #3b82f6; }
+        /* Drag and Drop */
+        .player-draggable { cursor: move; border: 1px solid #e2e8f0; padding: 8px; border-radius: 6px; user-select: none; }
+        .team-drop-zone.drag-over { border: 2px dashed #3b82f6; background-color: #eff6ff; }
+    </style>
+</head>
+<body class="antialiased text-gray-800">
+
+    <!-- Tela de Login -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Futebol Manager</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300">Entrar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Aplicação Principal -->
+    <div id="app" class="hidden min-h-screen container mx-auto p-4 md:p-8">
+        
+        <header class="bg-white shadow-md rounded-xl p-6 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Futebol Manager</h1>
+                    <p class="text-gray-500 mt-1">Gerencie jogadores, times e finanças do seu society.</p>
+                </div>
+                <div class="text-right mt-4 md:mt-0">
+                    <p id="auth-status" class="text-sm text-gray-600">Carregando...</p>
+                    <p id="admin-status" class="text-sm font-semibold text-blue-600"></p>
+                    <button id="logout-btn" class="mt-2 text-sm text-red-500 hover:underline">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button data-tab="games" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Partidas</button>
+                <button data-tab="confirmed" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Confirmados</button>
+                <button data-tab="players" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Jogadores</button>
+                <button data-tab="teams" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Sorteio de Times</button>
+                <button data-tab="finance" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Financeiro</button>
+                <button data-tab="admins" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Admins</button>
+            </nav>
+        </div>
+
+        <main>
+            <!-- Aba de Partidas -->
+            <div id="tab-games" class="tab-content">
+                 <div class="bg-white shadow-md rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Próxima Partida</h2>
+                        <button class="admin-only hidden w-full md:w-auto mt-4 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg" onclick="showModal('createGameModal')">Criar Nova Partida</button>
+                    </div>
+                    <div id="current-game-info" class="bg-gray-50 p-6 rounded-lg"><p class="text-gray-500">Nenhuma partida agendada.</p></div>
+                 </div>
+            </div>
+
+            <!-- Aba de Confirmados -->
+            <div id="tab-confirmed" class="tab-content hidden">
+                <div class="bg-white shadow-md rounded-xl p-6">
+                    <h2 class="text-2xl font-semibold mb-4">Jogadores Confirmados para a Próxima Partida</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Nome</th>
+                                    <th scope="col" class="px-6 py-3">Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="confirmed-players-table">
+                                <tr><td colspan="2" class="text-center p-4 text-gray-500">Aguardando confirmações...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aba de Jogadores (gerenciamento) -->
+            <div id="tab-players" class="tab-content hidden">
+                 <div class="bg-white shadow-md rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Gerenciar Jogadores</h2>
+                        <button class="admin-only hidden w-full md:w-auto mt-4 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg" onclick="showModal('addPlayerModal')">Adicionar Jogador</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Nome</th>
+                                    <th scope="col" class="px-6 py-3">Tipo</th>
+                                    <th scope="col" class="px-6 py-3">Ranking</th>
+                                    <th scope="col" class="px-6 py-3 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="players-table-management"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aba Sorteio de Times -->
+            <div id="tab-teams" class="tab-content hidden">
+                 <div class="bg-white shadow-md rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Sorteio de Times</h2>
+                        <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                            <label for="mode-toggle" class="flex items-center cursor-pointer">
+                                <span class="mr-3 text-sm font-medium text-gray-900">Automático</span>
+                                <div class="relative">
+                                    <input type="checkbox" id="mode-toggle" class="sr-only">
+                                    <div class="block bg-gray-600 w-14 h-8 rounded-full"></div>
+                                    <div class="dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition"></div>
+                                </div>
+                                <span class="ml-3 text-sm font-medium text-gray-900">Manual</span>
+                            </label>
+                            <button id="draw-teams-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Sortear Times</button>
+                        </div>
+                    </div>
+                    
+                    <div id="auto-teams-container" class="grid md:grid-cols-3 gap-6">
+                        <p class="text-gray-500 md:col-span-3">Os times aparecerão aqui após o sorteio.</p>
+                    </div>
+
+                    <div id="manual-teams-section" class="hidden mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="md:col-span-1">
+                                <h3 class="text-lg font-bold mb-2">Jogadores Disponíveis</h3>
+                                <div id="manual-player-pool" class="team-drop-zone p-2 bg-gray-100 rounded-lg min-h-[200px] space-y-2"></div>
+                            </div>
+                            <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2 text-blue-700">Time A</h3>
+                                    <div id="manual-team-a" class="team-drop-zone p-2 bg-blue-50 rounded-lg min-h-[200px] space-y-2"></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2 text-gray-700">Time B</h3>
+                                    <div id="manual-team-b" class="team-drop-zone p-2 bg-gray-100 rounded-lg min-h-[200px] space-y-2"></div>
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-bold mb-2 text-red-700">Time C</h3>
+                                    <div id="manual-team-c" class="team-drop-zone p-2 bg-red-50 rounded-lg min-h-[200px] space-y-2"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Aba Financeiro -->
+            <div id="tab-finance" class="tab-content hidden">
+                <div class="bg-white shadow-md rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                        <div>
+                            <h2 class="text-2xl font-semibold">Financeiro</h2>
+                            <p id="finance-balance" class="text-3xl font-bold text-gray-800">R$ 0,00</p>
+                        </div>
+                        <div class="flex space-x-2 mt-4 md:mt-0">
+                            <button class="admin-only hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg" onclick="showModal('addTransactionModal')">Nova Transação</button>
+                            <button class="admin-only hidden bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg" onclick="showAuditLog()">Auditoria</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                         <table class="w-full text-sm text-left text-gray-500">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3">Data</th>
+                                    <th scope="col" class="px-6 py-3">Descrição</th>
+                                    <th scope="col" class="px-6 py-3 text-right">Valor</th>
+                                    <th scope="col" class="px-6 py-3 text-center admin-only hidden">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Aba Administradores -->
+             <div id="tab-admins" class="tab-content hidden">
+                <div class="bg-white shadow-md rounded-xl p-6">
+                    <h2 class="text-2xl font-semibold mb-4">Administradores do Grupo</h2>
+                    <div id="admins-list" class="space-y-2">
+                        <p class="text-gray-500">Carregando administradores...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modais -->
+    <div id="createGameModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-semibold mb-4">Criar Nova Partida</h3>
+            <form id="create-game-form">
+                <div class="mb-4">
+                    <label for="gameDate" class="block text-sm font-medium text-gray-700 mb-1">Data e Hora da Partida</label>
+                    <input type="datetime-local" id="gameDate" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="mb-4">
+                    <label for="confirmationDeadline" class="block text-sm font-medium text-gray-700 mb-1">Prazo para Confirmação</label>
+                    <input type="datetime-local" id="confirmationDeadline" class="w-full px-3 py-2 border rounded" required>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('createGameModal')">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="addPlayerModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-semibold mb-4">Adicionar Novo Jogador</h3>
+            <form id="add-player-form">
+                <input type="text" id="playerName" placeholder="Nome do Jogador" class="w-full p-2 border rounded mb-2" required>
+                <select id="playerType" class="w-full p-2 border rounded mb-4" required>
+                    <option value="mensalista">Mensalista</option>
+                    <option value="avulso">Avulso</option>
+                    <option value="goleiro">Goleiro (não paga)</option>
+                </select>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('addPlayerModal')">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="editPlayerModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-semibold mb-4">Editar Jogador</h3>
+            <form id="edit-player-form">
+                <input type="hidden" id="editPlayerId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                    <input type="text" id="editPlayerName" class="w-full p-2 border rounded bg-gray-100" readonly>
+                </div>
+                <div class="mb-4">
+                    <label for="editPlayerType" class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                    <select id="editPlayerType" class="w-full p-2 border rounded" required>
+                        <option value="mensalista">Mensalista</option>
+                        <option value="avulso">Avulso</option>
+                        <option value="goleiro">Goleiro (não paga)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('editPlayerModal')">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Salvar Alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="addTransactionModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-semibold mb-4">Nova Transação</h3>
+            <form id="add-transaction-form">
+                <input type="text" id="transactionDescription" placeholder="Descrição (Ex: Pagamento, Bola)" class="w-full p-2 border rounded mb-2" required>
+                <input type="number" id="transactionAmount" placeholder="Valor (use - para saídas)" class="w-full p-2 border rounded mb-2" step="0.01" required>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('addTransactionModal')">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="auditLogModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Auditoria Financeira</h3>
+            <div id="audit-log-content" class="max-h-96 overflow-y-auto"></div>
+            <div class="text-right mt-4">
+                <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('auditLogModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
+    <div id="message-box" class="fixed bottom-5 right-5 bg-blue-600 text-white py-3 px-5 rounded-lg shadow-xl invisible opacity-0 transition-all"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, query, serverTimestamp, where, orderBy, limit, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCkdzuiymsH-Z-DLD2AmX06uFt-LLk_FP8",
+            authDomain: "rachadesexta-73cf7.firebaseapp.com",
+            projectId: "rachadesexta-73cf7",
+            storageBucket: "rachadesexta-73cf7.firebasestorage.app",
+            messagingSenderId: "665180359087",
+            appId: "1:665180359087:web:517536cb78cd4eac3fc75a",
+            measurementId: "G-11JHFPCSZ2"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let isAdmin = false;
+        let currentGameListener = null;
+        let countdownInterval = null;
+        let currentPlayers = [];
+        let currentGameId = null;
+
+        const basePath = `artifacts/futebol-manager-app/public/data`;
+        const playersCol = collection(db, `${basePath}/players`);
+        const adminsCol = collection(db, `${basePath}/admins`);
+        const gamesCol = collection(db, `${basePath}/games`);
+        const financialsCol = collection(db, `${basePath}/financials`);
+        const auditCol = collection(db, `${basePath}/financial_audit`);
+
+        window.showModal = (id) => document.getElementById(id).classList.remove('invisible', 'opacity-0');
+        window.hideModal = (id) => document.getElementById(id).classList.add('invisible', 'opacity-0');
+        
+        function showMessage(text) {
+            const el = document.getElementById('message-box');
+            el.textContent = text;
+            el.classList.remove('invisible', 'opacity-0');
+            setTimeout(() => el.classList.add('invisible', 'opacity-0'), 3000);
+        }
+
+        window.showAuditLog = async () => {
+            showModal('auditLogModal');
+            const contentDiv = document.getElementById('audit-log-content');
+            contentDiv.innerHTML = '<p>Carregando auditoria...</p>';
+            
+            const q = query(auditCol, orderBy("timestamp", "desc"));
+            const snapshot = await getDocs(q);
+
+            if (snapshot.empty) {
+                contentDiv.innerHTML = '<p>Nenhum registro de auditoria encontrado.</p>';
+                return;
+            }
+
+            let html = '<ul class="space-y-2">';
+            snapshot.docs.forEach(doc => {
+                const log = doc.data();
+                const date = log.timestamp.toDate().toLocaleString('pt-BR');
+                const actionClass = log.action === 'ADD' ? 'text-green-600' : 'text-red-600';
+                html += `<li class="text-sm p-2 bg-gray-50 rounded">
+                    <strong>${date}</strong> - Usuário <em>${log.user}</em>
+                    <p>Ação: <span class="font-semibold ${actionClass}">${log.action}</span> - Descrição: "${log.description}" - Valor: R$ ${log.amount.toFixed(2)}</p>
+                </li>`;
+            });
+            html += '</ul>';
+            contentDiv.innerHTML = html;
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                await checkAdminStatus(user);
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+                document.getElementById('auth-status').textContent = `Logado como: ${user.email}`;
+                attachAppListeners();
+            } else {
+                currentUser = null; isAdmin = false;
+                if(countdownInterval) clearInterval(countdownInterval);
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('app').classList.add('hidden');
+            }
+        });
+        
+        async function checkAdminStatus(user) {
+            if (!user) { 
+                isAdmin = false; 
+            } else {
+                const adminDoc = await getDoc(doc(adminsCol, user.uid));
+                isAdmin = adminDoc.exists();
+            }
+            document.getElementById('admin-status').textContent = isAdmin ? 'Você é um Administrador' : '';
+            setupUIForUser();
+        }
+
+        function setupUIForUser() {
+            document.querySelectorAll('.admin-only').forEach(el => {
+                if (isAdmin) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+        }
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                showMessage("Email ou senha inválidos. Verifique e tente novamente.");
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+        // --- Lógica de Partidas ---
+        function listenToCurrentGame() {
+            const q = query(gamesCol, orderBy("gameDate", "desc"), limit(1));
+            if (currentGameListener) currentGameListener(); 
+            
+            currentGameListener = onSnapshot(q, (snapshot) => {
+                const gameContainer = document.getElementById('current-game-info');
+                if (snapshot.empty) {
+                    gameContainer.innerHTML = '<p class="text-gray-500">Nenhuma partida agendada. O administrador pode criar uma nova.</p>';
+                    currentGameId = null;
+                    return;
+                }
+                
+                const gameDoc = snapshot.docs[0];
+                currentGameId = gameDoc.id;
+                renderGameDetails(gameDoc.id, gameDoc.data());
+                listenToGameAttendees(gameDoc.id);
+            });
+        }
+
+        function renderGameDetails(gameId, gameData) {
+            const gameContainer = document.getElementById('current-game-info');
+            const deadline = gameData.confirmationDeadline.toDate();
+            const gameDate = gameData.gameDate.toDate();
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+
+            function updateCountdown() {
+                const now = new Date();
+                const diff = deadline.getTime() - now.getTime();
+                const timerEl = document.getElementById('countdown-timer');
+                if (!timerEl) return;
+
+                if (diff <= 0) {
+                    timerEl.innerHTML = `<span class="font-bold text-red-600">Tempo Esgotado!</span>`;
+                    clearInterval(countdownInterval);
+                    document.querySelectorAll('.presence-btn, .approve-btn, .cancel-presence-btn').forEach(b => b.disabled = true);
+                } else {
+                    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    timerEl.innerHTML = `Tempo para confirmar: <span class="font-bold text-blue-600">${d}d ${h}h ${m}m ${s}s</span>`;
+                }
+            }
+
+            gameContainer.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-start">
+                    <div>
+                        <h3 class="text-xl font-bold">Data: ${gameDate.toLocaleString('pt-BR')}</h3>
+                        <p class="text-gray-600">Prazo: ${deadline.toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div id="countdown-timer" class="text-lg mt-4 md:mt-0"></div>
+                </div>
+                <div class="mt-6">
+                    <h4 class="text-lg font-semibold mb-2">Lista de Presença</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-2">Jogador</th>
+                                    <th class="px-4 py-2">Status</th>
+                                    <th class="px-4 py-2 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="game-attendees-table"></tbody>
+                        </table>
+                    </div>
+                </div>`;
+            
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+        
+        function listenToGameAttendees(gameId) {
+            const attendeesCol = collection(db, `${gamesCol.path}/${gameId}/attendees`);
+            onSnapshot(query(attendeesCol), (snapshot) => {
+                const attendees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAttendeesTable(gameId, attendees);
+                renderConfirmedList(attendees);
+            });
+        }
+        
+        function renderAttendeesTable(gameId, attendees) {
+            const tableBody = document.getElementById('game-attendees-table');
+            if (!tableBody) return;
+
+            if (currentPlayers.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-gray-500">Cadastre jogadores na aba "Jogadores".</td></tr>`;
+                return;
+            }
+
+            const goalkeepers = currentPlayers.filter(p => p.type === 'goleiro');
+            const monthly = currentPlayers.filter(p => p.type === 'mensalista');
+            const single = currentPlayers.filter(p => p.type === 'avulso');
+
+            tableBody.innerHTML = '';
+            let goalkeeperCounter = 1;
+            let monthlyCounter = 1;
+            let singleCounter = 1;
+
+            const createRow = (player, counter) => {
+                const attendeeInfo = attendees.find(a => a.id === player.id);
+                const status = attendeeInfo?.status || 'pendente';
+                let badge = `<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-200 text-gray-800">Pendente</span>`;
+                if (status === 'confirmed') badge = `<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-200 text-green-800">Confirmado</span>`;
+                if (status === 'waiting_list') badge = `<span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-200 text-yellow-800">Aguardando</span>`;
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-medium">${counter}. ${player.name}</td>
+                    <td class="px-6 py-4">${badge}</td>
+                    <td class="px-6 py-4 text-center space-x-2">${getActionButton(gameId, player, status)}</td>
+                `;
+                return tr;
+            };
+
+            if (goalkeepers.length > 0) {
+                tableBody.innerHTML += `<tr><td colspan="3" class="px-6 py-3 bg-yellow-100 font-bold text-yellow-800">Goleiros</td></tr>`;
+                goalkeepers.forEach(player => {
+                    const row = createRow(player, goalkeeperCounter++);
+                    row.classList.add('border-b', 'bg-yellow-50');
+                    tableBody.appendChild(row);
+                });
+            }
+
+            if (monthly.length > 0) {
+                tableBody.innerHTML += `<tr><td colspan="3" class="px-6 py-3 bg-blue-100 font-bold text-blue-800">Mensalistas</td></tr>`;
+                monthly.forEach(player => {
+                    const row = createRow(player, monthlyCounter++);
+                    row.classList.add('border-b', 'bg-blue-50');
+                    tableBody.appendChild(row);
+                });
+            }
+
+            if (single.length > 0) {
+                tableBody.innerHTML += `<tr><td colspan="3" class="px-6 py-3 bg-gray-200 font-bold text-gray-800">Avulsos</td></tr>`;
+                single.forEach(player => {
+                    const row = createRow(player, singleCounter++);
+                    row.classList.add('border-b');
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        function renderConfirmedList(attendees) {
+            const tableBody = document.getElementById('confirmed-players-table');
+            if (!tableBody) return;
+
+            const confirmed = attendees.filter(p => p.status === 'confirmed');
+            if (confirmed.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="2" class="text-center p-4 text-gray-500">Nenhum jogador confirmado ainda.</td></tr>';
+                return;
+            }
+
+            const goalkeepers = confirmed.filter(p => p.type === 'goleiro').sort((a, b) => a.name.localeCompare(b.name));
+            const monthly = confirmed.filter(p => p.type === 'mensalista').sort((a, b) => a.name.localeCompare(b.name));
+            const single = confirmed.filter(p => p.type === 'avulso').sort((a, b) => {
+                const timeA = a.confirmedAt ? a.confirmedAt.toMillis() : 0;
+                const timeB = b.confirmedAt ? b.confirmedAt.toMillis() : 0;
+                return timeA - timeB;
+            });
+
+            tableBody.innerHTML = '';
+            let goalkeeperCounter = 1;
+            let fieldPlayerCounter = 1;
+
+            if (goalkeepers.length > 0) {
+                tableBody.innerHTML += `<tr><td colspan="2" class="px-6 py-3 bg-yellow-100 font-bold text-yellow-800">Goleiros</td></tr>`;
+                goalkeepers.forEach(player => {
+                    tableBody.innerHTML += `<tr class="border-b bg-yellow-50"><td class="px-6 py-4 font-medium">${goalkeeperCounter++}. ${player.name}</td><td class="px-6 py-4 capitalize">${player.type}</td></tr>`;
+                });
+            }
+
+            if (monthly.length > 0 || single.length > 0) {
+                 tableBody.innerHTML += `<tr><td colspan="2" class="px-6 py-3 bg-blue-100 font-bold text-blue-800">Jogadores de Linha</td></tr>`;
+                 monthly.forEach(player => {
+                    tableBody.innerHTML += `<tr class="border-b bg-blue-50"><td class="px-6 py-4 font-medium">${fieldPlayerCounter++}. ${player.name}</td><td class="px-6 py-4 capitalize">${player.type}</td></tr>`;
+                });
+                single.forEach(player => {
+                    tableBody.innerHTML += `<tr class="border-b"><td class="px-6 py-4 font-medium">${fieldPlayerCounter++}. ${player.name}</td><td class="px-6 py-4 capitalize">${player.type}</td></tr>`;
+                });
+            }
+        }
+
+
+        function getActionButton(gameId, player, status) {
+            const deadlinePassed = document.getElementById('countdown-timer')?.textContent.includes('Esgotado');
+            const disabled = deadlinePassed ? 'disabled' : '';
+
+            if (isAdmin && status === 'waiting_list') {
+                return `<button class="approve-btn text-white bg-green-500 hover:bg-green-600 px-3 py-1 text-xs rounded" data-game-id="${gameId}" data-player-id="${player.id}" ${disabled}>Aprovar</button>`;
+            }
+
+            if (status === 'pendente') {
+                return `<button class="presence-btn text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 text-xs rounded" data-game-id="${gameId}" data-player-id="${player.id}" ${disabled}>Confirmar</button>`;
+            }
+            
+            if (status === 'confirmed' || status === 'waiting_list') {
+                 return `<button class="cancel-presence-btn text-white bg-red-500 hover:bg-red-600 px-3 py-1 text-xs rounded" data-game-id="${gameId}" data-player-id="${player.id}" ${disabled}>Cancelar</button>`;
+            }
+            return '---';
+        }
+
+        document.getElementById('create-game-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!isAdmin) return;
+
+            const gameDate = new Date(e.target.gameDate.value);
+            const deadline = new Date(e.target.confirmationDeadline.value);
+
+            if(isNaN(gameDate) || isNaN(deadline) || deadline >= gameDate) {
+                return showMessage("Datas inválidas. O prazo deve ser antes da partida.");
+            }
+            await addDoc(gamesCol, { gameDate, confirmationDeadline: deadline, status: 'open' });
+            showMessage("Partida criada!");
+            hideModal('createGameModal');
+            e.target.reset();
+        });
+
+        // Lógica de Jogadores
+        function listenToPlayers() {
+            onSnapshot(query(playersCol), (snapshot) => {
+                const tableBody = document.getElementById('players-table-management');
+                tableBody.innerHTML = '';
+                
+                const sortOrder = { goleiro: 1, mensalista: 2, avulso: 3 };
+                currentPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                currentPlayers.sort((a, b) => {
+                    const typeA = sortOrder[a.type] || 99;
+                    const typeB = sortOrder[b.type] || 99;
+                    if (typeA !== typeB) return typeA - typeB;
+                    return a.name.localeCompare(b.name);
+                });
+
+                if (currentPlayers.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center p-4">Nenhum jogador cadastrado.</td></tr>';
+                    return;
+                }
+                
+                let counter = 1;
+                currentPlayers.forEach(player => {
+                    const tr = document.createElement('tr');
+                    let bgColorClass = '';
+                    if (player.type === 'goleiro') bgColorClass = 'bg-yellow-50';
+                    if (player.type === 'mensalista') bgColorClass = 'bg-blue-50';
+
+                    tr.className = `border-b ${bgColorClass}`;
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 font-medium">${counter++}. ${player.name}</td>
+                        <td class="px-6 py-4 capitalize">${player.type}</td>
+                        <td class="px-6 py-4 text-yellow-500">${'⭐'.repeat(player.rank || 0)}</td>
+                        <td class="px-6 py-4 text-center space-x-4">
+                             <button class="edit-player-btn admin-only text-blue-500 hover:underline" 
+                                data-id="${player.id}" 
+                                data-name="${player.name}" 
+                                data-type="${player.type}">Editar</button>
+                            <button class="remove-player-btn admin-only text-red-500 hover:underline" data-id="${player.id}">Remover</button>
+                        </td>`;
+                    tableBody.appendChild(tr);
+                });
+                setupUIForUser();
+            });
+        }
+
+        document.getElementById('add-player-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const name = document.getElementById('playerName').value;
+            const type = document.getElementById('playerType').value;
+            await addDoc(playersCol, { name, type, rank: 0 });
+            showMessage('Jogador adicionado!');
+            e.target.reset();
+            hideModal('addPlayerModal');
+        });
+        
+        document.getElementById('edit-player-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const playerId = document.getElementById('editPlayerId').value;
+            const newType = document.getElementById('editPlayerType').value;
+
+            if (!playerId) return showMessage("Erro: ID do jogador não encontrado.");
+
+            const playerRef = doc(playersCol, playerId);
+            await updateDoc(playerRef, { type: newType });
+
+            showMessage("Tipo de jogador atualizado com sucesso!");
+            hideModal('editPlayerModal');
+        });
+
+        // Lógica de Sorteio de Times
+        document.getElementById('draw-teams-btn').addEventListener('click', async () => {
+            if (!currentGameId) {
+                showMessage("Nenhuma partida ativa para sortear.");
+                return;
+            }
+            const attendeesCol = collection(db, `${gamesCol.path}/${currentGameId}/attendees`);
+            const q = query(attendeesCol, where("status", "==", "confirmed"));
+            const snapshot = await getDocs(q);
+            
+            let confirmedPlayers = snapshot.docs.map(d => d.data());
+            const goalkeepers = confirmedPlayers.filter(p => p.type === 'goleiro');
+            let fieldPlayers = confirmedPlayers.filter(p => p.type !== 'goleiro');
+            
+            for (let i = fieldPlayers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [fieldPlayers[i], fieldPlayers[j]] = [fieldPlayers[j], fieldPlayers[i]];
+            }
+
+            const teamA = [], teamB = [], teamC = [];
+            
+            fieldPlayers.forEach((player) => {
+                if(teamA.length < 6) teamA.push(player);
+                else if(teamB.length < 6) teamB.push(player);
+                else if(teamC.length < 6) teamC.push(player);
+            });
+
+            const teamAGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
+            const teamBGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
+            const teamCGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
+            
+            const container = document.getElementById('auto-teams-container');
+            container.innerHTML = `
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-blue-700">Time A</h3>
+                    <p class="font-semibold text-sm mb-2 bg-blue-100 p-2 rounded">Goleiro: ${teamAGoal}</p>
+                    <ul class="space-y-1">${teamA.map(p => `<li class="p-2 bg-blue-50 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-gray-700">Time B</h3>
+                     <p class="font-semibold text-sm mb-2 bg-gray-200 p-2 rounded">Goleiro: ${teamBGoal}</p>
+                    <ul class="space-y-1">${teamB.map(p => `<li class="p-2 bg-gray-100 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-2 text-red-700">Time C</h3>
+                    <p class="font-semibold text-sm mb-2 bg-red-100 p-2 rounded">Goleiro: ${teamCGoal}</p>
+                    <ul class="space-y-1">${teamC.map(p => `<li class="p-2 bg-red-50 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
+                </div>
+            `;
+        });
+        
+        // Lógica Financeira
+        function listenToFinancials() {
+            onSnapshot(query(financialsCol, orderBy("createdAt", "desc")), (snapshot) => {
+                const tableBody = document.getElementById('transactions-table');
+                tableBody.innerHTML = '';
+                let balance = 0;
+                
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    balance += data.amount;
+                    const tr = document.createElement('tr');
+                    tr.className = 'border-b';
+                    tr.innerHTML = `
+                        <td class="px-6 py-4">${data.createdAt.toDate().toLocaleDateString('pt-BR')}</td>
+                        <td class="px-6 py-4">${data.description}</td>
+                        <td class="px-6 py-4 text-right font-medium ${data.amount > 0 ? 'text-green-600' : 'text-red-600'}">R$ ${data.amount.toFixed(2)}</td>
+                        <td class="px-6 py-4 text-center admin-only hidden">
+                            <button class="remove-transaction-btn text-red-500 hover:underline" data-id="${doc.id}">X</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                
+                const balanceEl = document.getElementById('finance-balance');
+                balanceEl.textContent = `R$ ${balance.toFixed(2)}`;
+                balanceEl.className = `text-3xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                setupUIForUser();
+            });
+        }
+        
+        document.getElementById('add-transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!isAdmin) return;
+            const description = e.target.transactionDescription.value;
+            const amount = parseFloat(e.target.transactionAmount.value);
+            
+            await addDoc(financialsCol, { description, amount, createdAt: serverTimestamp(), createdBy: currentUser.uid });
+            await addDoc(auditCol, { action: 'ADD', amount, description, user: currentUser.email, timestamp: serverTimestamp() });
+            
+            showMessage('Transação adicionada.');
+            e.target.reset();
+            hideModal('addTransactionModal');
+        });
+
+        // Lógica Montagem Manual
+        async function populateManualPlayerPool() {
+            const pool = document.getElementById('manual-player-pool');
+            pool.innerHTML = '<p class="text-xs text-gray-500">Carregando...</p>';
+            ['manual-team-a', 'manual-team-b', 'manual-team-c'].forEach(id => document.getElementById(id).innerHTML = '');
+
+            if (!currentGameId) { pool.innerHTML = '<p class="text-xs text-gray-500">Nenhuma partida ativa.</p>'; return; }
+            
+            const attendeesCol = collection(db, `${gamesCol.path}/${currentGameId}/attendees`);
+            const q = query(attendeesCol, where("status", "==", "confirmed"));
+            const snapshot = await getDocs(q);
+            
+            let confirmedPlayers = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            if (confirmedPlayers.length === 0) {
+                pool.innerHTML = '<p class="text-xs text-gray-500">Nenhum jogador confirmado.</p>';
+                return;
+            }
+
+            pool.innerHTML = '';
+            
+            const goalkeepers = confirmedPlayers.filter(p => p.type === 'goleiro').sort((a, b) => a.name.localeCompare(b.name));
+            const monthly = confirmedPlayers.filter(p => p.type === 'mensalista').sort((a, b) => a.name.localeCompare(b.name));
+            const single = confirmedPlayers.filter(p => p.type === 'avulso').sort((a, b) => {
+                const timeA = a.confirmedAt ? a.confirmedAt.toMillis() : 0;
+                const timeB = b.confirmedAt ? b.confirmedAt.toMillis() : 0;
+                return timeA - timeB;
+            });
+
+            let goalkeeperCounter = 1;
+            let monthlyCounter = 1;
+            let singleCounter = 1;
+
+            const createDraggable = (player, counter, bgColor) => {
+                const playerEl = document.createElement('div');
+                playerEl.className = `player-draggable text-sm ${bgColor}`;
+                playerEl.draggable = true;
+                playerEl.id = `player-${player.id}`;
+                playerEl.textContent = `${counter}. ${player.name}`;
+                playerEl.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', e.target.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                return playerEl;
+            };
+            
+            if (goalkeepers.length > 0) {
+                pool.innerHTML += `<div class="p-2 bg-yellow-100 font-bold text-yellow-800 text-sm rounded-t-lg">Goleiros</div>`;
+                goalkeepers.forEach(p => pool.appendChild(createDraggable(p, goalkeeperCounter++, 'bg-yellow-50')));
+            }
+            if (monthly.length > 0) {
+                pool.innerHTML += `<div class="p-2 bg-blue-100 font-bold text-blue-800 text-sm rounded-t-lg mt-2">Mensalistas</div>`;
+                monthly.forEach(p => pool.appendChild(createDraggable(p, monthlyCounter++, 'bg-blue-50')));
+            }
+            if (single.length > 0) {
+                pool.innerHTML += `<div class="p-2 bg-gray-200 font-bold text-gray-800 text-sm rounded-t-lg mt-2">Avulsos</div>`;
+                single.forEach(p => pool.appendChild(createDraggable(p, singleCounter++, 'bg-gray-50')));
+            }
+
+        }
+
+        function setupDropZones() {
+            document.querySelectorAll('.team-drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('drop', e => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                    const id = e.dataTransfer.getData('text/plain');
+                    const draggableElement = document.getElementById(id);
+                    if (draggableElement) {
+                        zone.appendChild(draggableElement);
+                    }
+                });
+            });
+        }
+        
+        function listenAndRenderAdmins() {
+            onSnapshot(query(adminsCol), (snapshot) => {
+                const listEl = document.getElementById('admins-list');
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum administrador configurado.</p>';
+                    return;
+                }
+
+                const adminEmails = snapshot.docs.map(doc => doc.data().email).filter(Boolean); // filter(Boolean) removes null/undefined emails
+                
+                if (adminEmails.length === 0) {
+                        listEl.innerHTML = '<p class="text-gray-500">Administradores encontrados, mas sem email cadastrado no banco de dados.</p>';
+                        return;
+                }
+
+                listEl.innerHTML = '<ul class="divide-y divide-gray-200"></ul>';
+                const ul = listEl.querySelector('ul');
+                adminEmails.forEach(email => {
+                    const li = document.createElement('li');
+                    li.className = "py-3 flex items-center";
+                    li.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        <span class="font-medium">${email}</span>
+                    `;
+                    ul.appendChild(li);
+                });
+            });
+        }
+
+
+        // Listeners e Ações Globais
+        function attachAppListeners() {
+            if (document.body.dataset.listenersAttached) return;
+            document.body.dataset.listenersAttached = 'true';
+            
+            listenToCurrentGame();
+            listenToPlayers();
+            listenToFinancials();
+            listenAndRenderAdmins();
+            setupDropZones();
+
+            document.getElementById('mode-toggle').addEventListener('change', (e) => {
+                const isManual = e.target.checked;
+                document.getElementById('auto-teams-container').classList.toggle('hidden', isManual);
+                document.getElementById('manual-teams-section').classList.toggle('hidden', !isManual);
+                document.getElementById('draw-teams-btn').classList.toggle('hidden', isManual);
+                if (isManual) populateManualPlayerPool();
+            });
+            
+            document.addEventListener('click', async (e) => {
+                const target = e.target;
+                
+                if (target.matches('.presence-btn, .approve-btn, .cancel-presence-btn')) {
+                    if(!target.dataset.gameId || !target.dataset.playerId) return;
+                    const { gameId, playerId } = target.dataset;
+                    const attendeesCol = collection(db, `${gamesCol.path}/${gameId}/attendees`);
+                    const playerRef = doc(attendeesCol, playerId);
+                    const player = currentPlayers.find(p => p.id === playerId);
+
+                    if(target.classList.contains('presence-btn')) {
+                        const newStatus = player.type === 'mensalista' || player.type === 'goleiro' ? 'confirmed' : 'waiting_list';
+                        await setDoc(playerRef, { 
+                            status: newStatus, 
+                            name: player.name, 
+                            type: player.type,
+                            confirmedAt: serverTimestamp() 
+                        });
+                        showMessage(newStatus === 'confirmed' ? 'Presença confirmada!' : 'Você está na lista de espera.');
+                    } else if(target.classList.contains('approve-btn') && isAdmin) {
+                        await updateDoc(playerRef, { status: 'confirmed', confirmedAt: serverTimestamp() });
+                        showMessage('Jogador aprovado!');
+                    } else if(target.classList.contains('cancel-presence-btn')) {
+                        await deleteDoc(playerRef);
+                        showMessage('Presença cancelada.');
+                    }
+                }
+                
+                if (target.classList.contains('edit-player-btn')) {
+                    if (!isAdmin) return;
+                    const { id, name, type } = target.dataset;
+                    document.getElementById('editPlayerId').value = id;
+                    document.getElementById('editPlayerName').value = name;
+                    document.getElementById('editPlayerType').value = type;
+                    showModal('editPlayerModal');
+                }
+
+                if (target.classList.contains('remove-player-btn')) {
+                    if (!isAdmin) return;
+                    if (confirm('Tem certeza que deseja remover este jogador?')) {
+                        await deleteDoc(doc(playersCol, target.dataset.id));
+                        showMessage('Jogador removido.');
+                    }
+                }
+
+                if (target.classList.contains('remove-transaction-btn')) {
+                     if (!isAdmin) return;
+                     if(confirm('Deseja remover esta transação?')) {
+                         await deleteDoc(doc(financialsCol, target.dataset.id));
+                         showMessage('Transação removida.');
+                     }
+                }
+            });
+            
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    contents.forEach(c => c.classList.add('hidden'));
+                    document.getElementById(`tab-${tab.dataset.tab}`).classList.remove('hidden');
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+
