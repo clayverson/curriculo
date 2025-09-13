@@ -124,7 +124,7 @@
             </div>
             
             <!-- Aba Sorteio de Times -->
-            <div id="tab-teams" class="tab-content admin-only hidden">
+            <div id="tab-teams" class="tab-content hidden">
                  <div class="bg-white shadow-md rounded-xl p-6">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold">Sorteio de Times</h2>
@@ -144,6 +144,12 @@
                     
                     <div id="auto-teams-container" class="grid md:grid-cols-3 gap-6">
                         <p class="text-gray-500 md:col-span-3">Os times aparecerão aqui após o sorteio.</p>
+                    </div>
+
+                    <div class="text-center mt-6">
+                        <button id="share-teams-btn" class="hidden bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg">
+                            Compartilhar no WhatsApp
+                        </button>
                     </div>
 
                     <div id="manual-teams-section" class="hidden mt-6">
@@ -185,7 +191,7 @@
             </div>
             
             <!-- Aba Financeiro -->
-            <div id="tab-finance" class="tab-content admin-only hidden">
+            <div id="tab-finance" class="tab-content hidden">
                 <div class="bg-white shadow-md rounded-xl p-6">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6">
                         <div>
@@ -500,7 +506,10 @@
                         <h3 class="text-xl font-bold">Data: ${gameDate.toLocaleString('pt-BR')}</h3>
                         <p class="text-gray-600">Prazo: ${deadline.toLocaleString('pt-BR')}</p>
                     </div>
-                    <div id="countdown-timer" class="text-lg mt-4 md:mt-0"></div>
+                    <div class="flex flex-col items-end">
+                         <div id="countdown-timer" class="text-lg mb-2"></div>
+                         <button class="cancel-game-btn admin-only hidden bg-red-500 text-white px-3 py-1 text-xs rounded" data-game-id="${gameId}">Cancelar Partida</button>
+                    </div>
                 </div>
                 <div class="mt-6">
                     <h4 class="text-lg font-semibold mb-2">Lista de Presença</h4>
@@ -520,6 +529,7 @@
             
             updateCountdown();
             countdownInterval = setInterval(updateCountdown, 1000);
+            setupUIForUser();
         }
         
         function listenToGameAttendees(gameId) {
@@ -788,6 +798,7 @@
                     <ul class="space-y-1">${teamC.map(p => `<li class="p-2 bg-red-50 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
                 </div>
             `;
+            document.getElementById('share-teams-btn').classList.remove('hidden');
         });
         
         // Lógica Financeira
@@ -1052,6 +1063,32 @@
                     showMessage("Falha ao lançar pagamento. Tente novamente.");
                 }
             });
+            
+            document.getElementById('share-teams-btn').addEventListener('click', () => {
+                const autoTeamsContainer = document.getElementById('auto-teams-container');
+                const teamsHeaders = autoTeamsContainer.querySelectorAll('h3');
+                if (teamsHeaders.length === 0) {
+                    return showMessage("Sorteie os times primeiro.");
+                }
+
+                let message = "*⚽ Times Sorteados! ⚽*\n\n";
+
+                teamsHeaders.forEach(header => {
+                    const teamContainer = header.parentElement;
+                    const teamName = header.textContent;
+                    const goalkeeper = teamContainer.querySelector('p').textContent;
+                    const players = Array.from(teamContainer.querySelectorAll('ul > li'))
+                                    .map(li => `- ${li.textContent}`)
+                                    .join('\n');
+                    
+                    message += `*${teamName}*\n`;
+                    message += `${goalkeeper}\n`;
+                    message += `${players}\n\n`;
+                });
+
+                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+            });
 
             document.getElementById('mode-toggle').addEventListener('change', (e) => {
                 const isManual = e.target.checked;
@@ -1086,6 +1123,30 @@
                     } else if(target.classList.contains('cancel-presence-btn')) {
                         await deleteDoc(playerRef);
                         showMessage('Presença cancelada.');
+                    }
+                }
+
+                if (target.classList.contains('cancel-game-btn')) {
+                    if (!isAdmin) return;
+                    const { gameId } = target.dataset;
+                    if (confirm('Tem certeza que deseja cancelar esta partida? Esta ação não pode ser desfeita.')) {
+                        try {
+                            const attendeesColRef = collection(db, `${gamesCol.path}/${gameId}/attendees`);
+                            const attendeesSnapshot = await getDocs(attendeesColRef);
+                            
+                            const batch = writeBatch(db);
+                            attendeesSnapshot.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                            await batch.commit();
+
+                            await deleteDoc(doc(gamesCol, gameId));
+                            
+                            showMessage('Partida cancelada com sucesso.');
+                        } catch (error) {
+                            console.error("Erro ao cancelar partida:", error);
+                            showMessage("Falha ao cancelar a partida.");
+                        }
                     }
                 }
                 
