@@ -62,8 +62,9 @@
                 <button data-tab="games" class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Partidas</button>
                 <button data-tab="confirmed" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Confirmados</button>
                 <button data-tab="players" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Jogadores</button>
-                <button data-tab="teams" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Sorteio de Times</button>
-                <button data-tab="finance" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Financeiro</button>
+                <button data-tab="teams" class="tab-button admin-only hidden whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Sorteio de Times</button>
+                <button data-tab="payments" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Pagamentos</button>
+                <button data-tab="finance" class="tab-button admin-only hidden whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">Financeiro</button>
             </nav>
         </div>
 
@@ -123,7 +124,7 @@
             </div>
             
             <!-- Aba Sorteio de Times -->
-            <div id="tab-teams" class="tab-content hidden">
+            <div id="tab-teams" class="tab-content admin-only hidden">
                  <div class="bg-white shadow-md rounded-xl p-6">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold">Sorteio de Times</h2>
@@ -169,9 +170,22 @@
                     </div>
                 </div>
             </div>
+
+             <!-- Aba de Pagamentos -->
+             <div id="tab-payments" class="tab-content hidden">
+                <div class="bg-white shadow-md rounded-xl p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold">Pagamentos de Mensalistas</h2>
+                        <button class="admin-only hidden w-full md:w-auto mt-4 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg" onclick="showModal('createPaymentModal')">Criar Pagamento</button>
+                    </div>
+                    <div id="payments-list" class="space-y-4">
+                        <p class="text-gray-500">Carregando pagamentos...</p>
+                    </div>
+                </div>
+            </div>
             
             <!-- Aba Financeiro -->
-            <div id="tab-finance" class="tab-content hidden">
+            <div id="tab-finance" class="tab-content admin-only hidden">
                 <div class="bg-white shadow-md rounded-xl p-6">
                     <div class="flex flex-col md:flex-row justify-between items-center mb-6">
                         <div>
@@ -262,6 +276,29 @@
             </form>
         </div>
     </div>
+    <div id="createPaymentModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-semibold mb-4">Criar Novo Pagamento</h3>
+            <form id="create-payment-form">
+                <input type="text" id="paymentDescription" placeholder="Descrição (Ex: Mensalidade de Outubro)" class="w-full p-2 border rounded mb-2" required>
+                <input type="number" id="paymentAmount" placeholder="Valor" class="w-full p-2 border rounded mb-2" step="0.01" required>
+                <input type="text" id="paymentPixKey" placeholder="Chave PIX para pagamento" class="w-full p-2 border rounded mb-4" required>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('createPaymentModal')">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Lançar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="verifyPaymentModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-lg p-6">
+            <h3 class="text-xl font-semibold mb-4">Verificar Pagamentos</h3>
+            <div id="payment-verification-list" class="max-h-96 overflow-y-auto"></div>
+            <div class="text-right mt-4">
+                <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('verifyPaymentModal')">Fechar</button>
+            </div>
+        </div>
+    </div>
     <div id="addTransactionModal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 class="text-xl font-semibold mb-4">Nova Transação</h3>
@@ -289,7 +326,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, query, serverTimestamp, where, orderBy, limit, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, addDoc, getDoc, getDocs, setDoc, deleteDoc, onSnapshot, query, serverTimestamp, where, orderBy, limit, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCkdzuiymsH-Z-DLD2AmX06uFt-LLk_FP8",
@@ -311,6 +348,7 @@
         let countdownInterval = null;
         let currentPlayers = [];
         let currentGameId = null;
+        let paymentVerificationListener = null;
 
         const basePath = `artifacts/futebol-manager-app/public/data`;
         const playersCol = collection(db, `${basePath}/players`);
@@ -318,9 +356,16 @@
         const gamesCol = collection(db, `${basePath}/games`);
         const financialsCol = collection(db, `${basePath}/financials`);
         const auditCol = collection(db, `${basePath}/financial_audit`);
+        const paymentsCol = collection(db, `${basePath}/payments`);
 
         window.showModal = (id) => document.getElementById(id).classList.remove('invisible', 'opacity-0');
-        window.hideModal = (id) => document.getElementById(id).classList.add('invisible', 'opacity-0');
+        window.hideModal = (id) => {
+            document.getElementById(id).classList.add('invisible', 'opacity-0');
+            if (id === 'verifyPaymentModal' && paymentVerificationListener) {
+                paymentVerificationListener(); // Unsubscribe from listener
+                paymentVerificationListener = null;
+            }
+        };
         
         function showMessage(text) {
             const el = document.getElementById('message-box');
@@ -834,16 +879,23 @@
                 return playerEl;
             };
             
+            const createHeader = (text, classes) => {
+                const headerEl = document.createElement('div');
+                headerEl.className = `p-2 font-bold text-sm rounded-t-lg ${classes}`;
+                headerEl.textContent = text;
+                return headerEl;
+            }
+
             if (goalkeepers.length > 0) {
-                pool.innerHTML += `<div class="p-2 bg-yellow-100 font-bold text-yellow-800 text-sm rounded-t-lg">Goleiros</div>`;
+                pool.appendChild(createHeader('Goleiros', 'bg-yellow-100 text-yellow-800'));
                 goalkeepers.forEach(p => pool.appendChild(createDraggable(p, goalkeeperCounter++, 'bg-yellow-50')));
             }
             if (monthly.length > 0) {
-                pool.innerHTML += `<div class="p-2 bg-blue-100 font-bold text-blue-800 text-sm rounded-t-lg mt-2">Mensalistas</div>`;
+                pool.appendChild(createHeader('Mensalistas', 'bg-blue-100 text-blue-800 mt-2'));
                 monthly.forEach(p => pool.appendChild(createDraggable(p, monthlyCounter++, 'bg-blue-50')));
             }
             if (single.length > 0) {
-                pool.innerHTML += `<div class="p-2 bg-gray-200 font-bold text-gray-800 text-sm rounded-t-lg mt-2">Avulsos</div>`;
+                pool.appendChild(createHeader('Avulsos', 'bg-gray-200 text-gray-800 mt-2'));
                 single.forEach(p => pool.appendChild(createDraggable(p, singleCounter++, 'bg-gray-50')));
             }
 
@@ -864,6 +916,91 @@
                 });
             });
         }
+        
+        // --- Lógica de Pagamentos ---
+
+        function listenToPayments() {
+            const q = query(paymentsCol, orderBy("createdAt", "desc"));
+            onSnapshot(q, (snapshot) => {
+                const listEl = document.getElementById('payments-list');
+                if (snapshot.empty) {
+                    listEl.innerHTML = '<p class="text-gray-500">Nenhum pagamento lançado.</p>';
+                    return;
+                }
+                listEl.innerHTML = '';
+                snapshot.docs.forEach(doc => {
+                    renderPaymentCard(doc);
+                });
+            });
+        }
+
+        async function renderPaymentCard(paymentDoc) {
+            const listEl = document.getElementById('payments-list');
+            const paymentData = paymentDoc.data();
+            const paymentId = paymentDoc.id;
+
+            const card = document.createElement('div');
+            card.className = "bg-gray-50 border rounded-lg p-4";
+            
+            let html = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-lg">${paymentData.description}</h3>
+                        <p class="text-sm text-gray-600">Valor: R$ ${paymentData.amount.toFixed(2)}</p>
+                        <p class="text-sm text-gray-600">PIX: ${paymentData.pixKey}</p>
+                    </div>
+                    <div class="text-right">
+                         ${isAdmin ? `
+                            <button class="verify-payment-btn text-sm bg-gray-200 px-3 py-1 rounded-md mr-2" data-payment-id="${paymentId}" data-amount="${paymentData.amount}">Verificar</button>
+                            <button class="remove-payment-btn text-sm bg-red-500 text-white px-3 py-1 rounded-md" data-payment-id="${paymentId}">Remover</button>
+                        ` : ''}
+                    </div>
+                </div>
+                <div id="details-${paymentId}" class="mt-4 border-t pt-2">
+                    <p class="text-xs text-gray-500">Carregando detalhes...</p>
+                </div>
+            `;
+            card.innerHTML = html;
+            listEl.appendChild(card);
+            
+            const detailsCol = collection(db, `${paymentsCol.path}/${paymentId}/details`);
+            onSnapshot(query(detailsCol, orderBy("playerName")), (detailsSnapshot) => {
+                const detailsContainer = document.getElementById(`details-${paymentId}`);
+                detailsContainer.innerHTML = '<ul class="divide-y divide-gray-200"></ul>';
+                const ul = detailsContainer.querySelector('ul');
+                
+                if(detailsSnapshot.empty) {
+                    ul.innerHTML = '<li class="text-xs text-gray-500 py-2">Nenhum mensalista encontrado para este pagamento.</li>';
+                    return;
+                }
+
+                detailsSnapshot.docs.forEach(detailDoc => {
+                    const detailData = detailDoc.data();
+                    const li = document.createElement('li');
+                    li.className = "py-2 flex justify-between items-center text-sm";
+                    
+                    let statusBadge;
+                    if(detailData.status === 'paid') statusBadge = '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-200 text-green-800">Pago</span>';
+                    else if(detailData.status === 'awaiting_approval') statusBadge = '<span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-200 text-yellow-800">Aguardando Aprovação</span>';
+                    else statusBadge = '<span class="px-2 py-1 text-xs font-medium rounded-full bg-red-200 text-red-800">Pendente</span>';
+
+                    let actionButton = '';
+                    if (!isAdmin && detailData.status === 'pending') {
+                        actionButton = `<button class="confirm-payment-btn text-white bg-blue-500 hover:bg-blue-600 px-3 py-1 text-xs rounded" data-payment-id="${paymentId}" data-player-id="${detailDoc.id}">Já Paguei</button>`;
+                    }
+                    
+                    li.innerHTML = `
+                        <span>${detailData.playerName}</span>
+                        <div class="flex items-center space-x-2">
+                            ${statusBadge}
+                            ${actionButton}
+                        </div>
+                    `;
+                    ul.appendChild(li);
+                });
+            });
+        }
+
 
         // Listeners e Ações Globais
         function attachAppListeners() {
@@ -873,7 +1010,48 @@
             listenToCurrentGame();
             listenToPlayers();
             listenToFinancials();
+            listenToPayments();
             setupDropZones();
+
+            document.getElementById('create-payment-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!isAdmin) return;
+                
+                const description = document.getElementById('paymentDescription').value.trim();
+                const amountValue = document.getElementById('paymentAmount').value;
+                const pixKey = document.getElementById('paymentPixKey').value.trim();
+
+                if (!description || !amountValue || !pixKey) {
+                    return showMessage("Todos os campos são obrigatórios.");
+                }
+
+                const amount = parseFloat(amountValue);
+
+                if (isNaN(amount) || amount <= 0) {
+                    return showMessage("Por favor, insira um valor numérico válido e positivo.");
+                }
+
+                try {
+                    const paymentRef = await addDoc(paymentsCol, { description, amount, pixKey, createdAt: serverTimestamp() });
+                    
+                    const mensalistas = currentPlayers.filter(p => p.type === 'mensalista');
+                    const batch = writeBatch(db);
+                    
+                    mensalistas.forEach(player => {
+                        const detailRef = doc(db, `${paymentsCol.path}/${paymentRef.id}/details`, player.id);
+                        batch.set(detailRef, { playerName: player.name, status: 'pending' });
+                    });
+                    
+                    await batch.commit();
+                    showMessage("Pagamento lançado com sucesso!");
+                    e.target.reset();
+                    hideModal('createPaymentModal');
+
+                } catch (error) {
+                    console.error("Erro ao lançar pagamento:", error);
+                    showMessage("Falha ao lançar pagamento. Tente novamente.");
+                }
+            });
 
             document.getElementById('mode-toggle').addEventListener('change', (e) => {
                 const isManual = e.target.checked;
@@ -934,6 +1112,78 @@
                          await deleteDoc(doc(financialsCol, target.dataset.id));
                          showMessage('Transação removida.');
                      }
+                }
+
+                if (target.classList.contains('confirm-payment-btn')) {
+                    const { paymentId, playerId } = target.dataset;
+                    const detailRef = doc(db, `${paymentsCol.path}/${paymentId}/details`, playerId);
+                    await updateDoc(detailRef, { status: 'awaiting_approval' });
+                    showMessage("Confirmação de pagamento enviada para o administrador.");
+                }
+
+                if (target.classList.contains('verify-payment-btn')) {
+                    const { paymentId, amount } = target.dataset;
+                    showModal('verifyPaymentModal');
+                    const listContainer = document.getElementById('payment-verification-list');
+                    listContainer.innerHTML = `<p>Carregando...</p>`
+                    
+                    if(paymentVerificationListener) paymentVerificationListener();
+
+                    const detailsCol = collection(db, `${paymentsCol.path}/${paymentId}/details`);
+                    paymentVerificationListener = onSnapshot(query(detailsCol), (snapshot) => {
+                        listContainer.innerHTML = `<ul class="divide-y divide-gray-200"></ul>`;
+                        const ul = listContainer.querySelector('ul');
+                        snapshot.docs.forEach(detailDoc => {
+                            const detailData = detailDoc.data();
+                            let actionHtml = '';
+                            if(detailData.status === 'awaiting_approval') {
+                                actionHtml = `<button class="approve-payment-btn bg-green-500 text-white px-2 py-1 text-xs rounded" data-payment-id="${paymentId}" data-player-id="${detailDoc.id}" data-player-name="${detailData.playerName}" data-amount="${amount}">Aprovar</button>`
+                            }
+                             ul.innerHTML += `<li class="py-2 flex justify-between items-center">${detailData.playerName} ${actionHtml}</li>`;
+                        });
+                    });
+                }
+
+                if (target.classList.contains('approve-payment-btn')) {
+                    const { paymentId, playerId, playerName, amount } = target.dataset;
+                    const detailRef = doc(db, `${paymentsCol.path}/${paymentId}/details`, playerId);
+                    
+                    const batch = writeBatch(db);
+                    batch.update(detailRef, { status: 'paid' });
+                    
+                    const transactionRef = doc(financialsCol);
+                    batch.set(transactionRef, {
+                        description: `Pagamento de ${playerName}`,
+                        amount: parseFloat(amount),
+                        createdAt: serverTimestamp(),
+                        createdBy: currentUser.uid
+                    });
+
+                    await batch.commit();
+                    showMessage(`Pagamento de ${playerName} aprovado!`);
+                }
+
+                if (target.classList.contains('remove-payment-btn')) {
+                    if (!isAdmin) return;
+                    const { paymentId } = target.dataset;
+                    if (confirm('Tem certeza que deseja remover este lançamento de pagamento e todos os seus registros?')) {
+                        try {
+                            const detailsColRef = collection(db, `${paymentsCol.path}/${paymentId}/details`);
+                            const detailsSnapshot = await getDocs(detailsColRef);
+                            const batch = writeBatch(db);
+                            detailsSnapshot.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                            await batch.commit();
+
+                            await deleteDoc(doc(paymentsCol, paymentId));
+                            
+                            showMessage('Lançamento de pagamento removido.');
+                        } catch (error) {
+                            console.error("Erro ao remover pagamento:", error);
+                            showMessage("Falha ao remover o pagamento.");
+                        }
+                    }
                 }
             });
             
