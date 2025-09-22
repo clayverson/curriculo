@@ -440,27 +440,23 @@
         async function loadPage() {
             requestsContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
             
-            const hasTextFilters = currentFilters.solicitante || currentFilters.equipamento || currentFilters.tecnico;
+            const hasAnyFilter = currentFilters.date || currentFilters.solicitante || currentFilters.equipamento || currentFilters.tecnico;
 
-            if (hasTextFilters) {
-                // --- CENÁRIO 1: FILTROS DE TEXTO ATIVOS ---
-                // Busca todos os documentos que correspondem ao filtro de data (se houver) e, em seguida, filtra por texto no lado do cliente.
+            if (hasAnyFilter) {
+                // --- CENÁRIO 1: QUALQUER FILTRO ATIVO ---
+                // Busca todos os documentos e filtra no lado do cliente.
                 paginationControls.classList.add('hidden');
                 try {
                     const requestsCollection = collection(db, 'service_requests');
-                    let queryConstraints = [orderBy('createdAt', 'desc')];
-
-                    // Filtra apenas por data no servidor para evitar a necessidade de múltiplos índices.
-                    if (currentFilters.date) {
-                        queryConstraints.push(where('data', '==', currentFilters.date));
-                    }
-                    
-                    const q = query(requestsCollection, ...queryConstraints);
+                    const q = query(requestsCollection, orderBy('createdAt', 'desc'));
                     const snapshot = await getDocs(q);
                     
                     let allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                    // Aplica filtros de texto no conjunto de dados completo no lado do cliente
+                    // Aplica TODOS os filtros no lado do cliente
+                    if (currentFilters.date) {
+                        allDocs = allDocs.filter(req => req.data === currentFilters.date);
+                    }
                     if (currentFilters.solicitante) {
                         allDocs = allDocs.filter(req => req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante));
                     }
@@ -479,20 +475,16 @@
 
                 } catch (error) {
                     console.error("Erro ao carregar requisições:", error);
-                    requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
+                    requestsContainer.innerHTML = '<p class="text-red-500">Erro ao carregar dados. Verifique suas regras de segurança do Firestore.</p>';
                 }
 
             } else {
-                // --- CENÁRIO 2: SEM FILTROS DE TEXTO ---
+                // --- CENÁRIO 2: SEM FILTROS ---
                 // Usa a paginação do lado do servidor.
                 paginationControls.classList.remove('hidden');
                 try {
                     const requestsCollection = collection(db, 'service_requests');
                     let queryConstraints = [orderBy('createdAt', 'desc')];
-
-                    if (currentFilters.date) {
-                        queryConstraints.push(where('data', '==', currentFilters.date));
-                    }
                     
                     const startCursor = pageQueryHistory[currentPage - 1];
                     if (startCursor) {
@@ -523,7 +515,7 @@
 
                 } catch (error) {
                     console.error("Erro ao carregar requisições:", error);
-                    requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
+                    requestsContainer.innerHTML = '<p class="text-red-500">Erro ao carregar dados. Verifique suas regras de segurança do Firestore.</p>';
                 }
             }
         }
@@ -810,19 +802,15 @@
             showModal('Gerando relatório...', 'success');
             try {
                 const requestsCollection = collection(db, 'service_requests');
-                let queryConstraints = [orderBy('createdAt', 'desc')];
-                
-                // Aplica filtro de data no servidor
-                if (currentFilters.date) {
-                    queryConstraints.push(where('data', '==', currentFilters.date));
-                }
-
-                const q = query(requestsCollection, ...queryConstraints);
+                const q = query(requestsCollection, orderBy('createdAt', 'desc'));
                 const snapshot = await getDocs(q);
 
                 let allData = snapshot.docs.map(doc => doc.data());
 
-                // Aplica filtros de texto no lado do cliente para corresponder à exibição
+                // Aplica TODOS os filtros no lado do cliente para corresponder à exibição
+                if (currentFilters.date) {
+                    allData = allData.filter(req => req.data === currentFilters.date);
+                }
                 if (currentFilters.solicitante) {
                     allData = allData.filter(req => req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante));
                 }
