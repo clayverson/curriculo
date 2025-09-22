@@ -208,6 +208,12 @@
                  <div id="requests-container">
                     <!-- Conteúdo dinâmico aqui -->
                  </div>
+                 <!-- Controles de Paginação -->
+                 <div id="pagination-controls" class="hidden mt-6 flex justify-center items-center space-x-4 no-print">
+                    <button id="prev-page-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 border disabled:opacity-50 disabled:cursor-not-allowed" disabled>Anterior</button>
+                    <span id="page-info" class="text-sm font-medium text-gray-700">Página 1</span>
+                    <button id="next-page-btn" class="px-4 py-2 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 border disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button>
+                </div>
             </div>
         </main>
     </div>
@@ -215,7 +221,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, query, serverTimestamp, orderBy, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, query, serverTimestamp, orderBy, getDoc, deleteDoc, updateDoc, getDocs, limit, startAfter, where } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- Configuração do Firebase ---
         const firebaseConfig = {
@@ -255,19 +261,30 @@
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
         const printArea = document.getElementById('print-area');
-        // Referências do Modal de Edição
         const editRequestModal = document.getElementById('edit-request-modal');
         const closeEditModalBtn = document.getElementById('close-edit-modal-btn');
         const editRequestForm = document.getElementById('edit-request-form');
         const techniciansListEdit = document.getElementById('technicians-list-edit');
         const addTechnicianBtnEdit = document.getElementById('add-technician-btn-edit');
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const pageInfo = document.getElementById('page-info');
 
-        let unsubscribeRequests = null; 
-        let allRequests = []; 
+        let allRequestsForEditing = new Map();
         let currentlyDisplayedRequests = []; 
         let currentUser = null; 
         let requestToDeleteId = null;
         let requestToEditId = null;
+
+        // --- Estado da Paginação ---
+        const PAGE_SIZE = 5; // Itens por página
+        let lastVisibleDoc = null; 
+        let pageQueryHistory = [null]; // Armazena o cursor do último doc da página anterior
+        let currentPage = 1;
+        let hasNextPage = false;
+        let currentFilters = {};
+
 
         // --- Lógica do Modal de Autenticação ---
         const openAuthModal = () => authModal.classList.remove('hidden');
@@ -331,7 +348,6 @@
                 const userRole = userDocSnap.exists() ? userDocSnap.data().role : 'viewer';
                 currentUser = { uid: user.uid, email: user.email, role: userRole };
 
-                // VISÃO DE USUÁRIO LOGADO
                 mainGrid.classList.remove('lg:grid-cols-1');
                 mainGrid.classList.add('lg:grid-cols-2');
                 formContainer.classList.remove('hidden');
@@ -347,12 +363,15 @@
                 
                 filterControls.classList.remove('hidden');
                 selectionControls.classList.remove('hidden');
+                paginationControls.classList.remove('hidden');
+
                 document.getElementById('filter-btn').addEventListener('click', applyFilters);
                 document.getElementById('clear-filter-btn').addEventListener('click', clearFilters);
+                prevPageBtn.addEventListener('click', loadPrevPage);
+                nextPageBtn.addEventListener('click', loadNextPage);
 
-                loadRequests();
+                applyFilters(); // Carga inicial
             } else {
-                // VISÃO DE USUÁRIO DESLOGADO
                 currentUser = null;
                 mainGrid.classList.remove('lg:grid-cols-2');
                 mainGrid.classList.add('lg:grid-cols-1');
@@ -369,12 +388,11 @@
                 `;
                 filterControls.classList.add('hidden'); 
                 selectionControls.classList.add('hidden');
-
-                if (unsubscribeRequests) unsubscribeRequests();
+                paginationControls.classList.add('hidden');
             }
         });
 
-        // --- Lógica do Formulário (Público) ---
+        // --- Lógica do Formulário ---
         const techniciansList = document.getElementById('technicians-list');
         const addTechnicianBtn = document.getElementById('add-technician-btn');
         const addTechnicianEntry = (listElement) => {
@@ -411,30 +429,99 @@
                 techniciansList.innerHTML = ''; 
                 addTechnicianEntry(techniciansList); 
                 showModal('Requisição salva com sucesso!', 'success');
+                applyFilters(); // Recarrega a primeira página para mostrar o novo item se ele se encaixar na ordenação
             } catch (error) {
                 console.error("Erro ao salvar a requisição:", error);
                 showModal('Ocorreu um erro ao salvar a requisição.');
             }
         });
         
-        // --- Lógica de Carregamento de Relatórios ---
-        function loadRequests() {
+        // --- Lógica de Carregamento de Relatórios e Paginação ---
+        async function loadPage() {
             requestsContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
-            const q = query(collection(db, `service_requests`), orderBy('createdAt', 'desc'));
+            try {
+                const requestsCollection = collection(db, 'service_requests');
+                let queryConstraints = [orderBy('createdAt', 'desc')];
 
-            unsubscribeRequests = onSnapshot(q, (snapshot) => {
-                allRequests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                applyFilters();
-            }, (error) => { 
-                console.error("Erro ao carregar requisições:", error); 
+                // Adicionar filtros de query do Firestore
+                if (currentFilters.date) {
+                    queryConstraints.push(where('data', '==', currentFilters.date));
+                }
+                if (currentFilters.solicitante) {
+                     queryConstraints.push(where('solicitante', '==', document.getElementById('filter-solicitante').value)); // Usando valor exato para exemplo
+                }
+                 if (currentFilters.equipamento) {
+                    queryConstraints.push(where('equipamento', '==', document.getElementById('filter-equipamento').value));
+                }
+                
+                // Adicionar cursor de paginação
+                const startCursor = pageQueryHistory[currentPage - 1];
+                if (startCursor) {
+                    queryConstraints.push(startAfter(startCursor));
+                }
+
+                queryConstraints.push(limit(PAGE_SIZE + 1)); // Pega um a mais para verificar se há próxima página
+
+                const q = query(requestsCollection, ...queryConstraints);
+                const snapshot = await getDocs(q);
+                
+                hasNextPage = snapshot.docs.length > PAGE_SIZE;
+                const docsToRender = hasNextPage ? snapshot.docs.slice(0, PAGE_SIZE) : snapshot.docs;
+
+                if (docsToRender.length > 0) {
+                    lastVisibleDoc = docsToRender[docsToRender.length - 1];
+                } else {
+                    lastVisibleDoc = null;
+                }
+                
+                let requestsData = docsToRender.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Filtro client-side para técnico (solução de contorno)
+                if (currentFilters.tecnico) {
+                    requestsData = requestsData.filter(req => 
+                        req.tecnicos && req.tecnicos.some(tech => 
+                            tech.nome.toLowerCase().includes(currentFilters.tecnico)
+                        )
+                    );
+                }
+
+                currentlyDisplayedRequests = requestsData;
+                allRequestsForEditing.clear();
+                requestsData.forEach(req => allRequestsForEditing.set(req.id, req));
+                
+                renderRequests(requestsData);
+                updatePaginationUI();
+
+            } catch (error) {
+                console.error("Erro ao carregar requisições:", error);
                 requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados.</p>';
-            });
+            }
         }
 
+        function loadNextPage() {
+            if (!hasNextPage) return;
+            pageQueryHistory.push(lastVisibleDoc);
+            currentPage++;
+            loadPage();
+        }
+
+        function loadPrevPage() {
+            if (currentPage <= 1) return;
+            pageQueryHistory.pop();
+            currentPage--;
+            loadPage();
+        }
+
+        function updatePaginationUI() {
+            pageInfo.textContent = `Página ${currentPage}`;
+            prevPageBtn.disabled = currentPage <= 1;
+            nextPageBtn.disabled = !hasNextPage;
+        }
+
+
         function renderRequests(requests) {
-            currentlyDisplayedRequests = requests;
             if (requests.length === 0) {
-                requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada.</p>';
+                requestsContainer.innerHTML = '<p class="text-gray-500">Nenhuma requisição encontrada para esta página ou filtro.</p>';
                 return;
             }
             requestsContainer.innerHTML = '';
@@ -494,21 +581,15 @@
 
         // --- Lógica de Filtros ---
         function applyFilters() {
-            const filterDate = document.getElementById('filter-data').value;
-            const filterSolicitante = document.getElementById('filter-solicitante').value.toLowerCase();
-            const filterEquipamento = document.getElementById('filter-equipamento').value.toLowerCase();
-            const filterTecnico = document.getElementById('filter-tecnico').value.toLowerCase();
-
-            const filteredRequests = allRequests.filter(req => {
-                const matchesDate = !filterDate || req.data === filterDate;
-                const matchesSolicitante = !filterSolicitante || req.solicitante.toLowerCase().includes(filterSolicitante);
-                const matchesEquipamento = !filterEquipamento || req.equipamento.toLowerCase().includes(filterEquipamento);
-                const matchesTecnico = !filterTecnico || (req.tecnicos && req.tecnicos.some(tech => tech.nome.toLowerCase().includes(filterTecnico)));
-                
-                return matchesDate && matchesSolicitante && matchesEquipamento && matchesTecnico;
-            });
-
-            renderRequests(filteredRequests);
+             currentFilters = {
+                date: document.getElementById('filter-data').value,
+                solicitante: document.getElementById('filter-solicitante').value,
+                equipamento: document.getElementById('filter-equipamento').value,
+                tecnico: document.getElementById('filter-tecnico').value.toLowerCase(), // tecnico é filtrado no client-side
+            };
+            currentPage = 1;
+            pageQueryHistory = [null];
+            loadPage();
         }
 
         function clearFilters() {
@@ -516,7 +597,7 @@
             document.getElementById('filter-solicitante').value = '';
             document.getElementById('filter-equipamento').value = '';
             document.getElementById('filter-tecnico').value = '';
-            renderRequests(allRequests);
+            applyFilters();
         }
         
         // --- Lógica de Exclusão ---
@@ -533,6 +614,7 @@
             try {
                 await deleteDoc(doc(db, 'service_requests', requestToDeleteId));
                 showModal('Requisição excluída com sucesso!', 'success');
+                loadPage(); // Recarrega a página atual
             } catch(error) {
                 console.error("Erro ao excluir requisição:", error);
                 showModal('Falha ao excluir a requisição.');
@@ -548,8 +630,11 @@
         
         function openEditModal(event) {
             requestToEditId = event.currentTarget.dataset.docId;
-            const requestData = allRequests.find(req => req.id === requestToEditId);
-            if (!requestData) return;
+            const requestData = allRequestsForEditing.get(requestToEditId);
+            if (!requestData) {
+                showModal('Erro: Dados da requisição não encontrados para edição.');
+                return;
+            };
 
             editRequestForm.querySelector('#edit-solicitante').value = requestData.solicitante;
             editRequestForm.querySelector('#edit-data').value = requestData.data;
@@ -562,14 +647,18 @@
             editRequestForm.querySelector('#edit-solucao').value = requestData.solucaoProblema;
             
             techniciansListEdit.innerHTML = '';
-            requestData.tecnicos.forEach(tech => {
-                addTechnicianEntry(techniciansListEdit);
-                const lastEntry = techniciansListEdit.lastElementChild;
-                lastEntry.querySelector('[name=tech-name]').value = tech.nome;
-                lastEntry.querySelector('[name=tech-reg]').value = tech.registro;
-                lastEntry.querySelector('[name=tech-start]').value = tech.horaInicio;
-                lastEntry.querySelector('[name=tech-end]').value = tech.horaFinal;
-            });
+            if (requestData.tecnicos && requestData.tecnicos.length > 0) {
+                requestData.tecnicos.forEach(tech => {
+                    addTechnicianEntry(techniciansListEdit);
+                    const lastEntry = techniciansListEdit.lastElementChild;
+                    lastEntry.querySelector('[name=tech-name]').value = tech.nome;
+                    lastEntry.querySelector('[name=tech-reg]').value = tech.registro;
+                    lastEntry.querySelector('[name=tech-start]').value = tech.horaInicio;
+                    lastEntry.querySelector('[name=tech-end]').value = tech.horaFinal;
+                });
+            } else {
+                 addTechnicianEntry(techniciansListEdit); // Adiciona um campo em branco se não houver técnicos
+            }
 
             editRequestModal.classList.remove('hidden');
         }
@@ -586,7 +675,10 @@
 
             const technicians = [];
             techniciansListEdit.querySelectorAll('.technician-entry').forEach(entry => {
-                technicians.push({ nome: entry.querySelector('[name=tech-name]').value, registro: entry.querySelector('[name=tech-reg]').value, horaInicio: entry.querySelector('[name=tech-start]').value, horaFinal: entry.querySelector('[name=tech-end]').value });
+                 const name = entry.querySelector('[name=tech-name]').value;
+                 if (name) { // Só adiciona se o nome do técnico for preenchido
+                    technicians.push({ nome: name, registro: entry.querySelector('[name=tech-reg]').value, horaInicio: entry.querySelector('[name=tech-start]').value, horaFinal: entry.querySelector('[name=tech-end]').value });
+                 }
             });
 
             const updatedData = {
@@ -605,6 +697,7 @@
             try {
                 await updateDoc(doc(db, 'service_requests', requestToEditId), updatedData);
                 showModal('Requisição atualizada com sucesso!', 'success');
+                loadPage(); // Recarrega a página atual para refletir as mudanças
             } catch(error) {
                 console.error('Erro ao atualizar requisição:', error);
                 showModal('Falha ao atualizar a requisição.');
@@ -621,12 +714,7 @@
             
             const count = checkedCheckboxes.length;
             selectionCounter.textContent = `(${count} selecionada${count !== 1 ? 's' : ''})`;
-
-            if (count > 0) {
-                printSelectedBtn.disabled = false;
-            } else {
-                printSelectedBtn.disabled = true;
-            }
+            printSelectedBtn.disabled = count === 0;
 
             if (visibleCheckboxes.length > 0 && count === visibleCheckboxes.length) {
                 selectAllCheckbox.checked = true;
@@ -659,7 +747,6 @@
                 const cardToClone = document.getElementById(`request-card-${id}`);
                 if (cardToClone) {
                     const clone = cardToClone.cloneNode(true);
-                    // Remove checkbox do clone
                     clone.querySelector('.request-checkbox').parentElement.remove();
                     printArea.appendChild(clone);
                 }
@@ -689,15 +776,36 @@
 
 
         // --- Lógica de Exportação para Excel ---
-        function exportToExcel() {
-            if (currentlyDisplayedRequests.length === 0) {
-                showModal('Nenhuma requisição para exportar com os filtros atuais.');
-                return;
-            }
-            showModal('Gerando relatório...', 'success');
-            
+        async function exportToExcel() {
+             showModal('Gerando relatório...', 'success');
             try {
-                const dataToExport = currentlyDisplayedRequests.map(data => {
+                 const requestsCollection = collection(db, 'service_requests');
+                let queryConstraints = [orderBy('createdAt', 'desc')];
+                // Adicionar filtros de query do Firestore
+                if (currentFilters.date) queryConstraints.push(where('data', '==', currentFilters.date));
+                if (currentFilters.solicitante) queryConstraints.push(where('solicitante', '==', currentFilters.solicitante));
+                if (currentFilters.equipamento) queryConstraints.push(where('equipamento', '==', currentFilters.equipamento));
+
+                const q = query(requestsCollection, ...queryConstraints);
+                const snapshot = await getDocs(q);
+
+                let allFilteredData = snapshot.docs.map(doc => doc.data());
+
+                // Filtro client-side para técnico
+                 if (currentFilters.tecnico) {
+                    allFilteredData = allFilteredData.filter(req => 
+                        req.tecnicos && req.tecnicos.some(tech => 
+                            tech.nome.toLowerCase().includes(currentFilters.tecnico)
+                        )
+                    );
+                }
+
+                if (allFilteredData.length === 0) {
+                    showModal('Nenhuma requisição para exportar com os filtros atuais.');
+                    return;
+                }
+
+                const dataToExport = allFilteredData.map(data => {
                     const techniciansStr = data.tecnicos.map(t => `${t.nome} (${t.horaInicio}-${t.horaFinal})`).join('; ');
                     return {
                         "Data": new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
@@ -736,4 +844,3 @@
     </script>
 </body>
 </html>
-
