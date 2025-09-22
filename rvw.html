@@ -443,15 +443,9 @@
                 const requestsCollection = collection(db, 'service_requests');
                 let queryConstraints = [orderBy('createdAt', 'desc')];
 
-                // Adicionar filtros de query do Firestore
+                // Filtro de data é feito no servidor, pois é mais eficiente e menos propenso a exigir múltiplos índices complexos.
                 if (currentFilters.date) {
                     queryConstraints.push(where('data', '==', currentFilters.date));
-                }
-                if (currentFilters.solicitante) {
-                     queryConstraints.push(where('solicitante', '==', document.getElementById('filter-solicitante').value)); // Usando valor exato para exemplo
-                }
-                 if (currentFilters.equipamento) {
-                    queryConstraints.push(where('equipamento', '==', document.getElementById('filter-equipamento').value));
                 }
                 
                 // Adicionar cursor de paginação
@@ -476,7 +470,17 @@
                 
                 let requestsData = docsToRender.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                // Filtro client-side para técnico (solução de contorno)
+                // Filtros de texto são aplicados no lado do cliente para permitir busca parcial (contains) e evitar erros de permissão por falta de índice.
+                if (currentFilters.solicitante) {
+                    requestsData = requestsData.filter(req => 
+                        req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante)
+                    );
+                }
+                if (currentFilters.equipamento) {
+                    requestsData = requestsData.filter(req => 
+                        req.equipamento && req.equipamento.toLowerCase().includes(currentFilters.equipamento)
+                    );
+                }
                 if (currentFilters.tecnico) {
                     requestsData = requestsData.filter(req => 
                         req.tecnicos && req.tecnicos.some(tech => 
@@ -494,7 +498,7 @@
 
             } catch (error) {
                 console.error("Erro ao carregar requisições:", error);
-                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados.</p>';
+                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
             }
         }
 
@@ -583,9 +587,9 @@
         function applyFilters() {
              currentFilters = {
                 date: document.getElementById('filter-data').value,
-                solicitante: document.getElementById('filter-solicitante').value,
-                equipamento: document.getElementById('filter-equipamento').value,
-                tecnico: document.getElementById('filter-tecnico').value.toLowerCase(), // tecnico é filtrado no client-side
+                solicitante: document.getElementById('filter-solicitante').value.toLowerCase(),
+                equipamento: document.getElementById('filter-equipamento').value.toLowerCase(),
+                tecnico: document.getElementById('filter-tecnico').value.toLowerCase(),
             };
             currentPage = 1;
             pageQueryHistory = [null];
@@ -844,3 +848,4 @@
     </script>
 </body>
 </html>
+
