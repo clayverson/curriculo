@@ -439,66 +439,92 @@
         // --- Lógica de Carregamento de Relatórios e Paginação ---
         async function loadPage() {
             requestsContainer.innerHTML = '<p class="text-gray-500">Carregando...</p>';
-            try {
-                const requestsCollection = collection(db, 'service_requests');
-                let queryConstraints = [orderBy('createdAt', 'desc')];
+            
+            const hasTextFilters = currentFilters.solicitante || currentFilters.equipamento || currentFilters.tecnico;
 
-                // Filtro de data é feito no servidor, pois é mais eficiente e menos propenso a exigir múltiplos índices complexos.
-                if (currentFilters.date) {
-                    queryConstraints.push(where('data', '==', currentFilters.date));
-                }
-                
-                // Adicionar cursor de paginação
-                const startCursor = pageQueryHistory[currentPage - 1];
-                if (startCursor) {
-                    queryConstraints.push(startAfter(startCursor));
-                }
+            if (hasTextFilters) {
+                // --- CENÁRIO 1: FILTROS DE TEXTO ATIVOS ---
+                // Busca todos os documentos que correspondem ao filtro de data (se houver) e, em seguida, filtra por texto no lado do cliente.
+                paginationControls.classList.add('hidden');
+                try {
+                    const requestsCollection = collection(db, 'service_requests');
+                    let queryConstraints = [orderBy('createdAt', 'desc')];
 
-                queryConstraints.push(limit(PAGE_SIZE + 1)); // Pega um a mais para verificar se há próxima página
+                    // Filtra apenas por data no servidor para evitar a necessidade de múltiplos índices.
+                    if (currentFilters.date) {
+                        queryConstraints.push(where('data', '==', currentFilters.date));
+                    }
+                    
+                    const q = query(requestsCollection, ...queryConstraints);
+                    const snapshot = await getDocs(q);
+                    
+                    let allDocs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                const q = query(requestsCollection, ...queryConstraints);
-                const snapshot = await getDocs(q);
-                
-                hasNextPage = snapshot.docs.length > PAGE_SIZE;
-                const docsToRender = hasNextPage ? snapshot.docs.slice(0, PAGE_SIZE) : snapshot.docs;
+                    // Aplica filtros de texto no conjunto de dados completo no lado do cliente
+                    if (currentFilters.solicitante) {
+                        allDocs = allDocs.filter(req => req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante));
+                    }
+                    if (currentFilters.equipamento) {
+                        allDocs = allDocs.filter(req => req.equipamento && req.equipamento.toLowerCase().includes(currentFilters.equipamento));
+                    }
+                    if (currentFilters.tecnico) {
+                        allDocs = allDocs.filter(req => req.tecnicos && req.tecnicos.some(tech => tech.nome.toLowerCase().includes(currentFilters.tecnico)));
+                    }
+                    
+                    currentlyDisplayedRequests = allDocs;
+                    allRequestsForEditing.clear();
+                    allDocs.forEach(req => allRequestsForEditing.set(req.id, req));
+                    
+                    renderRequests(allDocs);
 
-                if (docsToRender.length > 0) {
-                    lastVisibleDoc = docsToRender[docsToRender.length - 1];
-                } else {
-                    lastVisibleDoc = null;
-                }
-                
-                let requestsData = docsToRender.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Filtros de texto são aplicados no lado do cliente para permitir busca parcial (contains) e evitar erros de permissão por falta de índice.
-                if (currentFilters.solicitante) {
-                    requestsData = requestsData.filter(req => 
-                        req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante)
-                    );
-                }
-                if (currentFilters.equipamento) {
-                    requestsData = requestsData.filter(req => 
-                        req.equipamento && req.equipamento.toLowerCase().includes(currentFilters.equipamento)
-                    );
-                }
-                if (currentFilters.tecnico) {
-                    requestsData = requestsData.filter(req => 
-                        req.tecnicos && req.tecnicos.some(tech => 
-                            tech.nome.toLowerCase().includes(currentFilters.tecnico)
-                        )
-                    );
+                } catch (error) {
+                    console.error("Erro ao carregar requisições:", error);
+                    requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
                 }
 
-                currentlyDisplayedRequests = requestsData;
-                allRequestsForEditing.clear();
-                requestsData.forEach(req => allRequestsForEditing.set(req.id, req));
-                
-                renderRequests(requestsData);
-                updatePaginationUI();
+            } else {
+                // --- CENÁRIO 2: SEM FILTROS DE TEXTO ---
+                // Usa a paginação do lado do servidor.
+                paginationControls.classList.remove('hidden');
+                try {
+                    const requestsCollection = collection(db, 'service_requests');
+                    let queryConstraints = [orderBy('createdAt', 'desc')];
 
-            } catch (error) {
-                console.error("Erro ao carregar requisições:", error);
-                requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
+                    if (currentFilters.date) {
+                        queryConstraints.push(where('data', '==', currentFilters.date));
+                    }
+                    
+                    const startCursor = pageQueryHistory[currentPage - 1];
+                    if (startCursor) {
+                        queryConstraints.push(startAfter(startCursor));
+                    }
+                    queryConstraints.push(limit(PAGE_SIZE + 1));
+
+                    const q = query(requestsCollection, ...queryConstraints);
+                    const snapshot = await getDocs(q);
+                    
+                    hasNextPage = snapshot.docs.length > PAGE_SIZE;
+                    const docsToRender = hasNextPage ? snapshot.docs.slice(0, PAGE_SIZE) : snapshot.docs;
+
+                    if (docsToRender.length > 0) {
+                        lastVisibleDoc = docsToRender[docsToRender.length - 1];
+                    } else {
+                        lastVisibleDoc = null;
+                    }
+                    
+                    let requestsData = docsToRender.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                    currentlyDisplayedRequests = requestsData;
+                    allRequestsForEditing.clear();
+                    requestsData.forEach(req => allRequestsForEditing.set(req.id, req));
+                    
+                    renderRequests(requestsData);
+                    updatePaginationUI();
+
+                } catch (error) {
+                    console.error("Erro ao carregar requisições:", error);
+                    requestsContainer.innerHTML = '<p class="text-red-500">Erro de permissão ao carregar dados. Verifique os índices e as regras de segurança do Firestore.</p>';
+                }
             }
         }
 
@@ -781,35 +807,42 @@
 
         // --- Lógica de Exportação para Excel ---
         async function exportToExcel() {
-             showModal('Gerando relatório...', 'success');
+            showModal('Gerando relatório...', 'success');
             try {
-                 const requestsCollection = collection(db, 'service_requests');
+                const requestsCollection = collection(db, 'service_requests');
                 let queryConstraints = [orderBy('createdAt', 'desc')];
-                // Adicionar filtros de query do Firestore
-                if (currentFilters.date) queryConstraints.push(where('data', '==', currentFilters.date));
-                if (currentFilters.solicitante) queryConstraints.push(where('solicitante', '==', currentFilters.solicitante));
-                if (currentFilters.equipamento) queryConstraints.push(where('equipamento', '==', currentFilters.equipamento));
+                
+                // Aplica filtro de data no servidor
+                if (currentFilters.date) {
+                    queryConstraints.push(where('data', '==', currentFilters.date));
+                }
 
                 const q = query(requestsCollection, ...queryConstraints);
                 const snapshot = await getDocs(q);
 
-                let allFilteredData = snapshot.docs.map(doc => doc.data());
+                let allData = snapshot.docs.map(doc => doc.data());
 
-                // Filtro client-side para técnico
-                 if (currentFilters.tecnico) {
-                    allFilteredData = allFilteredData.filter(req => 
+                // Aplica filtros de texto no lado do cliente para corresponder à exibição
+                if (currentFilters.solicitante) {
+                    allData = allData.filter(req => req.solicitante && req.solicitante.toLowerCase().includes(currentFilters.solicitante));
+                }
+                if (currentFilters.equipamento) {
+                    allData = allData.filter(req => req.equipamento && req.equipamento.toLowerCase().includes(currentFilters.equipamento));
+                }
+                if (currentFilters.tecnico) {
+                    allData = allData.filter(req => 
                         req.tecnicos && req.tecnicos.some(tech => 
                             tech.nome.toLowerCase().includes(currentFilters.tecnico)
                         )
                     );
                 }
 
-                if (allFilteredData.length === 0) {
+                if (allData.length === 0) {
                     showModal('Nenhuma requisição para exportar com os filtros atuais.');
                     return;
                 }
 
-                const dataToExport = allFilteredData.map(data => {
+                const dataToExport = allData.map(data => {
                     const techniciansStr = data.tecnicos.map(t => `${t.nome} (${t.horaInicio}-${t.horaFinal})`).join('; ');
                     return {
                         "Data": new Date(data.data).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
