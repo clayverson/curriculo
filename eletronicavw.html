@@ -100,6 +100,7 @@
             <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Entrada e Saída de Equipamentos</h1>
             <div class="flex justify-center items-center mt-2 space-x-4">
                 <p id="userInfo" class="text-gray-600"></p>
+                <button id="gerenciarClientesBtn" class="hidden py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">Gerenciar Clentes</button>
                 <button id="gerenciarTecnicosBtn" class="hidden py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700">Gerenciar Técnicos</button>
                 <button id="logoutButton" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700">Sair</button>
             </div>
@@ -131,6 +132,14 @@
                 <fieldset class="form-section">
                     <legend class="text-xl font-semibold mb-4">Dados de Entrada</legend>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-3">
+                            <label for="buscaCliente" class="block text-sm font-medium text-gray-700">Buscar Cliente por Nome ou Registro</label>
+                            <div class="mt-1 relative">
+                                <input type="text" id="buscaCliente" class="block w-full rounded-md border-gray-300 shadow-sm" placeholder="Digite o nome ou registro do cliente...">
+                                <div id="resultadosBuscaCliente" class="absolute z-10 w-full bg-white border border-gray-300 rounded-md mt-1 hidden max-h-48 overflow-y-auto"></div>
+                            </div>
+                        </div>
+                        <div class="md:col-span-3 border-t border-gray-200 pt-6"></div>
                         <div>
                             <label for="nomePortador" class="block text-sm font-medium text-gray-700">Nome de quem trouxe</label>
                             <input type="text" id="nomePortador" name="nomePortador" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Nome do colaborador" required>
@@ -170,6 +179,7 @@
                                 <option value="armacao">Armação</option>
                                 <option value="pintura">Pintura</option>
                                 <option value="montagem_final">Montagem Final</option>
+								<option value="Estamparia">Estamparia</option>
                                 <option value="site">Site</option>
                                 <option value="eletronica">Eletrônica</option>
                                 <option value="patrimonial">Patrimonial</option>
@@ -189,7 +199,11 @@
                         </div>
                     </div>
                 </fieldset>
-                <div class="flex justify-end pt-4">
+                <div class="flex justify-end items-center pt-4 gap-4">
+                     <div class="flex items-center">
+                        <input id="salvarCliente" name="salvarCliente" type="checkbox" class="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="salvarCliente" class="ml-2 block text-sm text-gray-900">Salvar/Atualizar dados do cliente</label>
+                    </div>
                     <button type="submit" class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-base font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
                         Dar Entrada no Equipamento
                     </button>
@@ -202,7 +216,7 @@
 
                 <!-- Filtros -->
                 <div class="form-section">
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
                         <div class="md:col-span-2">
                              <label for="filtroGeral" class="block text-sm font-medium text-gray-700">Busca Geral</label>
                              <input type="text" id="filtroGeral" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Busque por qualquer campo...">
@@ -221,6 +235,15 @@
                                 <option value="Sem Reparo">Sem Reparo (Aguardando Retirada)</option>
                                 <option value="Entregue">Entregue</option>
                                 <option value="Sucateado">Sucateado</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="itemsPerPageSelect" class="block text-sm font-medium text-gray-700">Itens por Página</label>
+                            <select id="itemsPerPageSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
                         <div class="flex space-x-2">
@@ -271,6 +294,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="paginacaoAtivas" class="flex justify-between items-center mt-4 no-print"></div>
                 </div>
 
                 <div id="tabContentConcluidas" class="hidden printable-section">
@@ -294,6 +318,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="paginacaoConcluidas" class="flex justify-between items-center mt-4 no-print"></div>
                 </div>
 
                 <div id="tabContentEntregues" class="hidden printable-section">
@@ -317,6 +342,7 @@
                            </tbody>
                        </table>
                    </div>
+                   <div id="paginacaoEntregues" class="flex justify-between items-center mt-4 no-print"></div>
                </div>
 
             </div>
@@ -357,17 +383,18 @@
                         <label for="observacaoReparoExterno" class="block text-sm font-medium">Observações do Reparo Externo</label>
                         <textarea id="observacaoReparoExterno" name="observacaoReparoExterno" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Descreva o motivo do reparo ser externo..."></textarea>
                     </div>
-                    <div id="componentesSection" class="hidden mt-6 p-4 bg-gray-50 border rounded-lg"><h3 class="text-lg font-medium mb-4">Componentes Solicitados</h3><div id="listaComponentes" class="space-y-4"></div><button type="button" id="addComponenteBtn" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Adicionar</button></div>
+                    <div id="componentesSection" class="hidden mt-6 p-4 bg-gray-50 border rounded-lg">
+                        <h3 class="text-lg font-medium mb-4">Componentes Solicitados</h3>
+                        <div id="listaComponentes" class="space-y-4"></div>
+                        <button type="button" id="addComponenteBtn" class="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">Adicionar</button>
+                        <div class="mt-4">
+                            <label for="observacoesComponentes" class="block text-sm font-medium">Observações</label>
+                            <textarea id="observacoesComponentes" name="observacoesComponentes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Detalhes sobre a espera, fornecedor, etc..."></textarea>
+                        </div>
+                    </div>
                     <div id="semReparoSection" class="hidden mt-6">
                         <label for="motivoSemReparo" class="block text-sm font-medium">Motivo de não ter reparo</label>
                         <textarea id="motivoSemReparo" name="motivoSemReparo" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Destino do Equipamento</label>
-                             <div class="flex items-center gap-4">
-                                <div class="flex items-center"><input id="destinoSucata" name="destinoSemReparo" type="radio" value="sucata" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="destinoSucata" class="ml-3 block text-sm">Vira Sucata</label></div>
-                                <div class="flex items-center"><input id="destinoRetirada" name="destinoSemReparo" type="radio" value="retirada" class="h-4 w-4 text-indigo-600 border-gray-300" checked><label for="destinoRetirada" class="ml-3 block text-sm">Dono Irá Retirar</label></div>
-                            </div>
-                        </div>
                     </div>
                 </fieldset>
                 <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
@@ -424,6 +451,7 @@
                                 <option value="armacao">Armação</option>
                                 <option value="pintura">Pintura</option>
                                 <option value="montagem_final">Montagem Final</option>
+								<option value="Estamparia">Estamparia</option>
                                 <option value="site">Site</option>
                                 <option value="eletronica">Eletrônica</option>
                                 <option value="patrimonial">Patrimonial</option>
@@ -481,8 +509,8 @@
                         <div class="md:col-span-2" id="view-descricao-reparo-container"><strong class="text-gray-600 block">Descrição do Reparo:</strong> <p id="view-descricaoReparo" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
                         <div class="md:col-span-2" id="view-observacao-reparo-externo-container"><strong class="text-gray-600 block">Observação (Reparo Externo):</strong> <p id="view-observacaoReparoExterno" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
                         <div class="md:col-span-2" id="view-componentes-container"><strong class="text-gray-600 block">Componentes Solicitados:</strong> <div id="view-componentes" class="mt-1"></div></div>
+                        <div class="md:col-span-2" id="view-observacoes-componentes-container"><strong class="text-gray-600 block">Observações (Aguardando Componente):</strong> <p id="view-observacoesComponentes" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
                         <div class="md:col-span-2" id="view-motivo-sem-reparo-container"><strong class="text-gray-600 block">Motivo (Sem Reparo):</strong> <p id="view-motivoSemReparo" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
-                        <div class="md:col-span-2" id="view-destino-sem-reparo-container"><strong class="text-gray-600 block">Destino (Sem Reparo):</strong> <span id="view-destinoSemReparo"></span></div>
                     </div>
                 </div>
 
@@ -493,6 +521,8 @@
                         <div><strong class="text-gray-600 block">Registro:</strong> <span id="view-retiradaPorRegistro"></span></div>
                         <div><strong class="text-gray-600 block">Telefone:</strong> <span id="view-retiradaPorTelefone"></span></div>
                         <div><strong class="text-gray-600 block">Data da Retirada:</strong> <span id="view-dataRetirada"></span></div>
+                        <div class="md:col-span-2" id="view-destino-final-container"><strong class="text-gray-600 block">Destino Final:</strong> <span id="view-destinoFinal"></span></div>
+                        <div class="md:col-span-2" id="view-retirada-observacoes-container" style="display: none;"><strong class="text-gray-600 block">Observações da Retirada:</strong> <p id="view-retiradaObservacoes" class="mt-1 p-2 bg-gray-50 rounded"></p></div>
                     </div>
                 </div>
 
@@ -514,6 +544,15 @@
                 <input type="hidden" id="retiradaDocId">
                 <fieldset>
                     <legend class="text-2xl font-bold mb-6 text-gray-800">Registrar Retirada do Equipamento</legend>
+
+                    <div id="destinoSection" class="hidden mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <label class="block text-sm font-medium text-gray-900 mb-2">Este equipamento foi marcado como "Sem Reparo". Qual o destino final?</label>
+                         <div class="flex items-center gap-4">
+                            <div class="flex items-center"><input id="destinoFinalSucata" name="destinoFinal" type="radio" value="sucata" class="h-4 w-4 text-indigo-600 border-gray-300"><label for="destinoFinalSucata" class="ml-3 block text-sm">Sucatear</label></div>
+                            <div class="flex items-center"><input id="destinoFinalRetirada" name="destinoFinal" type="radio" value="retirada" class="h-4 w-4 text-indigo-600 border-gray-300" checked><label for="destinoFinalRetirada" class="ml-3 block text-sm">Entregar ao Dono</label></div>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="retiradaNome" class="block text-sm font-medium text-gray-700">Nome de quem está retirando</label>
@@ -531,6 +570,10 @@
                             <label for="dataRetirada" class="block text-sm font-medium text-gray-700">Data da Retirada</label>
                             <input type="date" id="dataRetirada" name="dataRetirada" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
                         </div>
+                    </div>
+                     <div class="mt-4 md:col-span-2">
+                        <label for="retiradaObservacoes" class="block text-sm font-medium text-gray-700">Observações</label>
+                        <textarea id="retiradaObservacoes" name="retiradaObservacoes" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Alguma observação sobre a retirada?"></textarea>
                     </div>
                 </fieldset>
                 <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
@@ -555,6 +598,115 @@
             <div class="flex justify-end pt-4 mt-4 border-t">
                 <button type="button" id="fecharGerenciarTecnicosBtn" class="py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600">Fechar</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal de Gerenciamento de Clientes (Admin) -->
+    <div id="gerenciarClientesModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <h2 class="text-2xl font-bold mb-4">Gerenciar Clientes</h2>
+            <div class="flex justify-between items-center mb-4">
+                <input type="text" id="buscaClienteModalInput" class="block w-full rounded-md border-gray-300 shadow-sm mr-4" placeholder="Buscar cliente por nome ou registro...">
+                <button id="abrirAddClienteModalBtn" class="py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 whitespace-nowrap">Novo Cliente</button>
+            </div>
+            <div id="listaClientes" class="max-h-80 overflow-y-auto">
+                <!-- Lista de clientes será populada aqui -->
+            </div>
+            <div class="flex justify-end pt-4 mt-4 border-t">
+                <button type="button" id="fecharGerenciarClientesBtn" class="py-2 px-6 bg-gray-500 text-white rounded-md hover:bg-gray-600">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Adicionar Cliente -->
+    <div id="addClienteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <form id="addClienteForm">
+                <fieldset>
+                    <legend class="text-2xl font-bold mb-6 text-gray-800">Adicionar Novo Cliente</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="add-cliente-nome" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                            <input type="text" id="add-cliente-nome" name="nome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="add-cliente-registro" class="block text-sm font-medium text-gray-700">Registro (ID Único)</label>
+                            <input type="text" id="add-cliente-registro" name="registro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="add-cliente-telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                            <input type="tel" id="add-cliente-telefone" name="telefone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="add-cliente-area" class="block text-sm font-medium text-gray-700">Área</label>
+                            <input type="text" id="add-cliente-area" name="area" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="add-cliente-setor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select id="add-cliente-setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="" disabled selected>Selecione um setor</option>
+                                <option value="armacao">Armação</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="montagem_final">Montagem Final</option>
+                                <option value="Estamparia">Estamparia</option>
+                                <option value="site">Site</option>
+                                <option value="eletronica">Eletrônica</option>
+                                <option value="patrimonial">Patrimonial</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
+                    <button type="button" id="cancelarAddClienteBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal para Editar Cliente -->
+    <div id="editClienteModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-lg shadow-lg rounded-md bg-white">
+            <form id="editClienteForm">
+                <fieldset>
+                    <legend class="text-2xl font-bold mb-6 text-gray-800">Editar Cliente</legend>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="edit-cliente-nome" class="block text-sm font-medium text-gray-700">Nome Completo</label>
+                            <input type="text" id="edit-cliente-nome" name="nome" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" required>
+                        </div>
+                        <div>
+                            <label for="edit-cliente-registro" class="block text-sm font-medium text-gray-700">Registro (ID Único)</label>
+                            <input type="text" id="edit-cliente-registro" name="registro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100" readonly required>
+                        </div>
+                        <div>
+                            <label for="edit-cliente-telefone" class="block text-sm font-medium text-gray-700">Telefone</label>
+                            <input type="tel" id="edit-cliente-telefone" name="telefone" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div>
+                            <label for="edit-cliente-area" class="block text-sm font-medium text-gray-700">Área</label>
+                            <input type="text" id="edit-cliente-area" name="area" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label for="edit-cliente-setor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select id="edit-cliente-setor" name="setor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="" disabled selected>Selecione um setor</option>
+                                <option value="armacao">Armação</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="montagem_final">Montagem Final</option>
+                                <option value="Estamparia">Estamparia</option>
+                                <option value="site">Site</option>
+                                <option value="eletronica">Eletrônica</option>
+                                <option value="patrimonial">Patrimonial</option>
+                            </select>
+                        </div>
+                    </div>
+                </fieldset>
+                <div class="flex justify-end items-center gap-4 pt-6 mt-6 border-t">
+                    <button type="button" id="cancelarEditClienteBtn" class="py-2 px-4 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button type="submit" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">Salvar Alterações</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -585,6 +737,9 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
 
+        // --- ATENÇÃO: CONFIGURAÇÃO DO FIREBASE ---
+        // Verifique se todos os valores abaixo correspondem EXATAMENTE
+        // aos valores do seu projeto no console do Firebase.
         const firebaseConfig = {
             apiKey: "AIzaSyD_xbg_Q8gEf1H6jiU9KjdctF8DOdRcnG4",
             authDomain: "entradaesaida-dbf99.firebaseapp.com",
@@ -602,6 +757,7 @@
         const colRef = collection(db, "equipamentos");
         const usersColRef = collection(db, "users");
         const tecnicosColRef = collection(db, "tecnicos");
+        const clientesColRef = collection(db, "clientes");
         
         let currentUser = { role: null, email: null };
 
@@ -628,6 +784,21 @@
         const fecharGerenciarTecnicosBtn = document.getElementById('fecharGerenciarTecnicosBtn');
         const addTecnicoForm = document.getElementById('addTecnicoForm');
         const listaTecnicos = document.getElementById('listaTecnicos');
+        const gerenciarClientesBtn = document.getElementById('gerenciarClientesBtn');
+        const gerenciarClientesModal = document.getElementById('gerenciarClientesModal');
+        const fecharGerenciarClientesBtn = document.getElementById('fecharGerenciarClientesBtn');
+        const listaClientes = document.getElementById('listaClientes');
+        const buscaCliente = document.getElementById('buscaCliente');
+        const resultadosBuscaCliente = document.getElementById('resultadosBuscaCliente');
+        const salvarCliente = document.getElementById('salvarCliente');
+        const buscaClienteModalInput = document.getElementById('buscaClienteModalInput');
+        const abrirAddClienteModalBtn = document.getElementById('abrirAddClienteModalBtn');
+        const addClienteModal = document.getElementById('addClienteModal');
+        const addClienteForm = document.getElementById('addClienteForm');
+        const cancelarAddClienteBtn = document.getElementById('cancelarAddClienteBtn');
+        const editClienteModal = document.getElementById('editClienteModal');
+        const editClienteForm = document.getElementById('editClienteForm');
+        const cancelarEditClienteBtn = document.getElementById('cancelarEditClienteBtn');
         const assumirModal = document.getElementById('assumirModal');
         const assumirForm = document.getElementById('assumirForm');
         const cancelarAssumirBtn = document.getElementById('cancelarAssumirBtn');
@@ -647,36 +818,64 @@
         let registrosAtuais = []; 
         let unsubscribe = null; 
         let unsubscribeTecnicos = null;
+        let unsubscribeClientes = null;
         let statusChartInstance = null;
         let activeTab = 'ativas';
+        let currentPageAtivas = 1;
+        let currentPageConcluidas = 1;
+        let currentPageEntregues = 1;
+        let itemsPerPage = 10;
         
+        // --- FUNÇÃO AUXILIAR PARA NORMALIZAÇÃO DE TEXTO ---
+        const normalizeString = (str) => {
+            if (!str) return '';
+            return str.toString().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        };
+
         // --- CONTROLE DE AUTENTICAÇÃO E PERMISSÕES ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const userDocRef = doc(db, "users", user.uid);
-                let userDocSnap = await getDoc(userDocRef);
-                
-                if (!userDocSnap.exists()) {
-                    await setDoc(userDocRef, { email: user.email, role: 'inserir' });
-                    userDocSnap = await getDoc(userDocRef);
+                try {
+                    const userDocRef = doc(db, "users", user.uid);
+                    let userDocSnap = await getDoc(userDocRef);
+                    
+                    if (!userDocSnap.exists()) {
+                        await setDoc(userDocRef, { email: user.email, role: 'inserir' });
+                        userDocSnap = await getDoc(userDocRef);
+                    }
+
+                    currentUser.role = userDocSnap.data().role;
+                    currentUser.email = user.email;
+
+                    loginScreen.classList.add('hidden');
+                    mainContent.classList.remove('hidden');
+                    userInfo.textContent = `Usuário: ${currentUser.email} (Nível: ${currentUser.role})`;
+                    
+                    gerenciarTecnicosBtn.classList.toggle('hidden', currentUser.role !== 'admin');
+                    gerenciarClientesBtn.classList.toggle('hidden', currentUser.role !== 'admin');
+
+                    if(currentUser.role === 'inserir' || currentUser.role === 'tecnico' || currentUser.role === 'admin') {
+                        maintenanceForm.classList.remove('hidden');
+                    } else {
+                        maintenanceForm.classList.add('hidden');
+                    }
+
+                    if (currentUser.role === 'admin' || currentUser.role === 'tecnico' || currentUser.role === 'inserir') {
+                        carregarRegistros();
+                        carregarClientes(); // Carrega clientes para todos os usuários logados
+                    } else {
+                        const emptyMessage = `<tr><td colspan="9" class="text-center text-gray-500 py-4">Use o formulário acima para registrar um novo equipamento. Permissão para visualizar a lista não concedida.</td></tr>`;
+                        corpoTabelaAtivos.innerHTML = emptyMessage;
+                        corpoTabelaConcluidos.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4"></td></tr>`;
+                        corpoTabelaEntregues.innerHTML = `<tr><td colspan="9" class="text-center text-gray-500 py-4"></td></tr>`;
+                        atualizarDashboard([]);
+                    }
+                } catch (error) {
+                    console.error("Falha ao conectar com o Firestore. Verifique a conexão com a internet.", error);
+                    loginError.textContent = "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.";
+                    loginError.classList.remove('hidden');
+                    await signOut(auth);
                 }
-
-                currentUser.role = userDocSnap.data().role;
-                currentUser.email = user.email;
-
-                loginScreen.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-                userInfo.textContent = `Usuário: ${currentUser.email} (Nível: ${currentUser.role})`;
-                
-                gerenciarTecnicosBtn.classList.toggle('hidden', currentUser.role !== 'admin');
-
-                if(currentUser.role === 'inserir' || currentUser.role === 'tecnico' || currentUser.role === 'admin') {
-                    maintenanceForm.classList.remove('hidden');
-                } else {
-                    maintenanceForm.classList.add('hidden');
-                }
-
-                carregarRegistros();
             } else {
                 currentUser = { role: null, email: null };
                 loginScreen.classList.remove('hidden');
@@ -684,6 +883,7 @@
 
                 if (unsubscribe) unsubscribe();
                 if (unsubscribeTecnicos) unsubscribeTecnicos();
+                if (unsubscribeClientes) unsubscribeClientes();
             }
         });
 
@@ -849,10 +1049,10 @@
             const registrosAtivos = listaDeRegistros.filter(r => statusAtivos.includes(r.statusGeral));
             const registrosConcluidos = listaDeRegistros.filter(r => statusConcluidos.includes(r.statusGeral));
             const registrosEntregues = listaDeRegistros.filter(r => r.statusGeral === 'Entregue');
-
-            popularTabela(corpoTabelaAtivos, registrosAtivos);
-            popularTabela(corpoTabelaConcluidos, registrosConcluidos);
-            popularTabela(corpoTabelaEntregues, registrosEntregues);
+            
+            renderizarTabelaPaginada(corpoTabelaAtivos, 'Ativas', registrosAtivos, currentPageAtivas);
+            renderizarTabelaPaginada(corpoTabelaConcluidos, 'Concluidas', registrosConcluidos, currentPageConcluidas);
+            renderizarTabelaPaginada(corpoTabelaEntregues, 'Entregues', registrosEntregues, currentPageEntregues);
 
             atualizarDashboard(listaDeRegistros);
         };
@@ -891,9 +1091,26 @@
             }];
 
             try {
+                // Salva a Ordem de Serviço
                 await addDoc(colRef, data);
+
+                // Salva ou atualiza o cliente se a opção estiver marcada
+                if (salvarCliente.checked && data.registroPortador) {
+                    const clienteData = {
+                        nome: data.nomePortador,
+                        registro: data.registroPortador,
+                        telefone: data.telefone,
+                        area: data.area,
+                        setor: data.setor
+                    };
+                    // Usa o registro como ID para evitar duplicatas
+                    const clienteDocRef = doc(db, "clientes", data.registroPortador);
+                    await setDoc(clienteDocRef, clienteData, { merge: true });
+                }
+
                 alert('Equipamento registrado com sucesso!');
                 maintenanceForm.reset();
+                salvarCliente.checked = false;
                 document.getElementById('dataEntrada').valueAsDate = new Date();
                 switchTab('ativas');
             } catch (err) {
@@ -906,6 +1123,16 @@
             retiradaForm.reset();
             retiradaForm.querySelector('#retiradaDocId').value = docId;
             retiradaForm.querySelector('#dataRetirada').valueAsDate = new Date();
+            
+            const destinoSection = document.getElementById('destinoSection');
+            const registro = registrosAtuais.find(r => r.id === docId);
+
+            if (registro && registro.statusGeral === 'Sem Reparo') {
+                destinoSection.classList.remove('hidden');
+            } else {
+                destinoSection.classList.add('hidden');
+            }
+
             retiradaModal.classList.remove('hidden');
         }
         
@@ -1046,16 +1273,11 @@
                     }
                 });
                 dataToUpdate.componentes = componentes;
+                dataToUpdate.observacoesComponentes = saidaForm.querySelector('#observacoesComponentes').value;
 
             } else if (statusReparo === 'sem_reparo') {
                 dataToUpdate.motivoSemReparo = saidaForm.querySelector('#motivoSemReparo').value;
-                const destino = saidaForm.querySelector('input[name="destinoSemReparo"]:checked').value;
-                dataToUpdate.destinoSemReparo = destino;
-                if(destino === 'sucata'){
-                    dataToUpdate.statusGeral = 'Sucateado';
-                } else {
-                    dataToUpdate.statusGeral = 'Sem Reparo';
-                }
+                dataToUpdate.statusGeral = 'Sem Reparo';
             }
             
             const logEntry = { acao: 'Finalização Técnica', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Status alterado para '${dataToUpdate.statusGeral}'. Finalizado por ${dataToUpdate.tecnico}.` };
@@ -1083,23 +1305,41 @@
                 retiradaPorRegistro: retiradaForm.querySelector('#retiradaRegistro').value,
                 retiradaPorTelefone: retiradaForm.querySelector('#retiradaTelefone').value,
                 dataRetirada: retiradaForm.querySelector('#dataRetirada').value,
-                statusGeral: 'Entregue'
+                retiradaObservacoes: retiradaForm.querySelector('#retiradaObservacoes').value
             };
             
+            const registroOriginal = registrosAtuais.find(r => r.id === docId);
+            let logDetails;
+
+            if (registroOriginal && registroOriginal.statusGeral === 'Sem Reparo') {
+                const destino = retiradaForm.querySelector('input[name="destinoFinal"]:checked').value;
+                dadosRetirada.destinoFinal = destino;
+                if (destino === 'sucata') {
+                    dadosRetirada.statusGeral = 'Sucateado';
+                    logDetails = `Equipamento destinado à sucata por ${dadosRetirada.retiradaPorNome} (Reg: ${dadosRetirada.retiradaPorRegistro}). Status alterado para 'Sucateado'.`;
+                } else { // 'retirada'
+                    dadosRetirada.statusGeral = 'Entregue';
+                    logDetails = `Equipamento sem reparo retirado por ${dadosRetirada.retiradaPorNome} (Reg: ${dadosRetirada.retiradaPorRegistro}). Status alterado para 'Entregue'.`;
+                }
+            } else {
+                dadosRetirada.statusGeral = 'Entregue';
+                logDetails = `Equipamento retirado por ${dadosRetirada.retiradaPorNome} (Reg: ${dadosRetirada.retiradaPorRegistro}). Status alterado para 'Entregue'.`;
+            }
+            
             const logEntry = { 
-                acao: 'Retirada', 
+                acao: 'Retirada/Destino', 
                 usuario: currentUser.email, 
                 data: new Date().toISOString(), 
-                detalhes: `Equipamento retirado por ${dadosRetirada.retiradaPorNome} (Reg: ${dadosRetirada.retiradaPorRegistro}). Status alterado para 'Entregue'.` 
+                detalhes: logDetails 
             };
 
             try {
                 await updateDoc(doc(db, "equipamentos", docId), { ...dadosRetirada, historico: arrayUnion(logEntry) });
-                alert('Retirada registrada com sucesso!');
+                alert('Ação registrada com sucesso!');
                 retiradaModal.classList.add('hidden');
             } catch (err) {
                 console.error(err);
-                alert('Erro ao registrar a retirada.');
+                alert('Erro ao registrar a ação.');
             }
         });
 
@@ -1140,8 +1380,8 @@
             document.getElementById('view-descricao-reparo-container').style.display = 'none';
             document.getElementById('view-observacao-reparo-externo-container').style.display = 'none';
             document.getElementById('view-componentes-container').style.display = 'none';
+            document.getElementById('view-observacoes-componentes-container').style.display = 'none';
             document.getElementById('view-motivo-sem-reparo-container').style.display = 'none';
-            document.getElementById('view-destino-sem-reparo-container').style.display = 'none';
 
             if ((osData.statusGeral === 'Finalizado' || osData.statusGeral === 'Entregue') && osData.tipoReparo === 'reparado' && osData.descricaoReparo) {
                 document.getElementById('view-descricaoReparo').textContent = osData.descricaoReparo;
@@ -1151,29 +1391,46 @@
                 document.getElementById('view-observacaoReparoExterno').textContent = osData.observacaoReparoExterno;
                 document.getElementById('view-observacao-reparo-externo-container').style.display = 'block';
             }
-            if (osData.statusGeral === 'Aguardando Componentes' && osData.componentes && osData.componentes.length > 0) {
-                 let compHtml = '';
-                 osData.componentes.forEach(c => { compHtml += `<div class="text-sm"> - Cód: ${c.codigo || 'N/A'}, Desc: ${c.descricao || 'N/A'}</div>`; });
-                 document.getElementById('view-componentes').innerHTML = compHtml;
-                 document.getElementById('view-componentes-container').style.display = 'block';
+            if (osData.statusGeral === 'Aguardando Componentes') {
+                if (osData.componentes && osData.componentes.length > 0) {
+                    let compHtml = '';
+                    osData.componentes.forEach(c => { compHtml += `<div class="text-sm"> - Cód: ${c.codigo || 'N/A'}, Desc: ${c.descricao || 'N/A'}</div>`; });
+                    document.getElementById('view-componentes').innerHTML = compHtml;
+                    document.getElementById('view-componentes-container').style.display = 'block';
+                }
+                if (osData.observacoesComponentes) {
+                    document.getElementById('view-observacoesComponentes').textContent = osData.observacoesComponentes;
+                    document.getElementById('view-observacoes-componentes-container').style.display = 'block';
+                }
             }
             if ((osData.statusGeral === 'Sem Reparo' || osData.statusGeral === 'Entregue' || osData.statusGeral === 'Sucateado') && osData.motivoSemReparo) {
                 document.getElementById('view-motivoSemReparo').textContent = osData.motivoSemReparo;
                 document.getElementById('view-motivo-sem-reparo-container').style.display = 'block';
-                 if(osData.destinoSemReparo){
-                    document.getElementById('view-destinoSemReparo').textContent = osData.destinoSemReparo === 'sucata' ? 'Vira Sucata' : 'Dono Irá Retirar';
-                    document.getElementById('view-destino-sem-reparo-container').style.display = 'block';
-                 }
             }
 
 
             const retiradaSection = document.getElementById('view-retirada-section');
+            const destinoFinalContainer = document.getElementById('view-destino-final-container');
+            const retiradaObsContainer = document.getElementById('view-retirada-observacoes-container');
+            destinoFinalContainer.style.display = 'none';
+            retiradaObsContainer.style.display = 'none';
+
             if (osData.dataRetirada) {
                 document.getElementById('view-retiradaPorNome').textContent = osData.retiradaPorNome || 'N/A';
                 document.getElementById('view-retiradaPorRegistro').textContent = osData.retiradaPorRegistro || 'N/A';
                 document.getElementById('view-retiradaPorTelefone').textContent = osData.retiradaPorTelefone || 'N/A';
                 document.getElementById('view-dataRetirada').textContent = new Date(osData.dataRetirada).toLocaleDateString('pt-BR', {timeZone: 'UTC'});
                 retiradaSection.classList.remove('hidden');
+
+                if (osData.destinoFinal) {
+                    document.getElementById('view-destinoFinal').textContent = osData.destinoFinal === 'sucata' ? 'Sucateado' : 'Entregue ao Dono';
+                    destinoFinalContainer.style.display = 'block';
+                }
+                
+                if (osData.retiradaObservacoes) {
+                    document.getElementById('view-retiradaObservacoes').textContent = osData.retiradaObservacoes;
+                    retiradaObsContainer.style.display = 'block';
+                }
             } else {
                 retiradaSection.classList.add('hidden');
             }
@@ -1224,6 +1481,8 @@
                         <div class="grid-item"><label>Registro:</label> <span>${osData.retiradaPorRegistro || ''}</span></div>
                         <div class="grid-item"><label>Telefone:</label> <span>${osData.retiradaPorTelefone || ''}</span></div>
                         <div class="grid-item"><label>Data da Retirada:</label> <span>${new Date(osData.dataRetirada).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</span></div>
+                        ${osData.destinoFinal ? `<div class="grid-item"><label>Destino Final:</label> <span>${osData.destinoFinal === 'sucata' ? 'Sucateado' : 'Entregue ao Dono'}</span></div>` : ''}
+                        ${osData.retiradaObservacoes ? `<div class="grid-item full-width"><label>Observações:</label> <span>${osData.retiradaObservacoes}</span></div>` : ''}
                     </div>
                 `;
             }
@@ -1298,12 +1557,12 @@
                     printHtml += `<span>Nenhum componente listado.</span>`;
                 }
                 printHtml += `</div>`;
+                if (osData.observacoesComponentes) {
+                    printHtml += `<div class="grid-item full-width"><label>Observações (Aguardando Componente):</label> <span>${osData.observacoesComponentes}</span></div>`;
+                }
             }
             if ((osData.statusGeral === 'Sem Reparo' || osData.statusGeral === 'Entregue' || osData.statusGeral === 'Sucateado') && osData.motivoSemReparo) {
                  printHtml += `<div class="grid-item full-width"><label>Motivo (Sem Reparo):</label> <span>${osData.motivoSemReparo}</span></div>`;
-                 if(osData.destinoSemReparo){
-                    printHtml += `<div class="grid-item"><label>Destino (Sem Reparo):</label> <span>${osData.destinoSemReparo === 'sucata' ? 'Vira Sucata' : 'Dono Irá Retirar'}</span></div>`
-                 }
             }
 
             printHtml += `
@@ -1352,7 +1611,7 @@
         });
 
         const aplicarFiltros = () => {
-            const termoBusca = document.getElementById('filtroGeral').value.trim().toLowerCase();
+            const termoBuscaNormalizado = normalizeString(document.getElementById('filtroGeral').value);
             const data = document.getElementById('filtroData').value;
             const status = document.getElementById('filtroStatus').value;
             
@@ -1361,7 +1620,6 @@
                 
                 let matchStatus = true;
                 if (status) {
-                    // This maps the filter value to the database value
                     if (status === "Finalizado (Aguardando Retirada)") {
                         matchStatus = reg.statusGeral === "Finalizado";
                     } else if (status === "Sem Reparo (Aguardando Retirada)") {
@@ -1372,7 +1630,7 @@
                 }
                 
                 let matchBusca = true;
-                if (termoBusca) {
+                if (termoBuscaNormalizado) {
                     const searchableFields = [
                         reg.osId,
                         reg.nomeEquipamento,
@@ -1386,7 +1644,7 @@
                     ];
                     
                     matchBusca = searchableFields.some(field => 
-                        field && field.toString().toLowerCase().includes(termoBusca)
+                        normalizeString(field).includes(termoBuscaNormalizado)
                     );
                 }
 
@@ -1410,16 +1668,34 @@
             }
         };
 
-        document.getElementById('filtroGeral').addEventListener('input', aplicarFiltros);
-        document.getElementById('filtroData').addEventListener('change', aplicarFiltros);
-        document.getElementById('filtroStatus').addEventListener('change', aplicarFiltros);
+        ['filtroGeral', 'filtroData', 'filtroStatus'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                currentPageAtivas = 1;
+                currentPageConcluidas = 1;
+                currentPageEntregues = 1;
+                aplicarFiltros();
+            });
+        });
+
 
         document.getElementById('btnLimpar').addEventListener('click', () => {
             document.getElementById('filtroGeral').value = '';
             document.getElementById('filtroData').value = '';
             document.getElementById('filtroStatus').value = '';
-            renderizarDados(registrosAtuais);
+            currentPageAtivas = 1;
+            currentPageConcluidas = 1;
+            currentPageEntregues = 1;
+            aplicarFiltros();
         });
+        
+        document.getElementById('itemsPerPageSelect').addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value, 10);
+            currentPageAtivas = 1;
+            currentPageConcluidas = 1;
+            currentPageEntregues = 1;
+            aplicarFiltros();
+        });
+
 
         document.getElementById('btnImprimir').addEventListener('click', () => {
              const activeContent = document.querySelector('.printable-section:not(.hidden)');
@@ -1445,7 +1721,7 @@
 
             if (registrosParaExportar.length === 0) return alert("Nenhum dado válido selecionado para exportar.");
             
-            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'TipoReparo', 'DescricaoReparo', 'ObservacaoReparoExterno', 'MotivoSemReparo', 'DestinoSemReparo', 'RetiradaPorNome', 'RetiradaPorRegistro', 'RetiradaPorTelefone', 'DataRetirada'];
+            const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'TipoReparo', 'DescricaoReparo', 'ObservacaoReparoExterno', 'MotivoSemReparo', 'DestinoFinal', 'RetiradaPorNome', 'RetiradaPorRegistro', 'RetiradaPorTelefone', 'DataRetirada', 'RetiradaObservacoes'];
             let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
             registrosParaExportar.forEach(reg => {
                 const rowData = {
@@ -1470,11 +1746,12 @@
                     DescricaoReparo: reg.descricaoReparo,
                     ObservacaoReparoExterno: reg.observacaoReparoExterno,
                     MotivoSemReparo: reg.motivoSemReparo,
-                    DestinoSemReparo: reg.destinoSemReparo,
+                    DestinoFinal: reg.destinoFinal,
                     RetiradaPorNome: reg.retiradaPorNome,
                     RetiradaPorRegistro: reg.retiradaPorRegistro,
                     RetiradaPorTelefone: reg.retiradaPorTelefone,
-                    DataRetirada: reg.dataRetirada
+                    DataRetirada: reg.dataRetirada,
+                    RetiradaObservacoes: reg.retiradaObservacoes
                 };
                 const row = headers.map(header => `"${(rowData[header] || '').toString().replace(/"/g, '""')}"`);
                 csvContent += row.join(";") + "\n";
@@ -1564,6 +1841,202 @@
                 nomeInput.value = '';
             }
         });
+        
+        // --- Gerenciamento de Clientes ---
+        gerenciarClientesBtn.addEventListener('click', () => {
+            gerenciarClientesModal.classList.remove('hidden');
+            buscaClienteModalInput.value = '';
+            carregarClientes();
+        });
+
+        fecharGerenciarClientesBtn.addEventListener('click', () => {
+            gerenciarClientesModal.classList.add('hidden');
+            if (unsubscribeClientes) unsubscribeClientes();
+        });
+
+        function renderizarListaClientes(clientes) {
+             listaClientes.innerHTML = '';
+             if (clientes.length === 0) {
+                 listaClientes.innerHTML = `<p class="text-center text-gray-500 py-4">Nenhum cliente encontrado.</p>`;
+                 return;
+             }
+             clientes.forEach(cliente => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-3 border-b hover:bg-gray-50';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${cliente.nome}</p>
+                        <p class="text-sm text-gray-600">Registro: ${cliente.id} | Tel: ${cliente.telefone || 'N/A'}</p>
+                        <p class="text-sm text-gray-500">Área: ${cliente.area || 'N/A'} | Setor: ${cliente.setor || 'N/A'}</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button data-id="${cliente.id}" class="editar-cliente-btn text-blue-600 hover:text-blue-800 font-medium">Editar</button>
+                        <button data-id="${cliente.id}" class="remover-cliente-btn text-red-500 hover:text-red-700 font-medium">Remover</button>
+                    </div>
+                `;
+                listaClientes.appendChild(div);
+            });
+        }
+        
+        let todosClientes = [];
+
+        function carregarClientes() {
+            if(unsubscribeClientes) unsubscribeClientes();
+            unsubscribeClientes = onSnapshot(clientesColRef, (snapshot) => {
+                todosClientes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // Não renderiza aqui, deixa o filtro fazer isso
+            });
+        }
+
+        buscaClienteModalInput.addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const filtrados = todosClientes.filter(c => 
+                c.nome.toLowerCase().includes(termo) || 
+                c.id.toLowerCase().includes(termo)
+            );
+            renderizarListaClientes(filtrados);
+        });
+
+        listaClientes.addEventListener('click', async (e) => {
+            if(e.target.classList.contains('remover-cliente-btn')){
+                const id = e.target.dataset.id;
+                if(confirm(`Tem certeza que deseja remover o cliente com registro ${id}?`)){
+                    await deleteDoc(doc(db, "clientes", id));
+                }
+            } else if (e.target.classList.contains('editar-cliente-btn')) {
+                const id = e.target.dataset.id;
+                const cliente = todosClientes.find(c => c.id === id);
+                if (cliente) {
+                    abrirModalEdicaoCliente(cliente);
+                }
+            }
+        });
+        
+        // --- Adicionar Cliente Modal ---
+        abrirAddClienteModalBtn.addEventListener('click', () => {
+            addClienteForm.reset();
+            addClienteModal.classList.remove('hidden');
+        });
+
+        cancelarAddClienteBtn.addEventListener('click', () => {
+            addClienteModal.classList.add('hidden');
+        });
+
+        addClienteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const registro = addClienteForm.querySelector('#add-cliente-registro').value.trim();
+            if (!registro) {
+                alert('O campo "Registro" é obrigatório e deve ser único.');
+                return;
+            }
+
+            const clienteData = {
+                nome: addClienteForm.querySelector('#add-cliente-nome').value,
+                registro: registro,
+                telefone: addClienteForm.querySelector('#add-cliente-telefone').value,
+                area: addClienteForm.querySelector('#add-cliente-area').value,
+                setor: addClienteForm.querySelector('#add-cliente-setor').value,
+            };
+
+            try {
+                const clienteDocRef = doc(db, "clientes", registro);
+                await setDoc(clienteDocRef, clienteData);
+                alert('Cliente adicionado com sucesso!');
+                addClienteModal.classList.add('hidden');
+            } catch (err) {
+                console.error("Erro ao adicionar cliente:", err);
+                alert('Erro ao salvar o cliente.');
+            }
+        });
+        
+        // --- Editar Cliente Modal ---
+        function abrirModalEdicaoCliente(cliente) {
+            editClienteForm.reset();
+            editClienteForm.querySelector('#edit-cliente-nome').value = cliente.nome || '';
+            editClienteForm.querySelector('#edit-cliente-registro').value = cliente.id || '';
+            editClienteForm.querySelector('#edit-cliente-telefone').value = cliente.telefone || '';
+            editClienteForm.querySelector('#edit-cliente-area').value = cliente.area || '';
+            editClienteForm.querySelector('#edit-cliente-setor').value = cliente.setor || '';
+            editClienteModal.classList.remove('hidden');
+        }
+
+        cancelarEditClienteBtn.addEventListener('click', () => {
+            editClienteModal.classList.add('hidden');
+        });
+
+        editClienteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const registro = editClienteForm.querySelector('#edit-cliente-registro').value.trim();
+            if (!registro) {
+                alert('Ocorreu um erro. O registro do cliente não foi encontrado.');
+                return;
+            }
+
+            const clienteData = {
+                nome: editClienteForm.querySelector('#edit-cliente-nome').value,
+                registro: registro,
+                telefone: editClienteForm.querySelector('#edit-cliente-telefone').value,
+                area: editClienteForm.querySelector('#edit-cliente-area').value,
+                setor: editClienteForm.querySelector('#edit-cliente-setor').value,
+            };
+
+            try {
+                const clienteDocRef = doc(db, "clientes", registro);
+                await setDoc(clienteDocRef, clienteData, { merge: true });
+                alert('Cliente atualizado com sucesso!');
+                editClienteModal.classList.add('hidden');
+            } catch (err) {
+                console.error("Erro ao atualizar cliente:", err);
+                alert('Erro ao salvar as alterações do cliente.');
+            }
+        });
+
+
+        // --- Busca de Cliente no Formulário Principal ---
+        buscaCliente.addEventListener('input', (e) => {
+            const termoBuscaNormalizado = normalizeString(e.target.value);
+            if (termoBuscaNormalizado.length < 2) {
+                resultadosBuscaCliente.classList.add('hidden');
+                return;
+            }
+            
+            const resultados = todosClientes.filter(cliente =>
+                normalizeString(cliente.nome).includes(termoBuscaNormalizado) ||
+                normalizeString(cliente.registro).includes(termoBuscaNormalizado)
+            );
+            
+            resultadosBuscaCliente.innerHTML = '';
+            if (resultados.length === 0) {
+                 resultadosBuscaCliente.innerHTML = `<div class="p-2 text-gray-500">Nenhum cliente encontrado.</div>`;
+            } else {
+                resultados.slice(0, 10).forEach(cliente => {
+                    const div = document.createElement('div');
+                    div.className = 'p-2 hover:bg-indigo-100 cursor-pointer';
+                    div.textContent = `${cliente.nome} - ${cliente.registro}`;
+                    div.addEventListener('click', () => selecionarCliente(cliente));
+                    resultadosBuscaCliente.appendChild(div);
+                });
+            }
+            resultadosBuscaCliente.classList.remove('hidden');
+        });
+        
+        function selecionarCliente(cliente) {
+            document.getElementById('nomePortador').value = cliente.nome || '';
+            document.getElementById('registroPortador').value = cliente.registro || '';
+            document.getElementById('telefone').value = cliente.telefone || '';
+            document.getElementById('area').value = cliente.area || '';
+            document.getElementById('setor').value = cliente.setor || '';
+            resultadosBuscaCliente.classList.add('hidden');
+            buscaCliente.value = '';
+        }
+        
+        // Ocultar resultados da busca ao clicar fora
+        document.addEventListener('click', function(event) {
+            if (!buscaCliente.contains(event.target) && !resultadosBuscaCliente.contains(event.target)) {
+                resultadosBuscaCliente.classList.add('hidden');
+            }
+        });
+
 
         // --- Assumir OS Modal ---
         async function abrirModalAssumir(docId) {
@@ -1607,6 +2080,70 @@
                 alert('Por favor, selecione um técnico.');
             }
         });
+        
+        // --- Paginação ---
+        function renderizarTabelaPaginada(tbody, tabName, allRecords, currentPage) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedRecords = allRecords.slice(startIndex, endIndex);
+
+            popularTabela(tbody, paginatedRecords);
+
+            const paginacaoContainer = document.getElementById(`paginacao${tabName}`);
+            renderizarControlesPaginacao(paginacaoContainer, tabName, allRecords.length, currentPage);
+        }
+        
+        function renderizarControlesPaginacao(container, tabName, totalItems, currentPage) {
+            container.innerHTML = '';
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+            if (totalPages <= 1) return;
+
+            const pageInfo = document.createElement('span');
+            pageInfo.className = 'text-sm text-gray-700';
+            pageInfo.textContent = `Página ${currentPage} de ${totalPages} (Total: ${totalItems} itens)`;
+
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'inline-flex -space-x-px rounded-md shadow-sm';
+
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = `&laquo; Anterior`;
+            prevButton.className = `relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0`;
+            if (currentPage === 1) {
+                prevButton.disabled = true;
+                prevButton.classList.add('cursor-not-allowed', 'opacity-50');
+            }
+            prevButton.addEventListener('click', () => {
+                if (currentPage > 1) {
+                    if (tabName === 'Ativas') currentPageAtivas--;
+                    else if (tabName === 'Concluidas') currentPageConcluidas--;
+                    else if (tabName === 'Entregues') currentPageEntregues--;
+                    aplicarFiltros();
+                }
+            });
+
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = `Próximo &raquo;`;
+            nextButton.className = `relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-700 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0`;
+            if (currentPage >= totalPages) {
+                nextButton.disabled = true;
+                nextButton.classList.add('cursor-not-allowed', 'opacity-50');
+            }
+            nextButton.addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    if (tabName === 'Ativas') currentPageAtivas++;
+                    else if (tabName === 'Concluidas') currentPageConcluidas++;
+                    else if (tabName === 'Entregues') currentPageEntregues++;
+                    aplicarFiltros();
+                }
+            });
+
+            buttonsContainer.appendChild(prevButton);
+            buttonsContainer.appendChild(nextButton);
+
+            container.appendChild(pageInfo);
+            container.appendChild(buttonsContainer);
+        }
         
         document.getElementById('dataEntrada').valueAsDate = new Date();
         switchTab('ativas'); // Inicia na aba de ativas
