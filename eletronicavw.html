@@ -26,7 +26,7 @@
             padding: 0 0.5rem;
         }
         .component-row {
-            transition: opacity 0.3s ease-in-out;
+            transition: opacity: 0.3s ease-in-out;
         }
         #tabelaRegistrosAtivos th, #tabelaRegistrosAtivos td,
         #tabelaRegistrosConcluidos th, #tabelaRegistrosConcluidos td,
@@ -216,15 +216,19 @@
 
                 <!-- Filtros -->
                 <div class="form-section">
-                    <div class="grid grid-cols-1 md:grid-cols-6 gap-6 items-end">
+                    <div class="grid grid-cols-1 md:grid-cols-7 gap-6 items-end">
                         <div class="md:col-span-2">
                              <label for="filtroGeral" class="block text-sm font-medium text-gray-700">Busca Geral</label>
                              <input type="text" id="filtroGeral" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="Busque por qualquer campo...">
                         </div>
-                        <div>
-                            <label for="filtroData" class="block text-sm font-medium text-gray-700">Data de Entrada</label>
-                            <input type="date" id="filtroData" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                       </div>
+                        <div class="md:col-span-2">
+                            <label for="filtroDataInicio" class="block text-sm font-medium text-gray-700">Período de Entrada</label>
+                            <div class="flex items-center space-x-2 mt-1">
+                                <input type="date" id="filtroDataInicio" class="block w-full rounded-md border-gray-300 shadow-sm" title="Data de início">
+                                <span class="text-gray-500">a</span>
+                                <input type="date" id="filtroDataFim" class="block w-full rounded-md border-gray-300 shadow-sm" title="Data de fim">
+                            </div>
+                        </div>
                        <div>
                             <label for="filtroStatus" class="block text-sm font-medium text-gray-700">Status</label>
                             <select id="filtroStatus" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
@@ -238,16 +242,29 @@
                             </select>
                         </div>
                         <div>
-                            <label for="itemsPerPageSelect" class="block text-sm font-medium text-gray-700">Itens por Página</label>
-                            <select id="itemsPerPageSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
+                            <label for="filtroSetor" class="block text-sm font-medium text-gray-700">Setor</label>
+                            <select id="filtroSetor" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="">Todos</option>
+                                <option value="armacao">Armação</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="montagem_final">Montagem Final</option>
+                                <option value="Estamparia">Estamparia</option>
+                                <option value="site">Site</option>
+                                <option value="eletronica">Eletrônica</option>
+                                <option value="patrimonial">Patrimonial</option>
                             </select>
                         </div>
-                        <div class="flex space-x-2">
-                             <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
+                        <div class="flex items-end space-x-2">
+                            <div>
+                                <label for="itemsPerPageSelect" class="block text-sm font-medium text-gray-700">Itens</label>
+                                <select id="itemsPerPageSelect" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                            <button id="btnLimpar" class="w-full inline-flex justify-center py-2 px-4 border shadow-sm rounded-md text-gray-700 bg-white hover:bg-gray-50">Limpar</button>
                         </div>
                     </div>
                 </div>
@@ -730,16 +747,38 @@
         </div>
     </div>
 
+    <!-- Modal de Notificação Genérico -->
+    <div id="notificationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div>
+                <h2 id="notificationModalTitle" class="text-xl font-bold mb-4 text-gray-800">Aviso</h2>
+                <p id="notificationModalMessage" class="text-gray-600 mb-6">Mensagem de notificação aqui.</p>
+            </div>
+            <div class="flex justify-end items-center">
+                <button type="button" id="notificationModalClose" class="py-2 px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação Genérico -->
+    <div id="confirmModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+        <div class="relative mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <h2 id="confirmModalTitle" class="text-xl font-bold mb-4 text-gray-800">Atenção</h2>
+            <p id="confirmModalMessage" class="text-gray-600 mb-6">Mensagem de confirmação aqui.</p>
+            <div class="flex justify-end items-center gap-4">
+                <button type="button" id="confirmModalCancel" class="py-2 px-6 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                <button type="button" id="confirmModalConfirm" class="py-2 px-6 bg-red-600 text-white rounded-md hover:bg-red-700">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts do Firebase -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, where, doc, updateDoc, arrayUnion, getDoc, getDocs, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- ATENÇÃO: CONFIGURAÇÃO DO FIREBASE ---
-        // Verifique se todos os valores abaixo correspondem EXATAMENTE
-        // aos valores do seu projeto no console do Firebase.
         const firebaseConfig = {
             apiKey: "AIzaSyD_xbg_Q8gEf1H6jiU9KjdctF8DOdRcnG4",
             authDomain: "entradaesaida-dbf99.firebaseapp.com",
@@ -750,7 +789,7 @@
             measurementId: "G-1278PJ8NT8"
         };
         
-        // --- INICIALIZAÇÃO E LÓGICA PRINCIPAL ---
+        // --- INICIALIZAÇÃO E LÓgica PRINCIPAL ---
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
@@ -803,7 +842,6 @@
         const assumirForm = document.getElementById('assumirForm');
         const cancelarAssumirBtn = document.getElementById('cancelarAssumirBtn');
         const selectTecnico = document.getElementById('selectTecnico');
-
         const tabAtivas = document.getElementById('tabAtivas');
         const tabConcluidas = document.getElementById('tabConcluidas');
         const tabEntregues = document.getElementById('tabEntregues');
@@ -813,6 +851,15 @@
         const corpoTabelaAtivos = document.getElementById('corpoTabelaAtivos');
         const corpoTabelaConcluidos = document.getElementById('corpoTabelaConcluidos');
         const corpoTabelaEntregues = document.getElementById('corpoTabelaEntregues');
+        
+        // --- ELEMENTOS DOS MODAIS GENÉRICOS ---
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmModalMessage = document.getElementById('confirmModalMessage');
+        const confirmModalConfirm = document.getElementById('confirmModalConfirm');
+        const confirmModalCancel = document.getElementById('confirmModalCancel');
+        const notificationModal = document.getElementById('notificationModal');
+        const notificationModalMessage = document.getElementById('notificationModalMessage');
+        const notificationModalClose = document.getElementById('notificationModalClose');
 
 
         let registrosAtuais = []; 
@@ -825,6 +872,33 @@
         let currentPageConcluidas = 1;
         let currentPageEntregues = 1;
         let itemsPerPage = 10;
+        
+        // --- FUNÇÕES DE MODAIS E NOTIFICAÇÕES ---
+        notificationModalClose.addEventListener('click', () => notificationModal.classList.add('hidden'));
+
+        function showNotification(message, title = 'Aviso') {
+            notificationModalMessage.textContent = message;
+            document.getElementById('notificationModalTitle').textContent = title;
+            notificationModal.classList.remove('hidden');
+        }
+
+        function showConfirmation(message, title = 'Confirmação') {
+            return new Promise((resolve) => {
+                confirmModalMessage.textContent = message;
+                document.getElementById('confirmModalTitle').textContent = title;
+                confirmModal.classList.remove('hidden');
+
+                confirmModalConfirm.onclick = () => {
+                    confirmModal.classList.add('hidden');
+                    resolve(true);
+                };
+
+                confirmModalCancel.onclick = () => {
+                    confirmModal.classList.add('hidden');
+                    resolve(false);
+                };
+            });
+        }
         
         // --- FUNÇÃO AUXILIAR PARA NORMALIZAÇÃO DE TEXTO ---
         const normalizeString = (str) => {
@@ -844,7 +918,7 @@
                         userDocSnap = await getDoc(userDocRef);
                     }
 
-                    currentUser.role = userDocSnap.data().role;
+                    currentUser.role = userDocSnap.data()?.role || 'inserir';
                     currentUser.email = user.email;
 
                     loginScreen.classList.add('hidden');
@@ -999,6 +1073,8 @@
                 const podeRegistrarSaida = currentUser.role === 'inserir' || currentUser.role === 'admin' || currentUser.role === 'tecnico';
                 const podeTransferir = currentUser.role === 'admin';
                 const podeEditar = currentUser.role === 'admin';
+                const podeExcluir = currentUser.role === 'admin';
+
                 
                 if ((data.statusGeral === 'Finalizado' || data.statusGeral === 'Sem Reparo') && podeRegistrarSaida) {
                     acoesHtml += `<button data-id="${docId}" class="btn-retirada text-green-600 hover:text-green-900 text-sm font-medium">Registrar Retirada</button>`;
@@ -1022,6 +1098,9 @@
                 if (podeEditar) {
                     acoesHtml += `<button data-id="${docId}" class="btn-editar text-yellow-600 hover:text-yellow-900 text-sm font-medium ml-3">Editar</button>`;
                 }
+                 if (podeExcluir) {
+                    acoesHtml += `<button data-id="${docId}" class="btn-excluir text-red-600 hover:text-red-900 text-sm font-medium ml-3">Excluir</button>`;
+                }
                 
                 const checkboxId = tbody.id.replace('corpoTabela', '').toLowerCase();
 
@@ -1043,18 +1122,21 @@
         };
 
         const renderizarDados = (listaDeRegistros) => {
+            // Filtra os registros marcados como 'Excluído' para não serem exibidos
+            const registrosVisiveis = listaDeRegistros.filter(r => r.statusGeral !== 'Excluído');
+
             const statusAtivos = ['Em Andamento', 'Aguardando Componentes'];
             const statusConcluidos = ['Finalizado', 'Sem Reparo', 'Sucateado'];
             
-            const registrosAtivos = listaDeRegistros.filter(r => statusAtivos.includes(r.statusGeral));
-            const registrosConcluidos = listaDeRegistros.filter(r => statusConcluidos.includes(r.statusGeral));
-            const registrosEntregues = listaDeRegistros.filter(r => r.statusGeral === 'Entregue');
+            const registrosAtivos = registrosVisiveis.filter(r => statusAtivos.includes(r.statusGeral));
+            const registrosConcluidos = registrosVisiveis.filter(r => statusConcluidos.includes(r.statusGeral));
+            const registrosEntregues = registrosVisiveis.filter(r => r.statusGeral === 'Entregue');
             
             renderizarTabelaPaginada(corpoTabelaAtivos, 'Ativas', registrosAtivos, currentPageAtivas);
             renderizarTabelaPaginada(corpoTabelaConcluidos, 'Concluidas', registrosConcluidos, currentPageConcluidas);
             renderizarTabelaPaginada(corpoTabelaEntregues, 'Entregues', registrosEntregues, currentPageEntregues);
 
-            atualizarDashboard(listaDeRegistros);
+            atualizarDashboard(registrosVisiveis);
         };
         
         const carregarRegistros = () => {
@@ -1066,10 +1148,8 @@
                 console.error("Erro ao carregar registros:", error);
             });
         };
-
-        maintenanceForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
+        
+        const registerEquipment = async () => {
             // Gerar ID único
             const today = new Date().toISOString().slice(0, 10);
             const q = query(colRef, where("dataEntrada", "==", today));
@@ -1108,15 +1188,49 @@
                     await setDoc(clienteDocRef, clienteData, { merge: true });
                 }
 
-                alert('Equipamento registrado com sucesso!');
+                showNotification('Equipamento registrado com sucesso!', 'Sucesso');
                 maintenanceForm.reset();
                 salvarCliente.checked = false;
                 document.getElementById('dataEntrada').valueAsDate = new Date();
                 switchTab('ativas');
             } catch (err) {
                 console.error(err);
-                alert('Erro ao registrar equipamento.');
+                showNotification('Erro ao registrar equipamento.', 'Erro');
             }
+        };
+
+        maintenanceForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // 1. Verificação de Internet
+            if (!navigator.onLine) {
+                showNotification('Você parece estar sem conexão com a internet. Por favor, verifique sua conexão e tente novamente.', 'Erro de Conexão');
+                return;
+            }
+
+            const sapValue = maintenanceForm.sap.value.trim();
+            
+            // 2. Verificação de SAP duplicado
+            if (sapValue) {
+                try {
+                    const q = query(colRef, where("sap", "==", sapValue));
+                    const querySnapshot = await getDocs(q);
+                    if (!querySnapshot.empty) {
+                        const existingOS = querySnapshot.docs[0].data();
+                        const confirmed = await showConfirmation(`Já existe uma O.S. (${existingOS.osId || 'N/A'}) com o SAP '${sapValue}'. Deseja continuar com o registro mesmo assim?`);
+                        if (!confirmed) {
+                            return; // Para a execução se o usuário cancelar
+                        }
+                    }
+                } catch (err) {
+                    console.error("Erro ao verificar SAP:", err);
+                    showNotification("Ocorreu um erro ao verificar o SAP. Por favor, tente novamente.", "Erro");
+                    return;
+                }
+            }
+            
+            // Se todas as verificações passaram, prossegue com o registro
+            registerEquipment();
         });
         
         function abrirModalRetirada(docId) {
@@ -1137,13 +1251,15 @@
         }
         
         const handleTableClick = async (e) => {
-            const target = e.target;
-            const docId = target.dataset.id;
+            const targetButton = e.target.closest('button');
+            if (!targetButton) return;
+
+            const docId = targetButton.dataset.id;
             if (!docId) return;
 
-            if (target.classList.contains('btn-assumir')) {
+            if (targetButton.classList.contains('btn-assumir')) {
                 abrirModalAssumir(docId);
-            } else if (target.classList.contains('btn-finalizar')) {
+            } else if (targetButton.classList.contains('btn-finalizar')) {
                 saidaForm.reset();
                 document.getElementById('editDocId').value = docId;
                 document.getElementById('dataSaida').valueAsDate = new Date();
@@ -1152,26 +1268,69 @@
                     document.getElementById('tecnico').value = registro.tecnicoAtribuido || '';
                 }
                 saidaModal.classList.remove('hidden');
-            } else if (target.classList.contains('btn-imprimir-os')) {
+            } else if (targetButton.classList.contains('btn-imprimir-os')) {
                 imprimirOS(docId);
-            } else if (target.classList.contains('btn-transferir')) {
+            } else if (targetButton.classList.contains('btn-transferir')) {
                 const registroAtual = registrosAtuais.find(r => r.id === docId);
                 const novoTecnico = prompt("Digite o nome do novo técnico para esta O.S.:");
                 if (novoTecnico && novoTecnico.trim() !== '') {
                     const logEntry = { acao: 'Transferência', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `O.S. transferida de '${registroAtual.tecnicoAtribuido}' para '${novoTecnico.trim()}'.` };
                     try {
                         await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: novoTecnico.trim(), historico: arrayUnion(logEntry) });
-                        alert(`O.S. transferida para ${novoTecnico.trim()} com sucesso!`);
+                        showNotification(`O.S. transferida para ${novoTecnico.trim()} com sucesso!`, 'Sucesso');
                     } catch (err) {
-                        alert("Ocorreu um erro ao tentar transferir a O.S.");
+                        showNotification("Ocorreu um erro ao tentar transferir a O.S.", 'Erro');
                     }
                 }
-            } else if (target.classList.contains('btn-editar')) {
+            } else if (targetButton.classList.contains('btn-editar')) {
                 abrirModalEdicao(docId);
-            } else if (target.classList.contains('btn-visualizar')) {
+            } else if (targetButton.classList.contains('btn-visualizar')) {
                 abrirModalVisualizacao(docId);
-            } else if (target.classList.contains('btn-retirada')) {
+            } else if (targetButton.classList.contains('btn-retirada')) {
                 abrirModalRetirada(docId);
+            } else if (targetButton.classList.contains('btn-excluir')) {
+                handleExcluirOS(docId);
+            }
+        };
+
+        const handleExcluirOS = async (docId) => {
+            const justificativa = prompt("Por favor, insira uma justificativa para a exclusão desta Ordem de Serviço:");
+
+            if (!justificativa || justificativa.trim() === '') {
+                showNotification("A exclusão foi cancelada. Uma justificativa é obrigatória.", 'Aviso');
+                return;
+            }
+
+            const confirmed = await showConfirmation("Você tem certeza que deseja marcar esta Ordem de Serviço como excluída? Ela será arquivada e não será mais exibida nas listas principais.");
+            if (confirmed) {
+                try {
+                    const osDocRef = doc(db, "equipamentos", docId);
+                    
+                    const dadosExcluidos = {
+                        statusGeral: 'Excluído',
+                        dataExclusao: new Date().toISOString(),
+                        excluidoPor: currentUser.email,
+                        justificativaExclusao: justificativa.trim()
+                    };
+                    
+                    const logEntry = { 
+                        acao: 'Exclusão', 
+                        usuario: currentUser.email, 
+                        data: new Date().toISOString(), 
+                        detalhes: `Registro marcado como excluído. Justificativa: ${justificativa.trim()}` 
+                    };
+
+                    await updateDoc(osDocRef, {
+                        ...dadosExcluidos,
+                        historico: arrayUnion(logEntry)
+                    });
+
+                    showNotification("Ordem de Serviço marcada como excluída e arquivada com sucesso!", 'Sucesso');
+
+                } catch (error) {
+                    console.error("Erro ao excluir a Ordem de Serviço:", error);
+                    showNotification("Ocorreu um erro ao tentar excluir a Ordem de Serviço. Verifique o console para mais detalhes.", 'Erro');
+                }
             }
         };
 
@@ -1219,7 +1378,7 @@
             }
 
             if (mudancas === 0) {
-                return alert('Nenhuma alteração foi feita.');
+                return showNotification('Nenhuma alteração foi feita.', 'Aviso');
             }
 
             const logEntry = {
@@ -1234,11 +1393,11 @@
                     ...dadosAtualizados,
                     historico: arrayUnion(logEntry)
                 });
-                alert('Registro atualizado com sucesso!');
+                showNotification('Registro atualizado com sucesso!', 'Sucesso');
                 editModal.classList.add('hidden');
             } catch (err) {
                 console.error("Erro ao editar registro:", err);
-                alert('Erro ao salvar as alterações.');
+                showNotification('Erro ao salvar as alterações.', 'Erro');
             }
         });
         
@@ -1284,11 +1443,11 @@
 
             try {
                 await updateDoc(doc(db, "equipamentos", docId), { ...dataToUpdate, historico: arrayUnion(logEntry) });
-                alert('Análise técnica salva com sucesso!');
+                showNotification('Análise técnica salva com sucesso!', 'Sucesso');
                 saidaModal.classList.add('hidden');
             } catch (err) {
                 console.error(err);
-                alert('Erro ao salvar a análise.');
+                showNotification('Erro ao salvar a análise.', 'Erro');
             }
         });
         
@@ -1335,11 +1494,11 @@
 
             try {
                 await updateDoc(doc(db, "equipamentos", docId), { ...dadosRetirada, historico: arrayUnion(logEntry) });
-                alert('Ação registrada com sucesso!');
+                showNotification('Ação registrada com sucesso!', 'Sucesso');
                 retiradaModal.classList.add('hidden');
             } catch (err) {
                 console.error(err);
-                alert('Erro ao registrar a ação.');
+                showNotification('Erro ao registrar a ação.', 'Erro');
             }
         });
 
@@ -1457,7 +1616,7 @@
         
         function imprimirOS(osId) {
             const osData = registrosAtuais.find(r => r.id === osId);
-            if (!osData) return alert('Dados da OS não encontrados.');
+            if (!osData) return showNotification('Dados da OS não encontrados.', 'Erro');
 
             let historicoHtml = '';
             if (osData.historico && Array.isArray(osData.historico)) {
@@ -1612,11 +1771,27 @@
 
         const aplicarFiltros = () => {
             const termoBuscaNormalizado = normalizeString(document.getElementById('filtroGeral').value);
-            const data = document.getElementById('filtroData').value;
+            const dataInicio = document.getElementById('filtroDataInicio').value;
+            const dataFim = document.getElementById('filtroDataFim').value;
             const status = document.getElementById('filtroStatus').value;
+            const setor = document.getElementById('filtroSetor').value;
             
-            const registrosFiltrados = registrosAtuais.filter(reg => {
-                const matchData = data ? reg.dataEntrada === data : true;
+            var registrosFiltrados = registrosAtuais.filter(reg => {
+                const matchData = (() => {
+                    if (!dataInicio && !dataFim) return true;
+                    if (!reg.dataEntrada) return false;
+                    const dataRegistro = new Date(reg.dataEntrada + 'T00:00:00'); 
+                    if (dataInicio && dataFim) {
+                        return dataRegistro >= new Date(dataInicio + 'T00:00:00') && dataRegistro <= new Date(dataFim + 'T00:00:00');
+                    }
+                    if (dataInicio) {
+                        return dataRegistro >= new Date(dataInicio + 'T00:00:00');
+                    }
+                    if (dataFim) {
+                        return dataRegistro <= new Date(dataFim + 'T00:00:00');
+                    }
+                    return true;
+                })();
                 
                 let matchStatus = true;
                 if (status) {
@@ -1629,6 +1804,8 @@
                     }
                 }
                 
+                const matchSetor = setor ? reg.setor === setor : true;
+
                 let matchBusca = true;
                 if (termoBuscaNormalizado) {
                     const searchableFields = [
@@ -1648,7 +1825,7 @@
                     );
                 }
 
-                return matchData && matchStatus && matchBusca;
+                return matchData && matchStatus && matchSetor && matchBusca;
             });
             
             renderizarDados(registrosFiltrados);
@@ -1668,7 +1845,7 @@
             }
         };
 
-        ['filtroGeral', 'filtroData', 'filtroStatus'].forEach(id => {
+        ['filtroGeral', 'filtroDataInicio', 'filtroDataFim', 'filtroStatus', 'filtroSetor'].forEach(id => {
             document.getElementById(id).addEventListener('input', () => {
                 currentPageAtivas = 1;
                 currentPageConcluidas = 1;
@@ -1677,11 +1854,12 @@
             });
         });
 
-
         document.getElementById('btnLimpar').addEventListener('click', () => {
             document.getElementById('filtroGeral').value = '';
-            document.getElementById('filtroData').value = '';
+            document.getElementById('filtroDataInicio').value = '';
+            document.getElementById('filtroDataFim').value = '';
             document.getElementById('filtroStatus').value = '';
+            document.getElementById('filtroSetor').value = '';
             currentPageAtivas = 1;
             currentPageConcluidas = 1;
             currentPageEntregues = 1;
@@ -1710,16 +1888,16 @@
         
         document.getElementById('btnExportar').addEventListener('click', () => {
             const checkboxClass = activeTab === 'ativas' ? '.row-checkbox-ativas' : (activeTab === 'concluidas' ? '.row-checkbox-concluidos' : '.row-checkbox-entregues');
-            const checkedCheckboxes = document.querySelectorAll(checkboxClass);
+            const checkedCheckboxes = document.querySelectorAll(`${checkboxClass}:checked`);
 
             if (checkedCheckboxes.length === 0) {
-                return alert("Por favor, selecione pelo menos um registro para exportar.");
+                return showNotification("Por favor, selecione pelo menos um registro para exportar.", "Aviso");
             }
 
             const selectedIds = Array.from(checkedCheckboxes).map(cb => cb.dataset.id);
             const registrosParaExportar = registrosAtuais.filter(reg => selectedIds.includes(reg.id));
 
-            if (registrosParaExportar.length === 0) return alert("Nenhum dado válido selecionado para exportar.");
+            if (registrosParaExportar.length === 0) return showNotification("Nenhum dado válido selecionado para exportar.", "Aviso");
             
             const headers = ['ID_OS', 'NomePortador', 'RegistroPortador', 'Telefone', 'Equipamento', 'Area', 'DataEntrada', 'SAP', 'OS_SAP', 'Setor', 'Recebedor', 'TecnicoAtribuido', 'Nota', 'Problema', 'StatusGeral', 'DataSaida', 'Tecnico', 'TipoReparo', 'DescricaoReparo', 'ObservacaoReparoExterno', 'MotivoSemReparo', 'DestinoFinal', 'RetiradaPorNome', 'RetiradaPorRegistro', 'RetiradaPorTelefone', 'DataRetirada', 'RetiradaObservacoes'];
             let csvContent = "data:text/csv;charset=utf-8," + headers.map(h => `"${h}"`).join(";") + "\n";
@@ -1821,7 +1999,8 @@
         listaTecnicos.addEventListener('click', async (e) => {
             if(e.target.classList.contains('remover-tecnico-btn')){
                 const id = e.target.dataset.id;
-                if(confirm('Tem certeza que deseja remover este técnico?')){
+                const confirmed = await showConfirmation('Tem certeza que deseja remover este técnico?');
+                if(confirmed){
                     await deleteDoc(doc(db, "tecnicos", id));
                 }
             }
@@ -1900,7 +2079,8 @@
         listaClientes.addEventListener('click', async (e) => {
             if(e.target.classList.contains('remover-cliente-btn')){
                 const id = e.target.dataset.id;
-                if(confirm(`Tem certeza que deseja remover o cliente com registro ${id}?`)){
+                const confirmed = await showConfirmation(`Tem certeza que deseja remover o cliente com registro ${id}?`);
+                if(confirmed){
                     await deleteDoc(doc(db, "clientes", id));
                 }
             } else if (e.target.classList.contains('editar-cliente-btn')) {
@@ -1926,7 +2106,7 @@
             e.preventDefault();
             const registro = addClienteForm.querySelector('#add-cliente-registro').value.trim();
             if (!registro) {
-                alert('O campo "Registro" é obrigatório e deve ser único.');
+                showNotification('O campo "Registro" é obrigatório e deve ser único.', 'Erro');
                 return;
             }
 
@@ -1941,11 +2121,11 @@
             try {
                 const clienteDocRef = doc(db, "clientes", registro);
                 await setDoc(clienteDocRef, clienteData);
-                alert('Cliente adicionado com sucesso!');
+                showNotification('Cliente adicionado com sucesso!', 'Sucesso');
                 addClienteModal.classList.add('hidden');
             } catch (err) {
                 console.error("Erro ao adicionar cliente:", err);
-                alert('Erro ao salvar o cliente.');
+                showNotification('Erro ao salvar o cliente.', 'Erro');
             }
         });
         
@@ -1968,7 +2148,7 @@
             e.preventDefault();
             const registro = editClienteForm.querySelector('#edit-cliente-registro').value.trim();
             if (!registro) {
-                alert('Ocorreu um erro. O registro do cliente não foi encontrado.');
+                showNotification('Ocorreu um erro. O registro do cliente não foi encontrado.', 'Erro');
                 return;
             }
 
@@ -1983,11 +2163,11 @@
             try {
                 const clienteDocRef = doc(db, "clientes", registro);
                 await setDoc(clienteDocRef, clienteData, { merge: true });
-                alert('Cliente atualizado com sucesso!');
+                showNotification('Cliente atualizado com sucesso!', 'Sucesso');
                 editClienteModal.classList.add('hidden');
             } catch (err) {
                 console.error("Erro ao atualizar cliente:", err);
-                alert('Erro ao salvar as alterações do cliente.');
+                showNotification('Erro ao salvar as alterações do cliente.', 'Erro');
             }
         });
 
@@ -2044,18 +2224,29 @@
             assumirForm.querySelector('#assumirDocId').value = docId;
             
             selectTecnico.innerHTML = '<option value="">Carregando...</option>';
-            const snapshot = await getDocs(tecnicosColRef);
-            selectTecnico.innerHTML = '<option value="">Selecione...</option>';
-            snapshot.docs.forEach(doc => {
-                const tecnico = doc.data();
-                const option = document.createElement('option');
-                option.value = tecnico.nome;
-                option.textContent = tecnico.nome;
-                selectTecnico.appendChild(option);
-            });
+            try {
+                const snapshot = await getDocs(tecnicosColRef);
+                selectTecnico.innerHTML = '<option value="">Selecione...</option>';
+                if (snapshot.empty) {
+                    selectTecnico.innerHTML = '<option value="">Nenhum técnico cadastrado</option>';
+                } else {
+                    snapshot.docs.forEach(doc => {
+                        const tecnico = doc.data();
+                        const option = document.createElement('option');
+                        option.value = tecnico.nome;
+                        option.textContent = tecnico.nome;
+                        selectTecnico.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error("Erro ao carregar técnicos:", error);
+                selectTecnico.innerHTML = '<option value="">Erro ao carregar</option>';
+                showNotification("Não foi possível carregar a lista de técnicos. Verifique o console para mais detalhes.", "Erro");
+            }
 
             assumirModal.classList.remove('hidden');
         }
+
 
         cancelarAssumirBtn.addEventListener('click', () => {
             assumirModal.classList.add('hidden');
@@ -2070,14 +2261,14 @@
                 const logEntry = { acao: 'Assumiu', usuario: currentUser.email, data: new Date().toISOString(), detalhes: `Técnico '${tecnicoNome}' assumiu a O.S.` };
                 try {
                     await updateDoc(doc(db, "equipamentos", docId), { tecnicoAtribuido: tecnicoNome, historico: arrayUnion(logEntry) });
-                    alert(`O.S. atribuída a ${tecnicoNome} com sucesso!`);
+                    showNotification(`O.S. atribuída a ${tecnicoNome} com sucesso!`, 'Sucesso');
                     assumirModal.classList.add('hidden');
                 } catch (err) {
-                    alert("Ocorreu um erro ao tentar assumir a O.S.");
+                    showNotification("Ocorreu um erro ao tentar assumir a O.S.", "Erro");
                     console.error(err);
                 }
             } else {
-                alert('Por favor, selecione um técnico.');
+                showNotification('Por favor, selecione um técnico.', 'Aviso');
             }
         });
         
