@@ -47,6 +47,29 @@
                     <span class="text-sm font-medium text-slate-500">Editor</span>
                 </div>
 
+                <!-- Logo Uploader -->
+                <div class="mb-6">
+                    <h2 class="font-bold mb-2 text-slate-700">Logo da Empresa</h2>
+                    <div class="mt-1 flex items-center gap-4 p-4 rounded-lg border bg-slate-50">
+                         <img id="logo_preview_editor" class="h-16 w-16 rounded-md object-cover hidden bg-slate-100" alt="Pré-visualização do logo">
+                         <div id="logo_placeholder" class="h-16 w-16 rounded-md bg-slate-200 flex items-center justify-center">
+                            <svg class="w-8 h-8 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                         </div>
+                         <div class="flex-grow">
+                             <input type="file" id="logo_input" accept="image/*" class="hidden">
+                             <label for="logo_input" class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-4 rounded-md text-sm">
+                                 Carregar Logo
+                             </label>
+                             <button id="remover_logo" class="ml-2 text-sm font-semibold text-red-600 hover:text-red-800 hidden">
+                                Remover
+                             </button>
+                             <p class="text-xs text-slate-500 mt-2">Use .PNG com fundo transparente para melhores resultados.</p>
+                         </div>
+                    </div>
+                </div>
+
                 <!-- Seção DE e PARA -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
@@ -119,10 +142,11 @@
                     <!-- Cabeçalho do Orçamento -->
                     <div class="flex justify-between items-start pb-6 border-b">
                         <div>
+                            <img id="preview_logo" class="h-20 max-w-xs mb-4 hidden" alt="Logo da Empresa">
                             <h1 id="preview_de_nome" class="text-2xl font-bold text-slate-900">Nome da sua empresa</h1>
                             <p id="preview_de_endereco" class="text-slate-600 whitespace-pre-line mt-1">Seu endereço, email, etc.</p>
                         </div>
-                        <h2 class="text-3xl font-bold text-slate-400 uppercase tracking-wider">Orçamento</h2>
+                        <h2 class="text-3xl font-bold text-slate-400 uppercase tracking-wider text-right">Orçamento</h2>
                     </div>
 
                     <!-- Informações do Cliente e Datas -->
@@ -194,6 +218,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            let logoUrl = '';
+            const logoInput = document.getElementById('logo_input');
+            const logoPreviewEditor = document.getElementById('logo_preview_editor');
+            const logoPlaceholder = document.getElementById('logo_placeholder');
+            const removerLogoBtn = document.getElementById('remover_logo');
+            const previewLogo = document.getElementById('preview_logo');
 
             // Define datas padrão
             const hoje = new Date();
@@ -204,6 +234,25 @@
 
             document.getElementById('data_emissao').value = formatarData(hoje);
             document.getElementById('data_validade').value = formatarData(validade);
+
+            // Listeners do Logo
+            logoInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        logoUrl = e.target.result;
+                        atualizarTudo();
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            removerLogoBtn.addEventListener('click', () => {
+                logoUrl = '';
+                logoInput.value = ''; // Limpa o input de arquivo
+                atualizarTudo();
+            });
 
             const itemTemplate = `
                 <div class="item-row flex items-center gap-2 p-2 rounded-lg border bg-slate-50">
@@ -239,6 +288,23 @@
             }
 
             function atualizarTudo() {
+                // Atualizar logo
+                if (logoUrl) {
+                    logoPreviewEditor.src = logoUrl;
+                    previewLogo.src = logoUrl;
+                    logoPreviewEditor.classList.remove('hidden');
+                    previewLogo.classList.remove('hidden');
+                    logoPlaceholder.classList.add('hidden');
+                    removerLogoBtn.classList.remove('hidden');
+                } else {
+                    logoPreviewEditor.src = '';
+                    previewLogo.src = '';
+                    logoPreviewEditor.classList.add('hidden');
+                    previewLogo.classList.add('hidden');
+                    logoPlaceholder.classList.remove('hidden');
+                    removerLogoBtn.classList.add('hidden');
+                }
+
                 // Atualizar textos simples
                 document.getElementById('preview_de_nome').innerText = document.getElementById('de_nome').value || 'Nome da sua empresa';
                 document.getElementById('preview_de_endereco').innerText = document.getElementById('de_endereco').value || 'Seu endereço, email, etc.';
@@ -300,3 +366,4 @@
     </script>
 </body>
 </html>
+
