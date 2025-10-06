@@ -217,9 +217,10 @@
 
             document.getElementById('adicionar-item').addEventListener('click', () => {
                 const lista = document.getElementById('itens-lista');
-                const novoItem = document.createElement('div');
-                novoItem.innerHTML = itemTemplate;
-                lista.appendChild(novoItem.firstChild);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = itemTemplate.trim();
+                const novoItem = tempDiv.firstChild;
+                lista.appendChild(novoItem);
                 atualizarTudo();
             });
 
