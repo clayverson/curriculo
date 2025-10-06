@@ -191,9 +191,12 @@
 
             document.getElementById('adicionar-item').addEventListener('click', () => {
                 const lista = document.getElementById('itens-lista');
-                const novoItem = document.createElement('div');
-                novoItem.innerHTML = itemTemplate;
-                lista.appendChild(novoItem.firstChild);
+                const tempDiv = document.createElement('div');
+                // O método trim() remove espaços em branco no início e no fim do template
+                tempDiv.innerHTML = itemTemplate.trim();
+                // Acessamos o primeiro elemento filho, que agora é o 'div.item-row'
+                const novoItem = tempDiv.firstChild;
+                lista.appendChild(novoItem);
                 atualizarTudo();
             });
 
@@ -228,7 +231,7 @@
                     const descricao = row.children[0].value;
                     const qtd = parseFloat(row.children[1].value) || 0;
 
-                    if (descricao || qtd) {
+                    if (descricao || qtd > 0) {
                         const tr = document.createElement('tr');
                         tr.className = 'border-b border-slate-100';
                         tr.innerHTML = `
@@ -255,4 +258,3 @@
     </script>
 </body>
 </html>
-
