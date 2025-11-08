@@ -14,7 +14,7 @@
         }
         
         /* Estilo para a aba ativa na pág de orçamento */
-        .active-tab-orcamento {
+        .active-tab-orcamento, .active-tab-ferramentas {
             border-bottom: 2px solid #facc15; /* text-yellow-400 */
             color: #facc15; /* text-yellow-400 */
         }
@@ -128,6 +128,11 @@
                 <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="ferramentas">
                     <i class="fa-solid fa-wrench w-5 h-5"></i>
                     <span>Ferramentas</span>
+                </a>
+                <!-- (NOVO) Link Cotações Cripto -->
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="cripto">
+                    <i class="fa-brands fa-bitcoin w-5 h-5"></i>
+                    <span>Cotações Cripto</span>
                 </a>
             </nav>
 
@@ -345,14 +350,166 @@
 
             </div>
 
+            <!-- ============================================= -->
+            <!-- PÁGINA: FERRAMENTAS                     -->
+            <!-- ============================================= -->
+            <div id="page-ferramentas" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Ferramentas</h1>
+
+                <!-- NAVEGAÇÃO POR ABAS (FERRAMENTAS) -->
+                <div class="flex border-b border-gray-700 mb-6">
+                    <button class="tab-link-ferramentas active-tab-ferramentas py-3 px-6 text-white font-semibold" data-tab="juros-compostos-content">JUROS COMPOSTOS</button>
+                    <button class="tab-link-ferramentas py-3 px-6 text-gray-400 hover:text-white" data-tab="benchmark-content">COMPARADOR (BENCHMARK)</button>
+                </div>
+
+                <!-- ABA: CALCULADORA DE JUROS COMPOSTOS -->
+                <div id="juros-compostos-content" class="tab-content-ferramentas">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Formulário -->
+                        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Calculadora de Juros Compostos</h2>
+                            <form id="juros-compostos-form" class="space-y-4">
+                                <div>
+                                    <label for="jc-valor-inicial" class="block text-sm font-medium text-gray-400 mb-1">Valor Inicial (R$)</label>
+                                    <input type="number" id="jc-valor-inicial" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="1000" step="100">
+                                </div>
+                                <div>
+                                    <label for="jc-aporte-mensal" class="block text-sm font-medium text-gray-400 mb-1">Aporte Mensal (R$)</label>
+                                    <input type="number" id="jc-aporte-mensal" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="300" step="50">
+                                </div>
+                                <div>
+                                    <label for="jc-taxa-anual" class="block text-sm font-medium text-gray-400 mb-1">Taxa de Juros Anual (%)</label>
+                                    <input type="number" id="jc-taxa-anual" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="jc-tempo-anos" class="block text-sm font-medium text-gray-400 mb-1">Tempo (em anos)</label>
+                                    <input type="number" id="jc-tempo-anos" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="1" min="1">
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                    Calcular
+                                </button>
+                            </form>
+                        </div>
+                        <!-- Resultados e Gráfico -->
+                        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Resultados</h2>
+                            <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Total Investido</span>
+                                    <span id="jc-total-investido" class="text-2xl font-bold text-white">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Total em Juros</span>
+                                    <span id="jc-total-juros" class="text-2xl font-bold text-green-400">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Total Final</span>
+                                    <span id="jc-valor-total" class="text-2xl font-bold text-yellow-400">R$ 0,00</span>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="jurosCompostosChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA: COMPARADOR (BENCHMARK) -->
+                <div id="benchmark-content" class="tab-content-ferramentas hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Formulário -->
+                        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Comparador de Rentabilidade</h2>
+                            <form id="benchmark-form" class="space-y-4">
+                                <div>
+                                    <label for="b-valor-inicial" class="block text-sm font-medium text-gray-400 mb-1">Valor Inicial (R$)</label>
+                                    <input type="number" id="b-valor-inicial" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="1000" step="100">
+                                </div>
+                                <div>
+                                    <label for="b-taxa-investimento" class="block text-sm font-medium text-gray-400 mb-1">Rentabilidade "Seu Investimento" (% a.a.)</label>
+                                    <input type="number" id="b-taxa-investimento" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="15" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="b-nome-benchmark" class="block text-sm font-medium text-gray-400 mb-1">Nome do Benchmark</label>
+                                    <input type="text" id="b-nome-benchmark" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="CDI">
+                                </div>
+                                <div>
+                                    <label for="b-taxa-benchmark" class="block text-sm font-medium text-gray-400 mb-1">Rentabilidade "Benchmark" (% a.a.)</label>
+                                    <input type="number" id="b-taxa-benchmark" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="b-tempo-anos" class="block text-sm font-medium text-gray-400 mb-1">Tempo (em anos)</label>
+                                    <input type="number" id="b-tempo-anos" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="1" min="1">
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                    Comparar
+                                </button>
+                            </form>
+                        </div>
+                        <!-- Resultados e Gráfico -->
+                        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                             <h2 class="text-xl font-semibold text-white mb-4">Resultados</h2>
+                             <div class="grid grid-cols-2 gap-4 mb-6 text-center">
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Final (Seu Investimento)</span>
+                                    <span id="b-valor-investimento" class="text-2xl font-bold text-yellow-400">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Final (Benchmark)</span>
+                                    <span id="b-valor-benchmark" class="text-2xl font-bold text-white">R$ 0,00</span>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="benchmarkChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- (NOVO) PÁGINA: COTAÇÕES CRIPTO -->
+            <div id="page-cripto" class="page-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-semibold text-white">Top 100 Criptomoedas</h1>
+                    <button id="btn-refresh-cripto" class="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Atualizar
+                    </button>
+                </div>
+
+                <!-- Container da Tabela -->
+                <div id="cripto-table-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading Spinner -->
+                    <div id="cripto-loading" class="hidden text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações...</p>
+                    </div>
+                    <!-- Tabela de Cotações -->
+                    <table id="cripto-table" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4 text-center">#</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                                <th class="py-3 px-4 text-right">Volume 24h</th>
+                                <th class="py-3 px-4 text-right">Cap. de Mercado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cripto-table-body" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
             <!-- Outras páginas --><div id="page-home" class="page-content hidden">
                  <h1 class="text-3xl font-semibold text-white mb-6">Home</h1>
                  <p>Bem-vindo ao seu painel financeiro.</p>
             </div>
-            <div id="page-ferramentas" class="page-content hidden">
-                 <h1 class="text-3xl font-semibold text-white mb-6">Ferramentas</h1>
-                 <p>Página de ferramentas em construção.</p>
-            </div>
+            <!-- ... -->
             <div id="page-faq" class="page-content hidden">
                  <h1 class="text-3xl font-semibold text-white mb-6">FAQ</h1>
                  <p>Página de FAQ em construção.</p>
@@ -464,6 +621,21 @@
     <!-- ============================================= -->
     <!-- SCRIPTS                                       -->
     <!-- ============================================= -->
+    
+    <!-- (NOVO) Configuração para modo standalone -->
+    <script id="firebase-config" type="application/json">
+        {
+            "apiKey": "AIzaSyCYKGo2bMEtrn37jQzP2Cc6F5SPKo_LPTM",
+            "authDomain": "orcamentodomestico-bdc7b.firebaseapp.com",
+            "projectId": "orcamentodomestico-bdc7b",
+            "storageBucket": "orcamentodomestico-bdc7b.firebasestorage.app",
+            "messagingSenderId": "95988700562",
+            "appId": "1:95988700562:web:d02f3fb8a19d737cfb9d4b",
+            "measurementId": "G-WVEV7S2DP0"
+        }
+    </script>
+    <script id="app-id" type="text/plain">orcamentodomestico-bdc7b</script>
+
 
     <!-- Firebase SDKs -->
     <script type="module">
@@ -627,6 +799,8 @@
             let portfolioChartInstance = null;
             let budgetHistoryChartInstance = null;
             let goalsChartInstance = null;
+            let jurosCompostosChartInstance = null; 
+            let benchmarkChartInstance = null; 
 
             // --- Fonte Única da Verdade para Metas (Orçamento) ---
             let goalsData = [
@@ -653,6 +827,8 @@
             let gastos = [];
             // Armazena o estado dos ativos (sincronizado com o Firestore)
             let ativos = [];
+            // (NOVO) Armazena o estado dos dados cripto
+            let criptoDataLoaded = false;
 
             // --- Referências DOM (Dashboard) ---
             const navLinks = document.querySelectorAll('.nav-link');
@@ -685,14 +861,12 @@
             const btnCancelEditGasto = document.getElementById('btn-cancel-edit-gasto');
             const btnSave = document.getElementById('btn-save');
 
-            // Referências DOM (Portfólio)
+            // ... (Referências DOM do Portfólio) ...
             const portfolioTotalValor = document.getElementById('portfolio-total-valor');
             const portfolioLegendContainer = document.getElementById('portfolio-legend-container');
             const btnOpenAddAtivoModal = document.getElementById('btn-open-add-ativo-modal');
             const ativosListContainer = document.getElementById('ativos-list-container');
             const ativosPlaceholder = document.getElementById('ativos-placeholder');
-
-            // Referências DOM (Modal Adicionar Ativo)
             const addAtivoModal = document.getElementById('add-ativo-modal');
             const addAtivoForm = document.getElementById('add-ativo-form');
             const btnCancelAddAtivo = document.getElementById('btn-cancel-add-ativo');
@@ -701,8 +875,6 @@
             const addAtivoQuantidade = document.getElementById('ativo-quantidade');
             const addAtivoPrecoMedio = document.getElementById('ativo-preco-medio');
             const addAtivoValorAtual = document.getElementById('ativo-valor-atual');
-            
-            // Referências DOM (Modal Editar Ativo)
             const editAtivoModal = document.getElementById('edit-ativo-modal');
             const editAtivoForm = document.getElementById('edit-ativo-form');
             const btnCancelEditAtivo = document.getElementById('btn-cancel-edit-ativo');
@@ -712,6 +884,25 @@
             const editAtivoQuantidade = document.getElementById('edit-ativo-quantidade');
             const editAtivoPrecoMedio = document.getElementById('edit-ativo-preco-medio');
             const editAtivoValorAtual = document.getElementById('edit-ativo-valor-atual');
+
+            // ... (Referências DOM Ferramentas) ...
+            const ferramentasTabs = document.querySelectorAll('.tab-link-ferramentas');
+            const ferramentasContents = document.querySelectorAll('.tab-content-ferramentas');
+            const jurosCompostosForm = document.getElementById('juros-compostos-form');
+            const jcTotalInvestido = document.getElementById('jc-total-investido');
+            const jcTotalJuros = document.getElementById('jc-total-juros');
+            const jcValorTotal = document.getElementById('jc-valor-total');
+            const benchmarkForm = document.getElementById('benchmark-form');
+            const bValorInvestimento = document.getElementById('b-valor-investimento');
+            const bValorBenchmark = document.getElementById('b-valor-benchmark');
+            const bNomeBenchmarkInput = document.getElementById('b-nome-benchmark');
+
+            // (NOVO) Referências DOM (Cripto)
+            const btnRefreshCripto = document.getElementById('btn-refresh-cripto');
+            const criptoTableContainer = document.getElementById('cripto-table-container');
+            const criptoLoading = document.getElementById('cripto-loading');
+            const criptoTable = document.getElementById('cripto-table');
+            const criptoTableBody = document.getElementById('cripto-table-body');
 
 
             // --- Referências do Firestore ---
@@ -736,6 +927,13 @@
                     initBudgetHistoryChart();
                 } else if (pageId === 'orcamento') {
                     initGoalsChart(); 
+                } else if (pageId === 'ferramentas') { 
+                    initJurosCompostosChart();
+                    initBenchmarkChart();
+                    if (jurosCompostosForm) jurosCompostosForm.dispatchEvent(new Event('submit'));
+                    if (benchmarkForm) benchmarkForm.dispatchEvent(new Event('submit'));
+                } else if (pageId === 'cripto') { // (NOVO)
+                    initCriptoPage();
                 }
             };
 
@@ -753,28 +951,37 @@
             orcamentoTabs.forEach(tab => {
                 tab.addEventListener('click', (e) => {
                     e.preventDefault();
-                    handleTabClick(e.target);
+                    handleTabClick(e.target, orcamentoTabs, 'active-tab-orcamento', orcamentoContents);
                 });
             });
             
             btnEditarMetas.addEventListener('click', (e) => {
                 e.preventDefault();
                 const metasTabButton = document.querySelector('.tab-link-orcamento[data-tab="metas-content"]');
-                handleTabClick(metasTabButton);
+                handleTabClick(metasTabButton, orcamentoTabs, 'active-tab-orcamento', orcamentoContents);
             });
             
-            function handleTabClick(tabButton) {
+            // Lógica das Abas da Página Ferramentas
+            ferramentasTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTabClick(e.target, ferramentasTabs, 'active-tab-ferramentas', ferramentasContents);
+                });
+            });
+
+            // Função genérica para Abas
+            function handleTabClick(tabButton, tabs, activeClass, contents) {
                 if (!tabButton) return;
                 
-                orcamentoTabs.forEach(t => {
+                tabs.forEach(t => {
                     const isActive = t === tabButton;
-                    t.classList.toggle('active-tab-orcamento', isActive);
+                    t.classList.toggle(activeClass, isActive);
                     t.classList.toggle('text-white', isActive);
                     t.classList.toggle('text-gray-400', !isActive);
                 });
 
                 const tabId = tabButton.dataset.tab;
-                orcamentoContents.forEach(content => {
+                contents.forEach(content => {
                     content.classList.toggle('hidden', content.id !== tabId);
                 });
             }
@@ -1011,6 +1218,169 @@
                 });
             }
 
+            // ==========================================================
+            // (NOVO) FUNÇÕES DE DADOS (CRIPTO)
+            // ==========================================================
+            
+            // 1. Inicializa a página (chama o fetch se for a 1ª vez)
+            function initCriptoPage() {
+                if (!criptoDataLoaded) {
+                    fetchCriptoData();
+                }
+            }
+
+            // 2. Busca dados da API CoinGecko
+            async function fetchCriptoData() {
+                criptoLoading.classList.remove('hidden');
+                criptoTable.classList.add('hidden');
+                // Limpa mensagem de erro anterior, se houver
+                criptoLoading.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i><p class="mt-4 text-lg">Buscando cotações...</p>`;
+                
+                try {
+                    const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&order=market_cap_desc&per_page=100&page=1&sparkline=false';
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const coins = await response.json();
+                    renderCriptoTable(coins);
+                    criptoDataLoaded = true; // Marca como carregado
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados de cripto:", error);
+                    criptoLoading.innerHTML = `<p class="text-red-500">Falha ao carregar dados. Verifique sua conexão e tente atualizar.</p>`;
+                } finally {
+                    if (criptoDataLoaded) { // Só esconde o loading se os dados foram carregados
+                        criptoLoading.classList.add('hidden');
+                        criptoTable.classList.remove('hidden');
+                    } else {
+                        // Se falhou, o loading permanece visível com a msg de erro
+                        criptoLoading.classList.remove('hidden');
+                        criptoTable.classList.add('hidden');
+                    }
+                }
+            }
+
+            // 3. Renderiza a tabela de criptomoedas
+            function renderCriptoTable(coins) {
+                criptoTableBody.innerHTML = ''; // Limpa a tabela
+                
+                coins.forEach(coin => {
+                    const priceChange = coin.price_change_percentage_24h || 0;
+                    const priceChangeColor = getResultadoColor(priceChange);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 text-center text-gray-400">${coin.market_cap_rank}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${coin.image}" alt="${coin.name}" class="w-6 h-6 rounded-full">
+                                <div>
+                                    <span class="font-semibold text-white">${coin.name}</span>
+                                    <span class="text-xs text-gray-400 uppercase ml-2">${coin.symbol}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-right font-medium text-white">${formatCurrencyBRL(coin.current_price)}</td>
+                        <td class="py-3 px-4 text-right ${priceChangeColor}">${priceChange.toFixed(2)}%</td>
+                        <td class="py-3 px-4 text-right text-gray-300">${formatCurrencyBRL(coin.total_volume)}</td>
+                        <td class="py-3 px-4 text-right text-gray-300">${formatCurrencyBRL(coin.market_cap)}</td>
+                    `;
+                    criptoTableBody.appendChild(row);
+                });
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE CÁLCULO (FERRAMENTAS)
+            // ==========================================================
+
+            // 1. Calculadora de Juros Compostos
+            function calcularJurosCompostos(e) {
+                if (e) e.preventDefault();
+                
+                const P = parseFloat(document.getElementById('jc-valor-inicial').value) || 0;
+                const A = parseFloat(document.getElementById('jc-aporte-mensal').value) || 0;
+                const taxaAnual = parseFloat(document.getElementById('jc-taxa-anual').value) || 0;
+                const anos = parseInt(document.getElementById('jc-tempo-anos').value) || 0;
+                
+                const r_mensal = (taxaAnual / 100) / 12;
+                const n_meses = anos * 12;
+                
+                let labels = ['Ano 0'];
+                let dataTotal = [P];
+                let dataInvestido = [P];
+                
+                let currentValue = P;
+                let currentInvestido = P;
+
+                for (let m = 1; m <= n_meses; m++) {
+                    currentValue += A;
+                    currentValue *= (1 + r_mensal);
+                    currentInvestido += A;
+                    
+                    if (m % 12 === 0) {
+                        labels.push(`Ano ${m / 12}`);
+                        dataTotal.push(currentValue);
+                        dataInvestido.push(currentInvestido);
+                    }
+                }
+                
+                const totalJuros = currentValue - currentInvestido;
+                
+                // Atualiza os placares
+                jcTotalInvestido.textContent = formatCurrencyBRL(currentInvestido);
+                jcTotalJuros.textContent = formatCurrencyBRL(totalJuros);
+                jcValorTotal.textContent = formatCurrencyBRL(currentValue);
+                
+                // Atualiza o gráfico
+                if (jurosCompostosChartInstance) {
+                    jurosCompostosChartInstance.data.labels = labels;
+                    jurosCompostosChartInstance.data.datasets[0].data = dataTotal;
+                    jurosCompostosChartInstance.data.datasets[1].data = dataInvestido;
+                    jurosCompostosChartInstance.update();
+                }
+            }
+
+            // 2. Calculadora de Benchmark
+            function calcularBenchmark(e) {
+                if (e) e.preventDefault();
+
+                const P = parseFloat(document.getElementById('b-valor-inicial').value) || 0;
+                const r_inv = parseFloat(document.getElementById('b-taxa-investimento').value) || 0;
+                const r_bench = parseFloat(document.getElementById('b-taxa-benchmark').value) || 0;
+                const anos = parseInt(document.getElementById('b-tempo-anos').value) || 0;
+                const nomeBenchmark = bNomeBenchmarkInput.value || 'Benchmark';
+                
+                let labels = ['Ano 0'];
+                let dataInv = [P];
+                let dataBench = [P];
+                
+                let currentInv = P;
+                let currentBench = P;
+
+                for (let y = 1; y <= anos; y++) {
+                    labels.push(`Ano ${y}`);
+                    currentInv *= (1 + r_inv / 100);
+                    currentBench *= (1 + r_bench / 100);
+                    dataInv.push(currentInv);
+                    dataBench.push(currentBench);
+                }
+
+                // Atualiza os placares
+                bValorInvestimento.textContent = formatCurrencyBRL(currentInv);
+                bValorBenchmark.textContent = formatCurrencyBRL(currentBench);
+
+                // Atualiza o gráfico
+                if (benchmarkChartInstance) {
+                    benchmarkChartInstance.data.labels = labels;
+                    benchmarkChartInstance.data.datasets[0].data = dataInv;
+                    benchmarkChartInstance.data.datasets[1].data = dataBench;
+                    benchmarkChartInstance.data.datasets[1].label = nomeBenchmark; // Atualiza o nome
+                    benchmarkChartInstance.update();
+                }
+            }
+
 
             // ==========================================================
             // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (ORÇAMENTO)
@@ -1140,8 +1510,8 @@
                     row.className = 'border-b border-gray-800';
                     row.innerHTML = `
                         <td class="py-3">${goal.name}</td>
-                        <td class="py-3 text-right">R$ ${totalGastoCategoria.toFixed(2).replace('.', ',')}</td>
-                        <td class="py-3 text-right">R$ ${devoGastarCategoria.toFixed(2).replace('.', ',')}</td>
+                        <td class="py-3 text-right">${formatCurrencyBRL(totalGastoCategoria)}</td>
+                        <td class="py-3 text-right">${formatCurrencyBRL(devoGastarCategoria)}</td>
                         <td class="py-3 text-right ${getPercentColor(utilizadoPercent)}">${utilizadoPercent.toFixed(2)}%</td>
                     `;
                     resumoTableBody.appendChild(row);
@@ -1154,8 +1524,8 @@
                     ? (totalGastoGeral / totalDevoGastarGeral) * 100 
                     : (totalGastoGeral > 0 ? 100 : 0);
                 
-                resumoTotalGasto.textContent = `R$ ${totalGastoGeral.toFixed(2).replace('.', ',')}`;
-                resumoTotalDevoGastar.textContent = `R$ ${totalDevoGastarGeral.toFixed(2).replace('.', ',')}`;
+                resumoTotalGasto.textContent = formatCurrencyBRL(totalGastoGeral);
+                resumoTotalDevoGastar.textContent = formatCurrencyBRL(totalDevoGastarGeral);
                 resumoTotalUtilizado.textContent = `${utilizadoGeralPercent.toFixed(0)}%`;
                 resumoTotalUtilizado.className = `pt-4 text-right ${getPercentColor(utilizadoGeralPercent)}`;
                 
@@ -1191,7 +1561,7 @@
                             <div class="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
                                 <div class="flex-grow">
                                     <span class="text-sm text-gray-300 block">${gasto.nome}</span>
-                                    <span class="text-white font-medium">R$ ${gasto.valor.toFixed(2).replace('.', ',')}</span>
+                                    <span class="text-white font-medium">${formatCurrencyBRL(gasto.valor)}</span>
                                 </div>
                                 <button class="edit-gasto-btn p-1 text-gray-400 hover:text-yellow-400" data-id="${gasto.id}" data-nome="${gasto.nome}" data-valor="${gasto.valor}">
                                     <i class="fa-solid fa-pencil w-4 h-4 pointer-events-none"></i>
@@ -1206,7 +1576,7 @@
                             <h3 class="font-semibold text-white mb-2">${categoria.name}</h3>
                             <div class="space-y-2">${itemsHtml}</div>
                             <div class="text-right text-white font-bold text-sm mt-2 border-t border-gray-700 pt-2">
-                                Total: R$ <span id="total-${key}">0,00</span>
+                                Total: <span id="total-${key}">R$ 0,00</span>
                             </div>
                         `;
                         gastosListContainer.appendChild(categoriaContainer);
@@ -1220,7 +1590,7 @@
                     if (totalSpan) {
                         const gastosDaCategoria = gastos.filter(g => g.categoriaKey === goal.key);
                         const totalGastoCategoria = gastosDaCategoria.reduce((sum, g) => sum + g.valor, 0);
-                        totalSpan.textContent = totalGastoCategoria.toFixed(2).replace('.', ',');
+                        totalSpan.textContent = formatCurrencyBRL(totalGastoCategoria);
                     }
                 });
             }
@@ -1235,6 +1605,11 @@
                 if (resultado > 0) return 'text-green-400';
                 if (resultado < 0) return 'text-red-500';
                 return 'text-gray-400';
+            }
+            // (NOVO) Formata como moeda BRL
+            function formatCurrencyBRL(value) {
+                if (value === null || value === undefined) return 'N/A';
+                return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             }
 
             // --- Funções do Modal de Edição (Gasto) ---
@@ -1308,20 +1683,20 @@
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Preço Médio</span>
-                                        <span class="text-white">R$ ${ativo.precoMedio.toFixed(2).replace('.', ',')}</span>
+                                        <span class="text-white">${formatCurrencyBRL(ativo.precoMedio)}</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Valor Invest.</span>
-                                        <span class="text-white">R$ ${valorInvestido.toFixed(2).replace('.', ',')}</span>
+                                        <span class="text-white">${formatCurrencyBRL(valorInvestido)}</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Valor Atual</span>
-                                        <span class="text-white">R$ ${ativo.valorAtual.toFixed(2).replace('.', ',')}</span>
+                                        <span class="text-white">${formatCurrencyBRL(ativo.valorAtual)}</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Resultado</span>
                                         <span class="${getResultadoColor(resultado)} font-semibold">
-                                            R$ ${resultado.toFixed(2).replace('.', ',')} (${resultadoPercent.toFixed(1)}%)
+                                            ${formatCurrencyBRL(resultado)} (${resultadoPercent.toFixed(1)}%)
                                         </span>
                                     </div>
                                 </div>
@@ -1381,7 +1756,7 @@
                 }
                 
                 // Atualiza o valor total no centro
-                portfolioTotalValor.textContent = `R$ ${totalPortfolio.toFixed(2).replace('.', ',')}`;
+                portfolioTotalValor.textContent = formatCurrencyBRL(totalPortfolio);
                 
                 // Atualiza a legenda
                 portfolioLegendContainer.innerHTML = '';
@@ -1459,7 +1834,7 @@
                                             const value = context.raw || 0;
                                             const total = context.chart.getDatasetMeta(0).total;
                                             const percent = total > 0 ? (value / total) * 100 : 0;
-                                            return `${label}: R$ ${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                                            return `${label}: ${formatCurrencyBRL(value)} (${percent.toFixed(1)}%)`;
                                         }
                                     }
                                 }
@@ -1558,6 +1933,103 @@
                     });
                 }
             }
+
+            // 4. Gráfico de Juros Compostos (Linha)
+            function initJurosCompostosChart() {
+                const jcCanvas = document.getElementById('jurosCompostosChart');
+                if (jcCanvas && !jurosCompostosChartInstance) {
+                    const jcCtx = jcCanvas.getContext('2d');
+                    jurosCompostosChartInstance = new Chart(jcCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    label: 'Valor Total Acumulado',
+                                    data: [],
+                                    borderColor: chartColors.income, // yellow-600
+                                    backgroundColor: chartColors.income,
+                                    fill: false,
+                                    tension: 0.1
+                                },
+                                {
+                                    label: 'Total Investido',
+                                    data: [],
+                                    borderColor: chartColors.gridColor, // gray-500
+                                    backgroundColor: chartColors.gridColor,
+                                    fill: false,
+                                    tension: 0.1,
+                                    borderDash: [5, 5]
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: chartColors.gridColor },
+                                    ticks: { color: chartColors.ticksColor }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { color: chartColors.ticksColor }
+                                }
+                            },
+                            plugins: { legend: { labels: { color: chartColors.legendColor } } }
+                        }
+                    });
+                }
+            }
+
+            // 5. Gráfico de Benchmark (Linha)
+            function initBenchmarkChart() {
+                const bCanvas = document.getElementById('benchmarkChart');
+                if (bCanvas && !benchmarkChartInstance) {
+                    const bCtx = bCanvas.getContext('2d');
+                    benchmarkChartInstance = new Chart(bCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                {
+                                    label: 'Seu Investimento',
+                                    data: [],
+                                    borderColor: chartColors.income, // yellow-600
+                                    backgroundColor: chartColors.income,
+                                    fill: false,
+                                    tension: 0.1
+                                },
+                                {
+                                    label: 'Benchmark',
+                                    data: [],
+                                    borderColor: chartColors.costs, // green-400
+                                    backgroundColor: chartColors.costs,
+                                    fill: false,
+                                    tension: 0.1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: chartColors.gridColor },
+                                    ticks: { color: chartColors.ticksColor }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { color: chartColors.ticksColor }
+                                }
+                            },
+                            plugins: { legend: { labels: { color: chartColors.legendColor } } }
+                        }
+                    });
+                }
+            }
             
             // ==========================================================
             // ADIÇÃO DE EVENT LISTENERS
@@ -1618,6 +2090,19 @@
 
             editAtivoForm.addEventListener('submit', updateAtivo);
             btnCancelEditAtivo.addEventListener('click', closeEditAtivoModal);
+
+            // --- Listeners de Ferramentas ---
+            jurosCompostosForm.addEventListener('submit', calcularJurosCompostos);
+            benchmarkForm.addEventListener('submit', calcularBenchmark);
+            bNomeBenchmarkInput.addEventListener('input', (e) => {
+                if(benchmarkChartInstance) {
+                    benchmarkChartInstance.data.datasets[1].label = e.target.value || 'Benchmark';
+                    benchmarkChartInstance.update('none'); 
+                }
+            });
+            
+            // --- (NOVO) Listeners de Cripto ---
+            btnRefreshCripto.addEventListener('click', fetchCriptoData);
 
             
             // ==========================================================
