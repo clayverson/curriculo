@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Financeiro</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome CDN (CSS) --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Google Font 'Inter' --><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Estilo para a aba ativa na pág de orçamento */
+        .active-tab-orcamento {
+            border-bottom: 2px solid #facc15; /* text-yellow-400 */
+            color: #facc15; /* text-yellow-400 */
+        }
+
+        /* --- Estilos Customizados para Sliders --- */
+        input[type="range"].slider-progress {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;   
+            outline: none;
+            /* Cor de fundo é um gradiente que mostra o progresso */
+            --progress-color: #facc15; /* cor padrão */
+            --progress-percent: 50%;   /* percentual padrão */
+            background: linear-gradient(to right, 
+                var(--progress-color) 0%, 
+                var(--progress-color) var(--progress-percent), 
+                #4b5563 var(--progress-percent), 
+                #4b5563 100%
+            );
+        }
+
+        /* Thumb (círculo) do slider para WebKit (Chrome, Safari) */
+        input[type="range"].slider-progress::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%; 
+            background: #E5E7EB; /* gray-200 */
+            cursor: pointer;
+            margin-top: -6px; /* Centraliza o thumb verticalmente */
+        }
+        
+        /* Thumb (círculo) do slider para Firefox */
+        input[type="range"].slider-progress::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #E5E7EB; /* gray-200 */
+            cursor: pointer;
+            border: none;
+        }
+        
+        /* Garante que ícones dentro de botões não capturem cliques */
+        .pointer-events-none {
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-300">
+
+    <!-- ============================================= -->
+    <!-- (NOVO) Container de Erro de Autenticação      -->
+    <!-- ============================================= -->
+    <div id="auth-error-page" class="hidden flex items-center justify-center min-h-screen">
+        <div class="bg-gray-900 p-8 rounded-lg shadow-lg text-center max-w-lg">
+            <i class="fa-solid fa-triangle-exclamation text-yellow-400 text-5xl mb-6"></i>
+            <h1 class="text-3xl font-semibold text-white mb-4">Erro de Configuração</h1>
+            <p class="text-gray-300 mb-2">Ocorreu um erro ao tentar fazer o login anônimo:</p>
+            <code id="auth-error-message" class="bg-gray-800 text-red-400 p-2 rounded-md block mb-6">auth/admin-restricted-operation</code>
+            <h2 class="text-xl font-semibold text-white mb-3">Como Corrigir (no Firebase):</h2>
+            <ol class="text-left text-gray-300 space-y-2">
+                <li>1. Abra o seu projeto no <a href="https://console.firebase.google.com/" target="_blank" class="text-yellow-400 underline hover:text-yellow-300">Console do Firebase</a>.</li>
+                <li>2. No menu à esquerda, clique em <strong>Authentication</strong>.</li>
+                <li>3. Vá para a aba <strong>Sign-in method</strong> (Método de login).</li>
+                <li>4. Na lista, clique em <strong>Anônimo</strong> (Anonymous).</li>
+                <li>5. Ative a chave (toggle) e clique em <strong>Salvar</strong>.</li>
+            </ol>
+            <button onclick="location.reload()" class="mt-8 bg-yellow-400 text-gray-900 font-semibold py-2 px-6 rounded-lg hover:bg-yellow-300 transition-colors">
+                Recarregar a página
+            </button>
+        </div>
+    </div>
+
+
+    <!-- ============================================= -->
+    <!-- PÁGINA DO DASHBOARD (Oculta por padrão)       -->
+    <!-- ============================================= -->
+    <div id="dashboard-page" class="flex hidden">
+        <!-- Barra Lateral Fixa --><aside class="w-64 h-screen fixed top-0 left-0 bg-gray-900 p-6 flex flex-col z-10">
+            <!-- Logo --><div class="flex items-center gap-3 mb-10">
+                <div class="bg-yellow-400 p-2 rounded-lg">
+                    <!-- Novo logo SVG --><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4Z" fill="black"/>
+                        <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6Z" fill="black"/>
+                        <path d="M12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6ZM12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" fill="black"/>
+                        <path d="M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8ZM12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path d="M12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="black"/>
+                    </svg>
+                </div>
+                <span class="text-white text-2xl font-bold">ZERO12</span>
+            </div>
+
+            <!-- Navegação --><nav class="flex flex-col gap-3">
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="home">
+                    <i class="fa-solid fa-home w-5 h-5"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" class="nav-link active-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="carteira">
+                    <i class="fa-solid fa-chart-pie w-5 h-5"></i>
+                    <span>Carteira</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="orcamento">
+                    <i class="fa-solid fa-piggy-bank w-5 h-5"></i>
+                    <span>Orçamento Doméstico</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="ferramentas">
+                    <i class="fa-solid fa-wrench w-5 h-5"></i>
+                    <span>Ferramentas</span>
+                </a>
+            </nav>
+
+            <!-- Navegação Inferior --><nav class="flex flex-col gap-3 mt-auto">
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="faq">
+                    <i class="fa-solid fa-circle-question w-5 h-5"></i>
+                    <span>FAQ</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="admin">
+                    <i class="fa-solid fa-shield-halved w-5 h-5"></i>
+                    <span>Admin</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal --><main class="ml-64 w-full p-8">
+            <!-- Header --><header class="flex justify-end items-center mb-8">
+                <div class="flex items-center gap-3">
+                    <span class="text-white">Olá, Clayverson Flores</span>
+                    <img src="https://placehold.co/40x40/EAB308/1F2937?text=CF" alt="Avatar do usuário" class="w-10 h-10 rounded-full border-2 border-yellow-400">
+                    <!-- Botão de Salvar -->
+                    <button id="btn-save" class="ml-4 text-gray-400 hover:text-white" title="Salvar Orçamento">
+                        <i class="fa-solid fa-floppy-disk w-5 h-5"></i>
+                    </button>
+                    <!-- Botão de Logout -->
+                    <button id="btn-logout" class="ml-4 text-gray-400 hover:text-white" title="Sair">
+                        <i class="fa-solid fa-right-from-bracket w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ============================================= --><!-- PÁGINA: CARTEIRA (Visível por padrão)         --><!-- ============================================= --><div id="page-carteira" class="page-content">
+                <h1 class="text-3xl font-semibold text-white mb-6">Carteira</h1>
+                <!-- Grid de Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    
+                    <!-- Card: Gráfico de Portfólio (Donut) --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                        <h2 class="text-xl font-semibold text-white mb-4">Portfólio Total</h2>
+                        
+                        <!-- Container do Gráfico e Total --><div class="relative h-64 w-full mb-6">
+                            <!-- Gráfico --><canvas id="portfolioChart"></canvas>
+                            <!-- Texto Central (dinâmico) --><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-gray-400 text-sm">Total</span>
+                                <span id="portfolio-total-valor" class="text-white text-3xl font-bold">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <!-- Legenda Customizada (dinâmica) --><div id="portfolio-legend-container" class="space-y-3">
+                            <!-- Legenda será preenchida por JS -->
+                        </div>
+                    </div>
+
+                    <!-- Card: Histórico de Orçamento (Barras) --><div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                        <h2 class="text-xl font-semibold text-white mb-4">Histórico de orçamento doméstico</h2>
+                        <div class="h-96">
+                            <canvas id="budgetHistoryChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- ============================================= -->
+                <!-- Seção de Gerenciamento de Ativos              -->
+                <!-- ============================================= -->
+                <div class="mt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-semibold text-white">Meus Ativos</h2>
+                        <button id="btn-open-add-ativo-modal" class="bg-yellow-400 text-gray-900 font-semibold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i>
+                            Adicionar Ativo
+                        </button>
+                    </div>
+
+                    <!-- Lista de Ativos -->
+                    <div id="ativos-list-container" class="space-y-6">
+                        <!-- Placeholder -->
+                        <div id="ativos-placeholder" class="text-center text-gray-400 py-12 bg-gray-900 rounded-lg">
+                            <i class="fa-solid fa-box-open w-12 h-12 mx-auto mb-4"></i>
+                            <p>Nenhum ativo adicionado.</p>
+                            <p class="text-sm">Clique em "Adicionar Ativo" para começar.</p>
+                        </div>
+                        <!-- Ativos serão injetados aqui por JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================= --><!-- PÁGINA: ORÇAMENTO (Oculta por padrão)         --><!-- ============================================= --><div id="page-orcamento" class="page-content hidden">
+                
+                <!-- NAVEGAÇÃO POR ABAS --><div class="flex border-b border-gray-700 mb-6">
+                    <button class="tab-link-orcamento active-tab-orcamento py-3 px-6 text-white font-semibold" data-tab="orcamento-content">ORÇAMENTO DOMÉSTICO</button>
+                    <button class="tab-link-orcamento py-3 px-6 text-gray-400 hover:text-white" data-tab="metas-content">MINHAS METAS</button>
+                </div>
+
+                <!-- ABA: ORÇAMENTO DOMÉSTICO --><div id="orcamento-content" class="tab-content-orcamento">
+                    <!-- Header da Página de Orçamento --><div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-3xl font-semibold text-white">Orçamento Doméstico</h1>
+                            <p class="text-gray-400">Controle seu orçamento com base em suas próprias metas e rendimentos.</p>
+                        </div>
+                        <!-- Renda Mensal Editável --><div class="bg-gray-900 p-4 rounded-lg shadow-inner">
+                            <label for="renda-mensal-input" class="text-sm text-gray-400 block mb-1">Renda do mês</label>
+                            <div class="flex items-center">
+                                <span class="text-2xl font-bold text-white mr-2">R$</span>
+                                <input type="number" id="renda-mensal-input" value="6000.00" min="0" step="0.01" class="text-2xl font-bold text-white bg-gray-800 p-1 rounded-md w-40 outline-none focus:border-yellow-400 border-2 border-transparent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid Superior (Resumo e Metas) --><div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Card: Resumo --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Resumo</h2>
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700 text-gray-400">
+                                        <th class="py-2">Budget</th>
+                                        <th class="py-2 text-right">Valor Gasto</th>
+                                        <th class="py-2 text-right">Devo gastar</th>
+                                        <th class="py-2 text-right">Utilizado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resumo-table-body" class="text-white">
+                                    <!-- Linhas serão preenchidas por JS -->
+                                </tbody>
+                                <tfoot class="text-white">
+                                    <tr class="font-bold">
+                                        <td class="pt-4">Total</td>
+                                        <td id="resumo-total-gasto" class="pt-4 text-right">R$ 0,00</td>
+                                        <td id="resumo-total-devo-gastar" class="pt-4 text-right">R$ 6.000,00</td>
+                                        <td id="resumo-total-utilizado" class="pt-4 text-right text-green-400">0%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Card: Metas --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Metas</h2>
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700 text-gray-400">
+                                        <th class="py-2">Categoria</th>
+                                        <th class="py-2 text-right">% Meta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metas-table-body" class="text-white">
+                                   <!-- Linhas serão preenchidas por JS -->
+                                </tbody>
+                            </table>
+                            <button id="btn-editar-metas" class="mt-6 w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                Editar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Grid Inferior (Gastos) --><div class="grid grid-cols-1 gap-6">
+                        <!-- Card: Gastos --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Gastos</h2>
+                            
+                            <!-- Lista de Gastos --><div id="gastos-list-container" class="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
+                                <!-- As categorias de gastos serão injetadas aqui pelo JS -->
+                                <div id="gastos-placeholder" class="text-center text-gray-400 py-8">
+                                    <i class="fa-solid fa-circle-info w-10 h-10 mx-auto mb-3"></i>
+                                    <p>Adicione um gasto abaixo para começar.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Formulário de Adicionar Custo --><h3 class="font-semibold text-white mt-6 mb-3 border-t border-gray-700 pt-4">Adicionar custo</h3>
+                            <form id="add-gasto-form">
+                                <div class="mb-3">
+                                    <label for="gasto-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome do gasto</label>
+                                    <input type="text" id="gasto-nome" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Ex: Luz, Água, Supermercado" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="gasto-valor" class="block text-sm font-medium text-gray-400 mb-1">Valor</label>
+                                    <input type="number" id="gasto-valor" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="gasto-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                                    <select id="gasto-categoria" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" required>
+                                        <!-- Opções serão preenchidas por JS -->
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors flex items-center justify-center">
+                                    <i class="fa-solid fa-plus w-5 h-5 mr-2"></i>
+                                    Adicionar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA: MINHAS METAS --><div id="metas-content" class="tab-content-orcamento hidden">
+                    <h1 class="text-3xl font-semibold text-white">Metas</h1>
+                    <p class="text-gray-400 mb-6">Edite os itens abaixo para ajustar suas metas.</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Card Esquerdo: Gráfico de Metas --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4" id="goals-total">Total: 100%</h2>
+                            
+                            <!-- Container do Gráfico --><div class="relative h-64 w-full mb-6">
+                                <canvas id="goalsChart"></canvas>
+                            </div>
+
+                            <!-- Legenda Customizada --><div id="goals-legend-container" class="space-y-3">
+                                <!-- Legenda será preenchida por JS -->
+                            </div>
+                        </div>
+
+                        <!-- Card Direito: Sliders de Metas --><div id="goals-sliders-container" class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg space-y-6">
+                            <!-- Sliders serão preenchidos por JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Outras páginas --><div id="page-home" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">Home</h1>
+                 <p>Bem-vindo ao seu painel financeiro.</p>
+            </div>
+            <div id="page-ferramentas" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">Ferramentas</h1>
+                 <p>Página de ferramentas em construção.</p>
+            </div>
+            <div id="page-faq" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">FAQ</h1>
+                 <p>Página de FAQ em construção.</p>
+            </div>
+            <div id="page-admin" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">Admin</h1>
+                 <p>Página de Admin em construção.</p>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- Modal de Edição de Gasto --><div id="edit-gasto-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h2 class="text-xl font-semibold text-white mb-4">Editar Gasto</h2>
+            <form id="edit-gasto-form">
+                <input type="hidden" id="edit-gasto-id">
+                <div class="mb-3">
+                    <label for="edit-gasto-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome</label>
+                    <input type="text" id="edit-gasto-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-gasto-valor" class="block text-sm font-medium text-gray-400 mb-1">Valor</label>
+                    <input type="number" id="edit-gasto-valor" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="btn-cancel-edit-gasto" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Adicionar Ativo --><div id="add-ativo-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-semibold text-white mb-4">Adicionar Ativo</h2>
+            <form id="add-ativo-form" class="space-y-4">
+                <div>
+                    <label for="ativo-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome / Ticker</label>
+                    <input type="text" id="ativo-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" placeholder="Ex: PETR4, MXRF11, Bitcoin" required>
+                </div>
+                <div>
+                    <label for="ativo-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                    <select id="ativo-categoria" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                        <!-- Opções serão preenchidas por JS -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="ativo-quantidade" class="block text-sm font-medium text-gray-400 mb-1">Quantidade</label>
+                        <input type="number" id="ativo-quantidade" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="any" min="0" placeholder="100" required>
+                    </div>
+                     <div>
+                        <label for="ativo-preco-medio" class="block text-sm font-medium text-gray-400 mb-1">Preço Médio (Custo)</label>
+                        <input type="number" id="ativo-preco-medio" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="25.00" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="ativo-valor-atual" class="block text-sm font-medium text-gray-400 mb-1">Valor Total Atual (R$)</label>
+                    <input type="number" id="ativo-valor-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="3000.00" required>
+                    <p class="text-xs text-gray-500 mt-1">Insira o valor total atualizado do ativo na sua carteira.</p>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="btn-cancel-add-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Editar Ativo --><div id="edit-ativo-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-semibold text-white mb-4">Editar Ativo</h2>
+            <form id="edit-ativo-form" class="space-y-4">
+                <input type="hidden" id="edit-ativo-id">
+                <div>
+                    <label for="edit-ativo-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome / Ticker</label>
+                    <input type="text" id="edit-ativo-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                </div>
+                <div>
+                    <label for="edit-ativo-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                    <select id="edit-ativo-categoria" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                        <!-- Opções serão preenchidas por JS -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-ativo-quantidade" class="block text-sm font-medium text-gray-400 mb-1">Quantidade</label>
+                        <input type="number" id="edit-ativo-quantidade" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="any" min="0" required>
+                    </div>
+                     <div>
+                        <label for="edit-ativo-preco-medio" class="block text-sm font-medium text-gray-400 mb-1">Preço Médio (Custo)</label>
+                        <input type="number" id="edit-ativo-preco-medio" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-ativo-valor-atual" class="block text-sm font-medium text-gray-400 mb-1">Valor Total Atual (R$)</label>
+                    <input type="number" id="edit-ativo-valor-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="btn-cancel-edit-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ============================================= -->
+    <!-- SCRIPTS                                       -->
+    <!-- ============================================= -->
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Importa as funções que você precisa dos SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signOut, 
+            onAuthStateChanged,
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot, 
+            collection, 
+            query 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Disponibiliza funções do Firestore globalmente para o script do dashboard
+        window.firebaseFirestore = {
+            getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query
+        };
+
+        // --- Configuração do Firebase ---
+        let firebaseConfig = {};
+        let appId = 'default-app-id';
+
+        try {
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                console.warn("Variável global __firebase_config não definida. (Isso é esperado no modo 'standalone')");
+                // Tenta carregar do 'painel-standalone.html'
+                const configElement = document.getElementById('firebase-config');
+                if (configElement) {
+                    firebaseConfig = JSON.parse(configElement.textContent);
+                } else {
+                     console.error("Configuração do Firebase não encontrada.");
+                }
+            }
+            
+            if (typeof __app_id !== 'undefined') {
+                appId = __app_id;
+            } else {
+                 // Tenta carregar do 'painel-standalone.html'
+                const appIdElement = document.getElementById('app-id');
+                if (appIdElement) {
+                    appId = appIdElement.textContent;
+                } else {
+                    console.warn("Variável global __app_id não definida. Usando 'default-app-id'.");
+                }
+            }
+        } catch (e) {
+            console.error("Erro ao parsear configuração do Firebase:", e);
+        }
+        
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Referências dos Elementos DOM ---
+        const dashboardPage = document.getElementById('dashboard-page');
+        const btnLogout = document.getElementById('btn-logout');
+        const authErrorPage = document.getElementById('auth-error-page');
+        const authErrorMessage = document.getElementById('auth-error-message');
+
+        // --- Monitoramento de Autenticação ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado
+                authErrorPage.classList.add('hidden'); // Esconde erro
+                dashboardPage.classList.remove('hidden'); // Mostra dashboard
+                
+                // Inicializa o dashboard e passa as instâncias necessárias
+                window.initDashboard(user.uid, appId, db);
+
+            } else {
+                // Usuário não está logado
+                dashboardPage.classList.add('hidden'); // Esconde dashboard
+                
+                // Tenta fazer login automático
+                authenticateUser();
+            }
+        });
+
+        // Função de Autenticação
+        async function authenticateUser() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    // Se um token customizado é fornecido (Ambiente Canvas)
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                    console.log("Login com token customizado bem-sucedido.");
+                } else {
+                    // Senão, tenta login anônimo (Ambiente Standalone)
+                    console.warn("Nenhum token customizado, tentando login anônimo.");
+                    await signInAnonymously(auth);
+                    console.log("Login anônimo bem-sucedido.");
+                }
+            } catch (error) {
+                console.error("Erro durante a autenticação automática:", error);
+                
+                // (MUDANÇA) Mostra a página de erro customizada
+                authErrorMessage.textContent = `${error.code}: ${error.message}`;
+                authErrorPage.classList.remove('hidden');
+                dashboardPage.classList.add('hidden');
+            }
+        }
+
+        // --- Evento de Logout ---
+        btnLogout.addEventListener('click', async () => {
+            try {
+                // Desconecta os listeners do Firestore antes de sair
+                if (window.unsubscribeGastosListener) {
+                    window.unsubscribeGastosListener();
+                    window.unsubscribeGastosListener = null;
+                }
+                if (window.unsubscribeAtivosListener) {
+                    window.unsubscribeAtivosListener();
+                    window.unsubscribeAtivosListener = null;
+                }
+                await signOut(auth);
+                // O onAuthStateChanged vai cuidar de esconder o dashboard
+                // e tentar autenticar novamente.
+            } catch (error) {
+                console.error("Erro ao fazer logout:", error);
+            }
+        });
+
+    </script>
+
+    <!-- Script do Dashboard (Antigo window.onload) -->
+    <script>
+        // Movemos todo o código do dashboard para esta função
+        // Ela será chamada pelo script type="module" acima quando a auth estiver pronta
+        window.initDashboard = (userId, appId, db) => {
+            
+            // Importa funções do Firestore (módulo já carregado)
+            const {
+                doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query 
+            } = window.firebaseFirestore;
+
+            // --- Constantes de Cores e Estilos ---
+            const chartColors = {
+                // Cores do portfólio agora estão em 'portfolioCategorias'
+                costs: '#4ade80', // green-400
+                income: '#ca8a04', // yellow-600
+                gridColor: 'rgba(255, 255, 255, 0.1)',
+                ticksColor: 'rgba(255, 255, 255, 0.7)',
+                legendColor: 'rgba(255, 255, 255, 0.9)'
+            };
+            
+            // --- Variáveis Globais para Gráficos ---
+            let portfolioChartInstance = null;
+            let budgetHistoryChartInstance = null;
+            let goalsChartInstance = null;
+
+            // --- Fonte Única da Verdade para Metas (Orçamento) ---
+            let goalsData = [
+                { key: 'custos', name: 'Custos fixos', percentage: 30, color: '#60a5fa' },
+                { key: 'conforto', name: 'Conforto', percentage: 15, color: '#2dd4bf' },
+                { key: 'metas', name: 'Metas', percentage: 15, color: '#facc15' },
+                { key: 'prazeres', name: 'Prazeres', percentage: 10, color: '#a78bfa' },
+                { key: 'liberdade', name: 'Liberdade financeira', percentage: 25, color: '#3b82f6' },
+                { key: 'conhecimento', name: 'Conhecimento', percentage: 5, color: '#fb923c' },
+                { key: 'emergencia', name: 'Reserva de emergência', percentage: 0, color: '#ef4444' }, 
+            ];
+            
+            // Fonte Única da Verdade para Categorias de Portfólio
+            const portfolioCategorias = [
+                { key: 'acoes_nac', name: 'Ações Nacionais', color: '#2dd4bf' },
+                { key: 'acoes_int', name: 'Ações Internacionais', color: '#60a5fa' },
+                { key: 'fiis', name: 'Fundos Imobiliários', color: '#facc15' },
+                { key: 'cripto', name: 'Criptomoedas', color: '#a78bfa' },
+                { key: 'renda_fixa', name: 'Renda Fixa', color: '#fb923c' },
+                { key: 'reits', name: 'REITs', color: '#6b7280' }
+            ];
+            
+            // Armazena o estado dos gastos (sincronizado com o Firestore)
+            let gastos = [];
+            // Armazena o estado dos ativos (sincronizado com o Firestore)
+            let ativos = [];
+
+            // --- Referências DOM (Dashboard) ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pageContents = document.querySelectorAll('.page-content');
+            const orcamentoTabs = document.querySelectorAll('.tab-link-orcamento');
+            const orcamentoContents = document.querySelectorAll('.tab-content-orcamento');
+            
+            // ... (Referências DOM do Orçamento) ...
+            const goalsTotalDisplay = document.getElementById('goals-total');
+            const goalsLegendContainer = document.getElementById('goals-legend-container');
+            const goalsSlidersContainer = document.getElementById('goals-sliders-container');
+            const metasTableBody = document.getElementById('metas-table-body');
+            const btnEditarMetas = document.getElementById('btn-editar-metas');
+            const rendaMensalInput = document.getElementById('renda-mensal-input');
+            const resumoTableBody = document.getElementById('resumo-table-body');
+            const resumoTotalGasto = document.getElementById('resumo-total-gasto');
+            const resumoTotalDevoGastar = document.getElementById('resumo-total-devo-gastar');
+            const resumoTotalUtilizado = document.getElementById('resumo-total-utilizado');
+            const addGastoForm = document.getElementById('add-gasto-form');
+            const gastoNomeInput = document.getElementById('gasto-nome');
+            const gastoValorInput = document.getElementById('gasto-valor');
+            const gastoCategoriaSelect = document.getElementById('gasto-categoria');
+            const gastosListContainer = document.getElementById('gastos-list-container');
+            const gastosPlaceholder = document.getElementById('gastos-placeholder');
+            const editGastoModal = document.getElementById('edit-gasto-modal');
+            const editGastoForm = document.getElementById('edit-gasto-form');
+            const editGastoId = document.getElementById('edit-gasto-id');
+            const editGastoNome = document.getElementById('edit-gasto-nome');
+            const editGastoValor = document.getElementById('edit-gasto-valor');
+            const btnCancelEditGasto = document.getElementById('btn-cancel-edit-gasto');
+            const btnSave = document.getElementById('btn-save');
+
+            // Referências DOM (Portfólio)
+            const portfolioTotalValor = document.getElementById('portfolio-total-valor');
+            const portfolioLegendContainer = document.getElementById('portfolio-legend-container');
+            const btnOpenAddAtivoModal = document.getElementById('btn-open-add-ativo-modal');
+            const ativosListContainer = document.getElementById('ativos-list-container');
+            const ativosPlaceholder = document.getElementById('ativos-placeholder');
+
+            // Referências DOM (Modal Adicionar Ativo)
+            const addAtivoModal = document.getElementById('add-ativo-modal');
+            const addAtivoForm = document.getElementById('add-ativo-form');
+            const btnCancelAddAtivo = document.getElementById('btn-cancel-add-ativo');
+            const addAtivoNome = document.getElementById('ativo-nome');
+            const addAtivoCategoria = document.getElementById('ativo-categoria');
+            const addAtivoQuantidade = document.getElementById('ativo-quantidade');
+            const addAtivoPrecoMedio = document.getElementById('ativo-preco-medio');
+            const addAtivoValorAtual = document.getElementById('ativo-valor-atual');
+            
+            // Referências DOM (Modal Editar Ativo)
+            const editAtivoModal = document.getElementById('edit-ativo-modal');
+            const editAtivoForm = document.getElementById('edit-ativo-form');
+            const btnCancelEditAtivo = document.getElementById('btn-cancel-edit-ativo');
+            const editAtivoId = document.getElementById('edit-ativo-id');
+            const editAtivoNome = document.getElementById('edit-ativo-nome');
+            const editAtivoCategoria = document.getElementById('edit-ativo-categoria');
+            const editAtivoQuantidade = document.getElementById('edit-ativo-quantidade');
+            const editAtivoPrecoMedio = document.getElementById('edit-ativo-preco-medio');
+            const editAtivoValorAtual = document.getElementById('edit-ativo-valor-atual');
+
+
+            // --- Referências do Firestore ---
+            const configRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento', 'config');
+            const gastosCollection = collection(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos');
+            const ativosCollection = collection(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos');
+
+
+            // --- Lógica de Navegação (Troca de Páginas) ---
+            const setActiveLink = (clickedLink) => {
+                navLinks.forEach(link => link.classList.remove('active-link'));
+                clickedLink.classList.add('active-link');
+            };
+
+            const showPage = (pageId) => {
+                pageContents.forEach(page => {
+                    page.classList.toggle('hidden', page.id !== `page-${pageId}`);
+                });
+                
+                if (pageId === 'carteira') {
+                    initPortfolioChart(); 
+                    initBudgetHistoryChart();
+                } else if (pageId === 'orcamento') {
+                    initGoalsChart(); 
+                }
+            };
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = link.dataset.page;
+                    if (!pageId) return;
+                    setActiveLink(link);
+                    showPage(pageId);
+                });
+            });
+            
+            // --- Lógica das Abas da Página Orçamento ---
+            orcamentoTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTabClick(e.target);
+                });
+            });
+            
+            btnEditarMetas.addEventListener('click', (e) => {
+                e.preventDefault();
+                const metasTabButton = document.querySelector('.tab-link-orcamento[data-tab="metas-content"]');
+                handleTabClick(metasTabButton);
+            });
+            
+            function handleTabClick(tabButton) {
+                if (!tabButton) return;
+                
+                orcamentoTabs.forEach(t => {
+                    const isActive = t === tabButton;
+                    t.classList.toggle('active-tab-orcamento', isActive);
+                    t.classList.toggle('text-white', isActive);
+                    t.classList.toggle('text-gray-400', !isActive);
+                });
+
+                const tabId = tabButton.dataset.tab;
+                orcamentoContents.forEach(content => {
+                    content.classList.toggle('hidden', content.id !== tabId);
+                });
+            }
+
+            // --- Estilo CSS dinâmico para links ativos ---
+            if (!document.getElementById('active-link-style')) {
+                const style = document.createElement('style');
+                style.id = 'active-link-style';
+                style.innerHTML = `
+                    .active-link {
+                        background-color: #1f2937; /* bg-gray-800 */
+                        color: #facc15; /* text-yellow-400 */
+                        font-weight: 600;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE DADOS (ORÇAMENTO)
+            // ==========================================================
+            
+            // 1. Salvar Renda e Metas (Orçamento)
+            async function saveConfiguration() {
+                try {
+                    const renda = parseFloat(rendaMensalInput.value) || 0;
+                    const metasParaSalvar = goalsData.map(g => ({ key: g.key, percentage: g.percentage }));
+                    
+                    await setDoc(configRef, {
+                        rendaMensal: renda,
+                        metas: metasParaSalvar
+                    });
+                    
+                    const saveIcon = btnSave.querySelector('i');
+                    saveIcon.classList.add('fa-beat', 'text-yellow-400');
+                    setTimeout(() => {
+                        saveIcon.classList.remove('fa-beat', 'text-yellow-400');
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error("Erro ao salvar configuração: ", error);
+                }
+            }
+            
+            // 2. Carregar Renda e Metas (Orçamento)
+            async function loadConfiguration() {
+                try {
+                    const docSnap = await getDoc(configRef);
+                    if (docSnap.exists()) {
+                        const config = docSnap.data();
+                        rendaMensalInput.value = (config.rendaMensal || 6000).toFixed(2);
+                        
+                        if (config.metas && Array.isArray(config.metas)) {
+                            goalsData = goalsData.map(localGoal => {
+                                const savedGoal = config.metas.find(g => g.key === localGoal.key);
+                                return savedGoal ? { ...localGoal, percentage: savedGoal.percentage } : localGoal;
+                            });
+                        }
+                    } else {
+                        rendaMensalInput.value = "6000.00";
+                        await saveConfiguration(); // Salva os padrões
+                    }
+                    fullRender(); // Renderiza tudo após carregar
+                } catch (error) {
+                    console.error("Erro ao carregar configuração: ", error);
+                }
+            }
+            
+            // 3. Adicionar Gasto
+            async function addGasto(e) {
+                e.preventDefault();
+                const nome = gastoNomeInput.value.trim();
+                const valor = parseFloat(gastoValorInput.value);
+                const categoriaKey = gastoCategoriaSelect.value;
+                
+                if (!nome || isNaN(valor) || valor <= 0 || !categoriaKey) return;
+                
+                try {
+                    await addDoc(gastosCollection, {
+                        nome: nome,
+                        valor: valor,
+                        categoriaKey: categoriaKey,
+                        createdAt: new Date()
+                    });
+                    addGastoForm.reset();
+                } catch (error) {
+                    console.error("Erro ao adicionar gasto: ", error);
+                }
+            }
+
+            // 4. Excluir Gasto
+            async function deleteGasto(gastoId) {
+                if (!gastoId) return;
+                try {
+                    const gastoRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos', gastoId);
+                    await deleteDoc(gastoRef);
+                } catch (error) {
+                    console.error("Erro ao excluir gasto: ", error);
+                }
+            }
+            
+            // 5. Editar Gasto (Salvar no modal)
+            async function updateGasto(e) {
+                e.preventDefault();
+                const id = editGastoId.value;
+                const nome = editGastoNome.value.trim();
+                const valor = parseFloat(editGastoValor.value);
+                
+                if (!id || !nome || isNaN(valor) || valor <= 0) return;
+                
+                try {
+                    const gastoRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos', id);
+                    await updateDoc(gastoRef, {
+                        nome: nome,
+                        valor: valor
+                    });
+                    closeEditGastoModal();
+                } catch (error) {
+                    console.error("Erro ao atualizar gasto: ", error);
+                }
+            }
+            
+            // 6. Listener de Gastos (Tempo Real)
+            function setupGastosListener() {
+                if (window.unsubscribeGastosListener) {
+                    window.unsubscribeGastosListener();
+                }
+                const q = query(gastosCollection);
+                window.unsubscribeGastosListener = onSnapshot(q, (querySnapshot) => {
+                    gastos = [];
+                    querySnapshot.forEach((doc) => {
+                        gastos.push({ id: doc.id, ...doc.data() });
+                    });
+                    gastos.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    renderGastosList();
+                    updateResumoTable();
+                }, (error) => {
+                    console.error("Erro no listener de gastos: ", error);
+                });
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE DADOS (PORTFÓLIO)
+            // ==========================================================
+
+            // 1. Adicionar Ativo
+            async function addAtivo(e) {
+                e.preventDefault();
+                const nome = addAtivoNome.value.trim();
+                const categoriaKey = addAtivoCategoria.value;
+                const quantidade = parseFloat(addAtivoQuantidade.value);
+                const precoMedio = parseFloat(addAtivoPrecoMedio.value);
+                const valorAtual = parseFloat(addAtivoValorAtual.value);
+
+                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(valorAtual)) {
+                    console.warn("Formulário de ativo inválido.");
+                    return;
+                }
+
+                try {
+                    await addDoc(ativosCollection, {
+                        nome: nome,
+                        categoriaKey: categoriaKey,
+                        quantidade: quantidade,
+                        precoMedio: precoMedio,
+                        valorAtual: valorAtual,
+                        createdAt: new Date()
+                    });
+                    closeAddAtivoModal();
+                } catch (error) {
+                    console.error("Erro ao adicionar ativo: ", error);
+                }
+            }
+
+            // 2. Excluir Ativo
+            async function deleteAtivo(ativoId) {
+                if (!ativoId) return;
+                try {
+                    const ativoRef = doc(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos', ativoId);
+                    await deleteDoc(ativoRef);
+                } catch (error) {
+                    console.error("Erro ao excluir ativo: ", error);
+                }
+            }
+            
+            // 3. Editar Ativo (Salvar no modal)
+            async function updateAtivo(e) {
+                e.preventDefault();
+                const id = editAtivoId.value;
+                const nome = editAtivoNome.value.trim();
+                const categoriaKey = editAtivoCategoria.value;
+                const quantidade = parseFloat(editAtivoQuantidade.value);
+                const precoMedio = parseFloat(editAtivoPrecoMedio.value);
+                const valorAtual = parseFloat(editAtivoValorAtual.value);
+
+                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(valorAtual)) {
+                     console.warn("Formulário de edição de ativo inválido.");
+                    return;
+                }
+                
+                try {
+                    const ativoRef = doc(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos', id);
+                    await updateDoc(ativoRef, {
+                        nome: nome,
+                        categoriaKey: categoriaKey,
+                        quantidade: quantidade,
+                        precoMedio: precoMedio,
+                        valorAtual: valorAtual,
+                    });
+                    closeEditAtivoModal();
+                } catch (error) {
+                    console.error("Erro ao atualizar ativo: ", error);
+                }
+            }
+
+            // 4. Listener de Ativos (Tempo Real)
+            function setupAtivosListener() {
+                if (window.unsubscribeAtivosListener) {
+                    window.unsubscribeAtivosListener();
+                }
+                const q = query(ativosCollection);
+                window.unsubscribeAtivosListener = onSnapshot(q, (querySnapshot) => {
+                    ativos = [];
+                    querySnapshot.forEach((doc) => {
+                        ativos.push({ id: doc.id, ...doc.data() });
+                    });
+                    ativos.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    
+                    renderAtivosList();
+                    updatePortfolioChartAndLegend();
+                    
+                }, (error) => {
+                    console.error("Erro no listener de ativos: ", error);
+                });
+            }
+
+
+            // ==========================================================
+            // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (ORÇAMENTO)
+            // ==========================================================
+
+            function fullRender() {
+                renderGoalsSliders();
+                renderGoalsLegend();
+                renderMetasTabela();
+                renderGastoCategoriaSelect();
+                updateGoalsChart();
+                updateResumoTable();
+            }
+
+            // --- Funções da Aba "Minhas Metas" ---
+            
+            function renderGoalsSliders() {
+                goalsSlidersContainer.innerHTML = '';
+                goalsData.forEach((goal) => {
+                    const sliderDiv = document.createElement('div');
+                    sliderDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="slider-${goal.key}" class="text-lg font-semibold text-white">${goal.name}</label>
+                            <span id="slider-${goal.key}-value" class="text-white font-semibold">${goal.percentage}%</span>
+                        </div>
+                        <input type="range" id="slider-${goal.key}" data-key="${goal.key}" class="slider-progress w-full" min="0" max="100" value="${goal.percentage}">
+                    `;
+                    goalsSlidersContainer.appendChild(sliderDiv);
+                    
+                    const sliderInput = sliderDiv.querySelector('input');
+                    sliderInput.style.setProperty('--progress-color', goal.color);
+                    sliderInput.style.setProperty('--progress-percent', `${goal.percentage}%`);
+                });
+            }
+
+            function renderGoalsLegend() {
+                goalsLegendContainer.innerHTML = '';
+                goalsData.forEach(goal => {
+                    if (goal.percentage > 0) {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center gap-2';
+                        legendItem.innerHTML = `
+                            <span class="w-3 h-3 rounded-full" style="background-color: ${goal.color};"></span>
+                            <span>${goal.name}</span>
+                        `;
+                        goalsLegendContainer.appendChild(legendItem);
+                    }
+                });
+            }
+            
+            function updateGoalsChart() {
+                if (goalsChartInstance) {
+                    goalsChartInstance.data.labels = goalsData.map(g => g.name);
+                    goalsChartInstance.data.datasets[0].data = goalsData.map(g => g.percentage);
+                    goalsChartInstance.data.datasets[0].backgroundColor = goalsData.map(g => g.color);
+                    goalsChartInstance.update();
+                    renderGoalsLegend();
+                }
+            }
+
+            function handleSliderInput(e) {
+                if (!e.target || e.target.type !== 'range') return;
+                
+                const key = e.target.dataset.key;
+                const value = parseFloat(e.target.value);
+                
+                const goal = goalsData.find(g => g.key === key);
+                if (goal) {
+                    goal.percentage = value;
+                }
+                
+                document.getElementById(`slider-${key}-value`).textContent = `${value}%`;
+                e.target.style.setProperty('--progress-percent', `${value}%`);
+                
+                const total = goalsData.reduce((sum, val) => sum + val.percentage, 0);
+                goalsTotalDisplay.textContent = `Total: ${total.toFixed(0)}%`;
+                goalsTotalDisplay.classList.toggle('text-red-500', total !== 100);
+                goalsTotalDisplay.classList.toggle('text-white', total === 100);
+
+                updateGoalsChart();
+                renderMetasTabela();
+                updateResumoTable();
+            }
+
+            // --- Funções da Aba "Orçamento Doméstico" ---
+
+            function renderMetasTabela() {
+                metasTableBody.innerHTML = '';
+                goalsData.forEach(goal => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3">${goal.name}</td>
+                        <td class="py-3 text-right">${goal.percentage.toFixed(0)}%</td>
+                    `;
+                    metasTableBody.appendChild(row);
+                });
+            }
+
+            function renderGastoCategoriaSelect() {
+                gastoCategoriaSelect.innerHTML = '<option value="">Selecione...</option>';
+                goalsData.forEach(goal => {
+                    const option = document.createElement('option');
+                    option.value = goal.key;
+                    option.textContent = goal.name;
+                    gastoCategoriaSelect.appendChild(option);
+                });
+            }
+            
+            function updateResumoTable() {
+                const renda = parseFloat(rendaMensalInput.value) || 0;
+                resumoTableBody.innerHTML = '';
+                
+                let totalGastoGeral = 0;
+                let totalDevoGastarGeral = 0;
+                
+                goalsData.forEach(goal => {
+                    const gastosDaCategoria = gastos.filter(g => g.categoriaKey === goal.key);
+                    const totalGastoCategoria = gastosDaCategoria.reduce((sum, g) => sum + g.valor, 0);
+                    const devoGastarCategoria = renda * (goal.percentage / 100);
+                    
+                    const utilizadoPercent = devoGastarCategoria > 0 
+                        ? (totalGastoCategoria / devoGastarCategoria) * 100 
+                        : (totalGastoCategoria > 0 ? 100 : 0);
+
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3">${goal.name}</td>
+                        <td class="py-3 text-right">R$ ${totalGastoCategoria.toFixed(2).replace('.', ',')}</td>
+                        <td class="py-3 text-right">R$ ${devoGastarCategoria.toFixed(2).replace('.', ',')}</td>
+                        <td class="py-3 text-right ${getPercentColor(utilizadoPercent)}">${utilizadoPercent.toFixed(2)}%</td>
+                    `;
+                    resumoTableBody.appendChild(row);
+                    
+                    totalGastoGeral += totalGastoCategoria;
+                    totalDevoGastarGeral += devoGastarCategoria;
+                });
+                
+                const utilizadoGeralPercent = totalDevoGastarGeral > 0 
+                    ? (totalGastoGeral / totalDevoGastarGeral) * 100 
+                    : (totalGastoGeral > 0 ? 100 : 0);
+                
+                resumoTotalGasto.textContent = `R$ ${totalGastoGeral.toFixed(2).replace('.', ',')}`;
+                resumoTotalDevoGastar.textContent = `R$ ${totalDevoGastarGeral.toFixed(2).replace('.', ',')}`;
+                resumoTotalUtilizado.textContent = `${utilizadoGeralPercent.toFixed(0)}%`;
+                resumoTotalUtilizado.className = `pt-4 text-right ${getPercentColor(utilizadoGeralPercent)}`;
+                
+                updateGastosListTotals(renda);
+            }
+            
+            function renderGastosList() {
+                gastosListContainer.innerHTML = '';
+                
+                if (gastos.length === 0) {
+                    gastosListContainer.appendChild(gastosPlaceholder);
+                    return;
+                }
+
+                const gastosAgrupados = {};
+                goalsData.forEach(goal => {
+                    gastosAgrupados[goal.key] = { name: goal.name, items: [] };
+                });
+                
+                gastos.forEach(gasto => {
+                    if (gastosAgrupados[gasto.categoriaKey]) {
+                        gastosAgrupados[gasto.categoriaKey].items.push(gasto);
+                    }
+                });
+
+                Object.keys(gastosAgrupados).forEach(key => {
+                    const categoria = gastosAgrupados[key];
+                    if (categoria.items.length > 0) {
+                        const categoriaContainer = document.createElement('div');
+                        categoriaContainer.id = `categoria-${key}`;
+                        
+                        const itemsHtml = categoria.items.map(gasto => `
+                            <div class="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
+                                <div class="flex-grow">
+                                    <span class="text-sm text-gray-300 block">${gasto.nome}</span>
+                                    <span class="text-white font-medium">R$ ${gasto.valor.toFixed(2).replace('.', ',')}</span>
+                                </div>
+                                <button class="edit-gasto-btn p-1 text-gray-400 hover:text-yellow-400" data-id="${gasto.id}" data-nome="${gasto.nome}" data-valor="${gasto.valor}">
+                                    <i class="fa-solid fa-pencil w-4 h-4 pointer-events-none"></i>
+                                </button>
+                                <button class="delete-gasto-btn p-1 text-gray-400 hover:text-red-500" data-id="${gasto.id}">
+                                    <i class="fa-solid fa-trash w-4 h-4 pointer-events-none"></i>
+                                </button>
+                            </div>
+                        `).join('');
+
+                        categoriaContainer.innerHTML = `
+                            <h3 class="font-semibold text-white mb-2">${categoria.name}</h3>
+                            <div class="space-y-2">${itemsHtml}</div>
+                            <div class="text-right text-white font-bold text-sm mt-2 border-t border-gray-700 pt-2">
+                                Total: R$ <span id="total-${key}">0,00</span>
+                            </div>
+                        `;
+                        gastosListContainer.appendChild(categoriaContainer);
+                    }
+                });
+            }
+            
+            function updateGastosListTotals(renda) {
+                goalsData.forEach(goal => {
+                    const totalSpan = document.getElementById(`total-${goal.key}`);
+                    if (totalSpan) {
+                        const gastosDaCategoria = gastos.filter(g => g.categoriaKey === goal.key);
+                        const totalGastoCategoria = gastosDaCategoria.reduce((sum, g) => sum + g.valor, 0);
+                        totalSpan.textContent = totalGastoCategoria.toFixed(2).replace('.', ',');
+                    }
+                });
+            }
+
+            // --- Funções Auxiliares ---
+            function getPercentColor(percent) {
+                if (percent > 95) return 'text-red-500';
+                if (percent > 80) return 'text-yellow-500';
+                return 'text-green-400';
+            }
+            function getResultadoColor(resultado) {
+                if (resultado > 0) return 'text-green-400';
+                if (resultado < 0) return 'text-red-500';
+                return 'text-gray-400';
+            }
+
+            // --- Funções do Modal de Edição (Gasto) ---
+            function openEditGastoModal(gasto) {
+                editGastoId.value = gasto.id;
+                editGastoNome.value = gasto.nome;
+                editGastoValor.value = gasto.valor.toFixed(2);
+                editGastoModal.classList.remove('hidden');
+            }
+            function closeEditGastoModal() {
+                editGastoModal.classList.add('hidden');
+                editGastoForm.reset();
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (PORTFÓLIO)
+            // ==========================================================
+            
+            // 1. Renderiza os selects de categoria de portfólio
+            function renderPortfolioCategoriaSelect() {
+                const selects = [addAtivoCategoria, editAtivoCategoria];
+                selects.forEach(select => {
+                    select.innerHTML = '<option value="">Selecione a Categoria...</option>';
+                    portfolioCategorias.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.key;
+                        option.textContent = cat.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+
+            // 2. Renderiza a lista de ativos (baseado no array 'ativos')
+            function renderAtivosList() {
+                ativosListContainer.innerHTML = '';
+                
+                if (ativos.length === 0) {
+                    ativosListContainer.appendChild(ativosPlaceholder);
+                    return; 
+                }
+
+                // Agrupa ativos por categoria
+                const ativosAgrupados = {};
+                portfolioCategorias.forEach(cat => {
+                    ativosAgrupados[cat.key] = { name: cat.name, items: [] };
+                });
+                
+                ativos.forEach(ativo => {
+                    if (ativosAgrupados[ativo.categoriaKey]) {
+                        ativosAgrupados[ativo.categoriaKey].items.push(ativo);
+                    }
+                });
+
+                // Renderiza
+                Object.keys(ativosAgrupados).forEach(key => {
+                    const categoria = ativosAgrupados[key];
+                    if (categoria.items.length > 0) {
+                        const categoriaContainer = document.createElement('div');
+                        categoriaContainer.className = 'bg-gray-900 p-6 rounded-lg shadow-lg';
+                        
+                        const itemsHtml = categoria.items.map(ativo => {
+                            const valorInvestido = ativo.quantidade * ativo.precoMedio;
+                            const resultado = ativo.valorAtual - valorInvestido;
+                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0;
+                            
+                            return `
+                                <div class="grid grid-cols-6 gap-4 items-center py-3 border-b border-gray-800 last:border-b-0">
+                                    <div class="col-span-2">
+                                        <span class="text-lg font-semibold text-white block">${ativo.nome}</span>
+                                        <span class="text-sm text-gray-400">Qtd: ${ativo.quantidade}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Preço Médio</span>
+                                        <span class="text-white">R$ ${ativo.precoMedio.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Valor Invest.</span>
+                                        <span class="text-white">R$ ${valorInvestido.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Valor Atual</span>
+                                        <span class="text-white">R$ ${ativo.valorAtual.toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Resultado</span>
+                                        <span class="${getResultadoColor(resultado)} font-semibold">
+                                            R$ ${resultado.toFixed(2).replace('.', ',')} (${resultadoPercent.toFixed(1)}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <!-- Botões de Ação na linha de baixo -->
+                                <div class="flex justify-end gap-2 pb-3 border-b border-gray-800 last:border-b-0">
+                                    <button class="edit-ativo-btn text-xs bg-gray-700 hover:bg-yellow-600 text-white py-1 px-2 rounded"
+                                        data-id="${ativo.id}"
+                                        data-nome="${ativo.nome}"
+                                        data-categoria="${ativo.categoriaKey}"
+                                        data-quantidade="${ativo.quantidade}"
+                                        data-preco-medio="${ativo.precoMedio}"
+                                        data-valor-atual="${ativo.valorAtual}">
+                                        <i class="fa-solid fa-pencil mr-1 pointer-events-none"></i> Editar
+                                    </button>
+                                    <button class="delete-ativo-btn text-xs bg-gray-700 hover:bg-red-600 text-white py-1 px-2 rounded" data-id="${ativo.id}">
+                                        <i class="fa-solid fa-trash mr-1 pointer-events-none"></i> Excluir
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
+
+                        categoriaContainer.innerHTML = `
+                            <h3 class="text-xl font-semibold text-white mb-4">${categoria.name}</h3>
+                            <div class="space-y-2">${itemsHtml}</div>
+                        `;
+                        ativosListContainer.appendChild(categoriaContainer);
+                    }
+                });
+            }
+            
+            // 3. Atualiza o gráfico e legenda do Portfólio
+            function updatePortfolioChartAndLegend() {
+                let totalPortfolio = 0;
+                const totaisCategoria = {};
+                portfolioCategorias.forEach(cat => totaisCategoria[cat.key] = 0);
+
+                // Calcula totais
+                ativos.forEach(ativo => {
+                    const valor = ativo.valorAtual || 0;
+                    totalPortfolio += valor;
+                    if (totaisCategoria[ativo.categoriaKey] !== undefined) {
+                        totaisCategoria[ativo.categoriaKey] += valor;
+                    }
+                });
+                
+                // Prepara dados para o gráfico
+                const chartData = portfolioCategorias.map(cat => totaisCategoria[cat.key]);
+                const chartLabels = portfolioCategorias.map(cat => cat.name);
+                const chartColors = portfolioCategorias.map(cat => cat.color);
+                
+                // Atualiza o gráfico
+                if (portfolioChartInstance) {
+                    portfolioChartInstance.data.labels = chartLabels;
+                    portfolioChartInstance.data.datasets[0].data = chartData;
+                    portfolioChartInstance.data.datasets[0].backgroundColor = chartColors;
+                    portfolioChartInstance.update();
+                }
+                
+                // Atualiza o valor total no centro
+                portfolioTotalValor.textContent = `R$ ${totalPortfolio.toFixed(2).replace('.', ',')}`;
+                
+                // Atualiza a legenda
+                portfolioLegendContainer.innerHTML = '';
+                portfolioCategorias.forEach(cat => {
+                    const valorCategoria = totaisCategoria[cat.key];
+                    const percent = totalPortfolio > 0 ? (valorCategoria / totalPortfolio) * 100 : 0;
+                    
+                    if (valorCategoria > 0) { // Só mostra se tiver valor
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center justify-between';
+                        legendItem.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full" style="background-color: ${cat.color}"></span>
+                                <span>${cat.name}</span>
+                            </div>
+                            <span>${percent.toFixed(2)}%</span>
+                        `;
+                        portfolioLegendContainer.appendChild(legendItem);
+                    }
+                });
+            }
+
+            // --- Funções dos Modais (Ativo) ---
+            function openAddAtivoModal() {
+                addAtivoForm.reset();
+                addAtivoModal.classList.remove('hidden');
+            }
+            function closeAddAtivoModal() {
+                addAtivoModal.classList.add('hidden');
+            }
+            function openEditAtivoModal(ativo) {
+                editAtivoId.value = ativo.id;
+                editAtivoNome.value = ativo.nome;
+                editAtivoCategoria.value = ativo.categoria;
+                editAtivoQuantidade.value = ativo.quantidade;
+                editAtivoPrecoMedio.value = ativo.precoMedio;
+                editAtivoValorAtual.value = ativo.valorAtual;
+                editAtivoModal.classList.remove('hidden');
+            }
+            function closeEditAtivoModal() {
+                editAtivoModal.classList.add('hidden');
+                editAtivoForm.reset();
+            }
+
+
+            // --- Funções de Inicialização dos Gráficos (Chart.js) ---
+            
+            // 1. Gráfico de Portfólio (Donut)
+            function initPortfolioChart() {
+                const portfolioCanvas = document.getElementById('portfolioChart');
+                if (portfolioCanvas && !portfolioChartInstance) { 
+                    const portfolioCtx = portfolioCanvas.getContext('2d');
+                    portfolioChartInstance = new Chart(portfolioCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [], // Começa vazio
+                            datasets: [{
+                                data: [], // Começa vazio
+                                backgroundColor: [], // Começa vazio
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '80%', 
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { 
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.chart.getDatasetMeta(0).total;
+                                            const percent = total > 0 ? (value / total) * 100 : 0;
+                                            return `${label}: R$ ${value.toFixed(2)} (${percent.toFixed(1)}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 2. Gráfico de Histórico de Orçamento (Barras)
+            function initBudgetHistoryChart() {
+                const budgetHistoryCanvas = document.getElementById('budgetHistoryChart');
+                if (budgetHistoryCanvas && !budgetHistoryChartInstance) {
+                    const budgetHistoryCtx = budgetHistoryCanvas.getContext('2d');
+                    budgetHistoryChartInstance = new Chart(budgetHistoryCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['04/2023', '05/2023', '06/2023', '07/2023', '08/2023', '09/2023', '10/2023', '11/2023', '12/2023'],
+                            datasets: [
+                                {
+                                    label: 'Custos',
+                                    data: [12, 19, 3, 5, 2, 8, 15, 6, 9],
+                                    backgroundColor: chartColors.costs,
+                                    borderRadius: 4
+                                },
+                                {
+                                    label: 'Renda',
+                                    data: [8, 10, 5, 2, 9, 3, 16, 17, 4],
+                                    backgroundColor: chartColors.income,
+                                    borderRadius: 4
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    align: 'end',
+                                    labels: {
+                                        color: chartColors.legendColor,
+                                        boxWidth: 12,
+                                        padding: 20
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: chartColors.gridColor },
+                                    ticks: { color: chartColors.ticksColor }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { color: chartColors.ticksColor }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // 3. Gráfico de Metas (Donut)
+            function initGoalsChart() {
+                const goalsCanvas = document.getElementById('goalsChart');
+                if (goalsCanvas && !goalsChartInstance) {
+                    const goalsCtx = goalsCanvas.getContext('2d');
+                    goalsChartInstance = new Chart(goalsCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: goalsData.map(g => g.name),
+                            datasets: [{
+                                data: goalsData.map(g => g.percentage),
+                                backgroundColor: goalsData.map(g => g.color),
+                                borderWidth: 0,
+                                hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '80%', 
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { 
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            return `${context.label}: ${context.raw}%`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // ==========================================================
+            // ADIÇÃO DE EVENT LISTENERS
+            // ==========================================================
+            
+            // --- Listeners do Orçamento ---
+            btnSave.addEventListener('click', saveConfiguration);
+            rendaMensalInput.addEventListener('change', updateResumoTable);
+            goalsSlidersContainer.addEventListener('input', handleSliderInput);
+            addGastoForm.addEventListener('submit', addGasto);
+            
+            gastosListContainer.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-gasto-btn');
+                const deleteBtn = e.target.closest('.delete-gasto-btn');
+                
+                if (editBtn) {
+                    const gasto = {
+                        id: editBtn.dataset.id,
+                        nome: editBtn.dataset.nome,
+                        valor: parseFloat(editBtn.dataset.valor)
+                    };
+                    openEditGastoModal(gasto);
+                }
+                if (deleteBtn) {
+                    const gastoId = deleteBtn.dataset.id;
+                    if (gastoId) { deleteGasto(gastoId); }
+                }
+            });
+            
+            editGastoForm.addEventListener('submit', updateGasto);
+            btnCancelEditGasto.addEventListener('click', closeEditGastoModal);
+            
+            // --- Listeners do Portfólio ---
+            btnOpenAddAtivoModal.addEventListener('click', openAddAtivoModal);
+            btnCancelAddAtivo.addEventListener('click', closeAddAtivoModal);
+            addAtivoForm.addEventListener('submit', addAtivo);
+
+            ativosListContainer.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-ativo-btn');
+                const deleteBtn = e.target.closest('.delete-ativo-btn');
+
+                if (editBtn) {
+                    const ativo = {
+                        id: editBtn.dataset.id,
+                        nome: editBtn.dataset.nome,
+                        categoria: editBtn.dataset.categoria,
+                        quantidade: parseFloat(editBtn.dataset.quantidade),
+                        precoMedio: parseFloat(editBtn.dataset.precoMedio),
+                        valorAtual: parseFloat(editBtn.dataset.valorAtual)
+                    };
+                    openEditAtivoModal(ativo);
+                }
+                if (deleteBtn) {
+                    const ativoId = deleteBtn.dataset.id;
+                    if (ativoId) { deleteAtivo(ativoId); }
+                }
+            });
+
+            editAtivoForm.addEventListener('submit', updateAtivo);
+            btnCancelEditAtivo.addEventListener('click', closeEditAtivoModal);
+
+            
+            // ==========================================================
+            // INICIALIZAÇÃO
+            // ==========================================================
+            
+            // 1. Preenche os selects dos modais (ambos os tipos)
+            renderGastoCategoriaSelect();
+            renderPortfolioCategoriaSelect(); 
+
+            // 2. Carrega Renda e Metas (Orçamento)
+            loadConfiguration();
+            
+            // 3. Inicia os listeners de dados
+            setupGastosListener();
+            setupAtivosListener(); 
+
+            // 4. Inicializa a Página Padrão
+            showPage('carteira'); 
+            
+        }; // Fim do 'initDashboard'
+    </script>
+
+</body>
+</html>
