@@ -70,25 +70,57 @@
 <body class="bg-gray-950 text-gray-300">
 
     <!-- ============================================= -->
-    <!-- (NOVO) Container de Erro de Autenticação      -->
+    <!-- (NOVO) PÁGINA DE LOGIN                        -->
     <!-- ============================================= -->
-    <div id="auth-error-page" class="hidden flex items-center justify-center min-h-screen">
-        <div class="bg-gray-900 p-8 rounded-lg shadow-lg text-center max-w-lg">
-            <i class="fa-solid fa-triangle-exclamation text-yellow-400 text-5xl mb-6"></i>
-            <h1 class="text-3xl font-semibold text-white mb-4">Erro de Configuração</h1>
-            <p class="text-gray-300 mb-2">Ocorreu um erro ao tentar fazer o login anônimo:</p>
-            <code id="auth-error-message" class="bg-gray-800 text-red-400 p-2 rounded-md block mb-6">auth/admin-restricted-operation</code>
-            <h2 class="text-xl font-semibold text-white mb-3">Como Corrigir (no Firebase):</h2>
-            <ol class="text-left text-gray-300 space-y-2">
-                <li>1. Abra o seu projeto no <a href="https://console.firebase.google.com/" target="_blank" class="text-yellow-400 underline hover:text-yellow-300">Console do Firebase</a>.</li>
-                <li>2. No menu à esquerda, clique em <strong>Authentication</strong>.</li>
-                <li>3. Vá para a aba <strong>Sign-in method</strong> (Método de login).</li>
-                <li>4. Na lista, clique em <strong>Anônimo</strong> (Anonymous).</li>
-                <li>5. Ative a chave (toggle) e clique em <strong>Salvar</strong>.</li>
-            </ol>
-            <button onclick="location.reload()" class="mt-8 bg-yellow-400 text-gray-900 font-semibold py-2 px-6 rounded-lg hover:bg-yellow-300 transition-colors">
-                Recarregar a página
-            </button>
+    <div id="login-page" class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-900 p-8 rounded-lg shadow-lg text-center max-w-sm w-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="bg-yellow-400 p-2 rounded-lg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4Z" fill="black"/>
+                        <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6Z" fill="black"/>
+                        <path d="M12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6ZM12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" fill="black"/>
+                        <path d="M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8ZM12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path d="M12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="black"/>
+                    </svg>
+                </div>
+                <span class="text-white text-3xl font-bold">ZERO12</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white mb-6">Acesse sua conta</h1>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <input type="email" id="login-email" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="E-mail" required>
+                </div>
+                <div>
+                    <input type="password" id="login-password" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Senha" required>
+                </div>
+                
+                <p id="login-error-message" class="text-red-400 text-sm h-4"></p>
+
+                <button type="button" id="btn-login" class="w-full bg-yellow-400 text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-300 transition-colors">
+                    Entrar
+                </button>
+                <button type="button" id="btn-create-account" class="w-full bg-gray-700 text-white font-semibold py-3 rounded-lg hover:bg-gray-600 transition-colors">
+                    Criar Conta
+                </button>
+                
+                <div class="relative my-4">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-700"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="bg-gray-900 px-2 text-gray-500">OU</span>
+                    </div>
+                </div>
+
+                <button type="button" id="btn-google-login" class="w-full bg-white text-gray-900 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C39.712 36.348 44 30.771 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                    Entrar com Google
+                </button>
+            </form>
         </div>
     </div>
 
@@ -129,7 +161,7 @@
                     <i class="fa-solid fa-wrench w-5 h-5"></i>
                     <span>Ferramentas</span>
                 </a>
-                <!-- (NOVO) Link Cotações Cripto -->
+                <!-- Link Cotações Cripto -->
                 <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="cripto">
                     <i class="fa-brands fa-bitcoin w-5 h-5"></i>
                     <span>Cotações Cripto</span>
@@ -468,7 +500,7 @@
 
             </div>
             
-            <!-- (NOVO) PÁGINA: COTAÇÕES CRIPTO -->
+            <!-- PÁGINA: COTAÇÕES CRIPTO -->
             <div id="page-cripto" class="page-content hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-semibold text-white">Top 100 Criptomoedas</h1>
@@ -568,9 +600,10 @@
                     </div>
                 </div>
                 <div>
-                    <label for="ativo-valor-atual" class="block text-sm font-medium text-gray-400 mb-1">Valor Total Atual (R$)</label>
-                    <input type="number" id="ativo-valor-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="3000.00" required>
-                    <p class="text-xs text-gray-500 mt-1">Insira o valor total atualizado do ativo na sua carteira.</p>
+                    <!-- (MODIFICADO) Alterado de "Valor Total Atual" para "Preço Atual" -->
+                    <label for="ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
+                    <input type="number" id="ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="30.00" required>
+                    <p class="text-xs text-gray-500 mt-1">Insira a cotação atual de 1 unidade do ativo.</p>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="btn-cancel-add-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
@@ -606,8 +639,9 @@
                     </div>
                 </div>
                 <div>
-                    <label for="edit-ativo-valor-atual" class="block text-sm font-medium text-gray-400 mb-1">Valor Total Atual (R$)</label>
-                    <input type="number" id="edit-ativo-valor-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                    <!-- (MODIFICADO) Alterado de "Valor Total Atual" para "Preço Atual" -->
+                    <label for="edit-ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
+                    <input type="number" id="edit-ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="btn-cancel-edit-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
@@ -622,7 +656,7 @@
     <!-- SCRIPTS                                       -->
     <!-- ============================================= -->
     
-    <!-- (NOVO) Configuração para modo standalone -->
+    <!-- Configuração para modo standalone -->
     <script id="firebase-config" type="application/json">
         {
             "apiKey": "AIzaSyCYKGo2bMEtrn37jQzP2Cc6F5SPKo_LPTM",
@@ -645,8 +679,11 @@
             getAuth, 
             signOut, 
             onAuthStateChanged,
-            signInWithCustomToken,
-            signInAnonymously
+            // (NOVOS) Imports para Login
+            GoogleAuthProvider,
+            signInWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -671,29 +708,20 @@
         let appId = 'default-app-id';
 
         try {
-            if (typeof __firebase_config !== 'undefined') {
-                firebaseConfig = JSON.parse(__firebase_config);
+            // (MODIFICADO) Carrega config do script tag, não mais do __firebase_config
+            const configElement = document.getElementById('firebase-config');
+            if (configElement) {
+                firebaseConfig = JSON.parse(configElement.textContent);
             } else {
-                console.warn("Variável global __firebase_config não definida. (Isso é esperado no modo 'standalone')");
-                // Tenta carregar do 'painel-standalone.html'
-                const configElement = document.getElementById('firebase-config');
-                if (configElement) {
-                    firebaseConfig = JSON.parse(configElement.textContent);
-                } else {
-                     console.error("Configuração do Firebase não encontrada.");
-                }
+                 console.error("Configuração do Firebase não encontrada.");
             }
             
-            if (typeof __app_id !== 'undefined') {
-                appId = __app_id;
+            // (MODIFICADO) Carrega appId do script tag
+            const appIdElement = document.getElementById('app-id');
+            if (appIdElement) {
+                appId = appIdElement.textContent;
             } else {
-                 // Tenta carregar do 'painel-standalone.html'
-                const appIdElement = document.getElementById('app-id');
-                if (appIdElement) {
-                    appId = appIdElement.textContent;
-                } else {
-                    console.warn("Variável global __app_id não definida. Usando 'default-app-id'.");
-                }
+                console.warn("Variável global __app_id não definida. Usando 'default-app-id'.");
             }
         } catch (e) {
             console.error("Erro ao parsear configuração do Firebase:", e);
@@ -704,17 +732,24 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- Referências dos Elementos DOM ---
+        // --- (NOVAS) Referências dos Elementos DOM (Login) ---
+        const loginPage = document.getElementById('login-page');
         const dashboardPage = document.getElementById('dashboard-page');
         const btnLogout = document.getElementById('btn-logout');
-        const authErrorPage = document.getElementById('auth-error-page');
-        const authErrorMessage = document.getElementById('auth-error-message');
+        
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const btnLogin = document.getElementById('btn-login');
+        const btnCreateAccount = document.getElementById('btn-create-account');
+        const btnGoogleLogin = document.getElementById('btn-google-login');
+        const loginErrorMessage = document.getElementById('login-error-message');
 
-        // --- Monitoramento de Autenticação ---
+
+        // --- (MODIFICADO) Monitoramento de Autenticação ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 // Usuário está logado
-                authErrorPage.classList.add('hidden'); // Esconde erro
+                loginPage.classList.add('hidden'); // Esconde login
                 dashboardPage.classList.remove('hidden'); // Mostra dashboard
                 
                 // Inicializa o dashboard e passa as instâncias necessárias
@@ -723,34 +758,71 @@
             } else {
                 // Usuário não está logado
                 dashboardPage.classList.add('hidden'); // Esconde dashboard
-                
-                // Tenta fazer login automático
-                authenticateUser();
+                loginPage.classList.remove('hidden'); // Mostra login
             }
         });
 
-        // Função de Autenticação
-        async function authenticateUser() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    // Se um token customizado é fornecido (Ambiente Canvas)
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                    console.log("Login com token customizado bem-sucedido.");
-                } else {
-                    // Senão, tenta login anônimo (Ambiente Standalone)
-                    console.warn("Nenhum token customizado, tentando login anônimo.");
-                    await signInAnonymously(auth);
-                    console.log("Login anônimo bem-sucedido.");
-                }
-            } catch (error) {
-                console.error("Erro durante a autenticação automática:", error);
-                
-                // (MUDANÇA) Mostra a página de erro customizada
-                authErrorMessage.textContent = `${error.code}: ${error.message}`;
-                authErrorPage.classList.remove('hidden');
-                dashboardPage.classList.add('hidden');
+        // --- (REMOVIDA) Função authenticateUser() (não é mais necessária) ---
+        
+        // --- (NOVOS) Event Listeners de Login ---
+        
+        // 1. Entrar com E-mail/Senha
+        btnLogin.addEventListener('click', async () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            if (!email || !password) {
+                loginErrorMessage.textContent = "Por favor, preencha e-mail e senha.";
+                return;
             }
-        }
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await signInWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged vai cuidar de mostrar o dashboard
+            } catch (error) {
+                console.error("Erro ao entrar:", error);
+                loginErrorMessage.textContent = "E-mail ou senha inválidos.";
+            }
+        });
+
+        // 2. Criar Conta com E-mail/Senha
+        btnCreateAccount.addEventListener('click', async () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            if (!email || !password) {
+                loginErrorMessage.textContent = "Por favor, preencha e-mail e senha.";
+                return;
+            }
+            if (password.length < 6) {
+                loginErrorMessage.textContent = "A senha deve ter pelo menos 6 caracteres.";
+                return;
+            }
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await createUserWithEmailAndPassword(auth, email, password);
+                // onAuthStateChanged vai cuidar de mostrar o dashboard
+            } catch (error) {
+                console.error("Erro ao criar conta:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    loginErrorMessage.textContent = "Este e-mail já está em uso.";
+                } else {
+                    loginErrorMessage.textContent = "Erro ao criar conta.";
+                }
+            }
+        });
+
+        // 3. Entrar com Google
+        btnGoogleLogin.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await signInWithPopup(auth, provider);
+                // onAuthStateChanged vai cuidar de mostrar o dashboard
+            } catch (error) {
+                console.error("Erro ao logar com Google:", error);
+                loginErrorMessage.textContent = "Falha ao logar com Google.";
+            }
+        });
+
 
         // --- Evento de Logout ---
         btnLogout.addEventListener('click', async () => {
@@ -765,8 +837,7 @@
                     window.unsubscribeAtivosListener = null;
                 }
                 await signOut(auth);
-                // O onAuthStateChanged vai cuidar de esconder o dashboard
-                // e tentar autenticar novamente.
+                // O onAuthStateChanged vai cuidar de mostrar a tela de login
             } catch (error) {
                 console.error("Erro ao fazer logout:", error);
             }
@@ -874,7 +945,7 @@
             const addAtivoCategoria = document.getElementById('ativo-categoria');
             const addAtivoQuantidade = document.getElementById('ativo-quantidade');
             const addAtivoPrecoMedio = document.getElementById('ativo-preco-medio');
-            const addAtivoValorAtual = document.getElementById('ativo-valor-atual');
+            const addAtivoPrecoAtual = document.getElementById('ativo-preco-atual'); // (MODIFICADO)
             const editAtivoModal = document.getElementById('edit-ativo-modal');
             const editAtivoForm = document.getElementById('edit-ativo-form');
             const btnCancelEditAtivo = document.getElementById('btn-cancel-edit-ativo');
@@ -883,7 +954,7 @@
             const editAtivoCategoria = document.getElementById('edit-ativo-categoria');
             const editAtivoQuantidade = document.getElementById('edit-ativo-quantidade');
             const editAtivoPrecoMedio = document.getElementById('edit-ativo-preco-medio');
-            const editAtivoValorAtual = document.getElementById('edit-ativo-valor-atual');
+            const editAtivoPrecoAtual = document.getElementById('edit-ativo-preco-atual'); // (MODIFICADO)
 
             // ... (Referências DOM Ferramentas) ...
             const ferramentasTabs = document.querySelectorAll('.tab-link-ferramentas');
@@ -897,7 +968,7 @@
             const bValorBenchmark = document.getElementById('b-valor-benchmark');
             const bNomeBenchmarkInput = document.getElementById('b-nome-benchmark');
 
-            // (NOVO) Referências DOM (Cripto)
+            // ... (Referências DOM (Cripto) ...
             const btnRefreshCripto = document.getElementById('btn-refresh-cripto');
             const criptoTableContainer = document.getElementById('cripto-table-container');
             const criptoLoading = document.getElementById('cripto-loading');
@@ -1127,16 +1198,16 @@
             // FUNÇÕES DE DADOS (PORTFÓLIO)
             // ==========================================================
 
-            // 1. Adicionar Ativo
+            // 1. Adicionar Ativo (MODIFICADO)
             async function addAtivo(e) {
                 e.preventDefault();
                 const nome = addAtivoNome.value.trim();
                 const categoriaKey = addAtivoCategoria.value;
                 const quantidade = parseFloat(addAtivoQuantidade.value);
                 const precoMedio = parseFloat(addAtivoPrecoMedio.value);
-                const valorAtual = parseFloat(addAtivoValorAtual.value);
+                const precoAtual = parseFloat(addAtivoPrecoAtual.value); // (MODIFICADO)
 
-                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(valorAtual)) {
+                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) { // (MODIFICADO)
                     console.warn("Formulário de ativo inválido.");
                     return;
                 }
@@ -1147,7 +1218,7 @@
                         categoriaKey: categoriaKey,
                         quantidade: quantidade,
                         precoMedio: precoMedio,
-                        valorAtual: valorAtual,
+                        precoAtual: precoAtual, // (MODIFICADO)
                         createdAt: new Date()
                     });
                     closeAddAtivoModal();
@@ -1167,7 +1238,7 @@
                 }
             }
             
-            // 3. Editar Ativo (Salvar no modal)
+            // 3. Editar Ativo (Salvar no modal) (MODIFICADO)
             async function updateAtivo(e) {
                 e.preventDefault();
                 const id = editAtivoId.value;
@@ -1175,9 +1246,9 @@
                 const categoriaKey = editAtivoCategoria.value;
                 const quantidade = parseFloat(editAtivoQuantidade.value);
                 const precoMedio = parseFloat(editAtivoPrecoMedio.value);
-                const valorAtual = parseFloat(editAtivoValorAtual.value);
+                const precoAtual = parseFloat(editAtivoPrecoAtual.value); // (MODIFICADO)
 
-                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(valorAtual)) {
+                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) { // (MODIFICADO)
                      console.warn("Formulário de edição de ativo inválido.");
                     return;
                 }
@@ -1189,7 +1260,7 @@
                         categoriaKey: categoriaKey,
                         quantidade: quantidade,
                         precoMedio: precoMedio,
-                        valorAtual: valorAtual,
+                        precoAtual: precoAtual, // (MODIFICADO)
                     });
                     closeEditAtivoModal();
                 } catch (error) {
@@ -1642,7 +1713,7 @@
                 });
             }
 
-            // 2. Renderiza a lista de ativos (baseado no array 'ativos')
+            // 2. Renderiza a lista de ativos (baseado no array 'ativos') (MODIFICADO)
             function renderAtivosList() {
                 ativosListContainer.innerHTML = '';
                 
@@ -1671,12 +1742,14 @@
                         categoriaContainer.className = 'bg-gray-900 p-6 rounded-lg shadow-lg';
                         
                         const itemsHtml = categoria.items.map(ativo => {
+                            const precoAtual = ativo.precoAtual || 0; // (MODIFICADO)
                             const valorInvestido = ativo.quantidade * ativo.precoMedio;
-                            const resultado = ativo.valorAtual - valorInvestido;
-                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0;
+                            const valorAtualTotal = ativo.quantidade * precoAtual; // (MODIFICADO)
+                            const resultado = valorAtualTotal - valorInvestido; // (MODIFICADO)
+                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0; // (MODIFICADO)
                             
                             return `
-                                <div class="grid grid-cols-6 gap-4 items-center py-3 border-b border-gray-800 last:border-b-0">
+                                <div class="grid grid-cols-7 gap-4 items-center py-3 border-b border-gray-800 last:border-b-0">
                                     <div class="col-span-2">
                                         <span class="text-lg font-semibold text-white block">${ativo.nome}</span>
                                         <span class="text-sm text-gray-400">Qtd: ${ativo.quantidade}</span>
@@ -1685,13 +1758,18 @@
                                         <span class="text-sm text-gray-400 block">Preço Médio</span>
                                         <span class="text-white">${formatCurrencyBRL(ativo.precoMedio)}</span>
                                     </div>
+                                    <!-- (NOVA COLUNA) -->
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Preço Atual</span>
+                                        <span class="text-white">${formatCurrencyBRL(precoAtual)}</span>
+                                    </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Valor Invest.</span>
                                         <span class="text-white">${formatCurrencyBRL(valorInvestido)}</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Valor Atual</span>
-                                        <span class="text-white">${formatCurrencyBRL(ativo.valorAtual)}</span>
+                                        <span class="text-white">${formatCurrencyBRL(valorAtualTotal)}</span>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Resultado</span>
@@ -1708,7 +1786,8 @@
                                         data-categoria="${ativo.categoriaKey}"
                                         data-quantidade="${ativo.quantidade}"
                                         data-preco-medio="${ativo.precoMedio}"
-                                        data-valor-atual="${ativo.valorAtual}">
+                                        data-preco-atual="${precoAtual}" 
+                                    >
                                         <i class="fa-solid fa-pencil mr-1 pointer-events-none"></i> Editar
                                     </button>
                                     <button class="delete-ativo-btn text-xs bg-gray-700 hover:bg-red-600 text-white py-1 px-2 rounded" data-id="${ativo.id}">
@@ -1727,7 +1806,7 @@
                 });
             }
             
-            // 3. Atualiza o gráfico e legenda do Portfólio
+            // 3. Atualiza o gráfico e legenda do Portfólio (MODIFICADO)
             function updatePortfolioChartAndLegend() {
                 let totalPortfolio = 0;
                 const totaisCategoria = {};
@@ -1735,7 +1814,8 @@
 
                 // Calcula totais
                 ativos.forEach(ativo => {
-                    const valor = ativo.valorAtual || 0;
+                    const precoAtual = ativo.precoAtual || 0;
+                    const valor = ativo.quantidade * precoAtual; // (MODIFICADO)
                     totalPortfolio += valor;
                     if (totaisCategoria[ativo.categoriaKey] !== undefined) {
                         totaisCategoria[ativo.categoriaKey] += valor;
@@ -1787,13 +1867,14 @@
             function closeAddAtivoModal() {
                 addAtivoModal.classList.add('hidden');
             }
+            // (MODIFICADO)
             function openEditAtivoModal(ativo) {
                 editAtivoId.value = ativo.id;
                 editAtivoNome.value = ativo.nome;
                 editAtivoCategoria.value = ativo.categoria;
                 editAtivoQuantidade.value = ativo.quantidade;
                 editAtivoPrecoMedio.value = ativo.precoMedio;
-                editAtivoValorAtual.value = ativo.valorAtual;
+                editAtivoPrecoAtual.value = ativo.precoAtual.toFixed(2); // (MODIFICADO)
                 editAtivoModal.classList.remove('hidden');
             }
             function closeEditAtivoModal() {
@@ -2078,7 +2159,7 @@
                         categoria: editBtn.dataset.categoria,
                         quantidade: parseFloat(editBtn.dataset.quantidade),
                         precoMedio: parseFloat(editBtn.dataset.precoMedio),
-                        valorAtual: parseFloat(editBtn.dataset.valorAtual)
+                        precoAtual: parseFloat(editBtn.dataset.precoAtual) // (MODIFICADO)
                     };
                     openEditAtivoModal(ativo);
                 }
