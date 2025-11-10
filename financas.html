@@ -1228,6 +1228,8 @@
             let criptoDataLoaded = false;
             // (NOVO) Armazena o estado dos dados de câmbio
             let cambioDataLoaded = false;
+            // (NOVO) Trava para evitar chamadas duplicadas da Brapi
+            let brapiDataLoading = false;
 
 
             // --- Referências DOM (Dashboard) ---
@@ -1778,7 +1780,8 @@
             
             // Função ÚNICA para buscar todos os dados da Brapi
             async function fetchAllBrapiData() {
-                if (brapiDataLoaded) return; // Já carregou, não faz de novo
+                if (brapiDataLoaded || brapiDataLoading) return; // (MODIFICADO) Adiciona verificação de 'loading'
+                brapiDataLoading = true; // (NOVO) Trava a função
                 
                 // Mostra todos os loadings
                 loadingAcoes.classList.remove('hidden');
@@ -1834,6 +1837,7 @@
                     loadingFiis.innerHTML = errorMsg;
                     loadingEtfs.innerHTML = errorMsg;
                 } finally {
+                    brapiDataLoading = false; // (NOVO) Libera a trava, independente do resultado
                     // Esconde todos os loadings e mostra as tabelas
                     loadingAcoes.classList.add('hidden');
                     loadingFiis.classList.add('hidden');
