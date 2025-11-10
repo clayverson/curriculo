@@ -13,8 +13,8 @@
             font-family: 'Inter', sans-serif;
         }
         
-        /* Estilo para a aba ativa na pág de orçamento */
-        .active-tab-orcamento, .active-tab-ferramentas {
+        /* Estilo para abas ativas */
+        .active-tab-orcamento, .active-tab-ferramentas, .active-tab-cotacoes {
             border-bottom: 2px solid #facc15; /* text-yellow-400 */
             color: #facc15; /* text-yellow-400 */
         }
@@ -63,6 +63,15 @@
         /* Garante que ícones dentro de botões não capturem cliques */
         .pointer-events-none {
             pointer-events: none;
+        }
+
+        /* (NOVO) Esconde a scrollbar no container de cotações */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
 
     </style>
@@ -145,11 +154,11 @@
             </div>
 
             <!-- Navegação --><nav class="flex flex-col gap-3">
-                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="home">
-                    <i class="fa-solid fa-home w-5 h-5"></i>
-                    <span>Home</span>
+                <a href="#" class="nav-link active-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="home">
+                    <i class="fa-solid fa-user-circle w-5 h-5"></i> <!-- (MODIFICADO) -->
+                    <span>Meu Perfil</span> <!-- (MODIFICADO) -->
                 </a>
-                <a href="#" class="nav-link active-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="carteira">
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="carteira">
                     <i class="fa-solid fa-chart-pie w-5 h-5"></i>
                     <span>Carteira</span>
                 </a>
@@ -157,14 +166,30 @@
                     <i class="fa-solid fa-piggy-bank w-5 h-5"></i>
                     <span>Orçamento Doméstico</span>
                 </a>
-                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="ferramentas">
-                    <i class="fa-solid fa-wrench w-5 h-5"></i>
-                    <span>Ferramentas</span>
+                <!-- (NOVOS LINKS) -->
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="acoes-br">
+                    <i class="fa-solid fa-arrow-trend-up w-5 h-5"></i>
+                    <span>Ações BR</span>
                 </a>
-                <!-- Link Cotações Cripto -->
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="fiis">
+                    <i class="fa-solid fa-building-columns w-5 h-5"></i>
+                    <span>FIIs</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="etfs">
+                    <i class="fa-solid fa-globe w-5 h-5"></i>
+                    <span>ETFs</span>
+                </a>
                 <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="cripto">
                     <i class="fa-brands fa-bitcoin w-5 h-5"></i>
                     <span>Cotações Cripto</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="renda-fixa">
+                    <i class="fa-solid fa-money-bill-transfer w-5 h-5"></i>
+                    <span>Renda Fixa</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="ferramentas">
+                    <i class="fa-solid fa-wrench w-5 h-5"></i>
+                    <span>Ferramentas</span>
                 </a>
             </nav>
 
@@ -181,10 +206,10 @@
         </aside>
 
         <!-- Conteúdo Principal --><main class="ml-64 w-full p-8">
-            <!-- Header --><header class="flex justify-end items-center mb-8">
+            <!-- Header (MODIFICADO) --><header class="flex justify-end items-center mb-8">
                 <div class="flex items-center gap-3">
-                    <span class="text-white">Olá, Clayverson Flores</span>
-                    <img src="https://placehold.co/40x40/EAB308/1F2937?text=CF" alt="Avatar do usuário" class="w-10 h-10 rounded-full border-2 border-yellow-400">
+                    <span id="header-user-name" class="text-white">Olá, Carregando...</span> <!-- (MODIFICADO) -->
+                    <img id="header-user-avatar" src="https://placehold.co/40x40/EAB308/1F2937?text=CF" alt="Avatar do usuário" class="w-10 h-10 rounded-full border-2 border-yellow-400"> <!-- (MODIFICADO) -->
                     <!-- Botão de Salvar -->
                     <button id="btn-save" class="ml-4 text-gray-400 hover:text-white" title="Salvar Orçamento">
                         <i class="fa-solid fa-floppy-disk w-5 h-5"></i>
@@ -196,7 +221,33 @@
                 </div>
             </header>
 
-            <!-- ============================================= --><!-- PÁGINA: CARTEIRA (Visível por padrão)         --><!-- ============================================= --><div id="page-carteira" class="page-content">
+            <!-- ============================================= -->
+            <!-- PÁGINA: HOME / PERFIL (MODIFICADO)        -->
+            <!-- ============================================= -->
+            <div id="page-home" class="page-content">
+                <h1 class="text-3xl font-semibold text-white mb-6">Meu Perfil</h1>
+                <div class="bg-gray-900 p-8 rounded-lg shadow-lg max-w-lg">
+                    <form id="perfil-form" class="space-y-4">
+                        <div>
+                            <label for="perfil-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome</label>
+                            <input type="text" id="perfil-nome" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700" placeholder="Seu nome" required>
+                        </div>
+                        <div>
+                            <label for="perfil-email" class="block text-sm font-medium text-gray-400 mb-1">E-mail</label>
+                            <input type="email" id="perfil-email" class="w-full p-3 bg-gray-700 text-gray-400 rounded-lg border border-gray-700" placeholder="seuemail@provedor.com" readonly disabled>
+                            <p class="text-xs text-gray-500 mt-1">O e-mail não pode ser alterado.</p>
+                        </div>
+                        
+                        <p id="perfil-message" class="text-green-400 text-sm h-4"></p>
+                        
+                        <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-300 transition-colors">
+                            Salvar Alterações
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ============================================= --><!-- PÁGINA: CARTEIRA                          --><!-- ============================================= --><div id="page-carteira" class="page-content hidden">
                 <h1 class="text-3xl font-semibold text-white mb-6">Carteira</h1>
                 <!-- Grid de Gráficos -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -252,7 +303,7 @@
 
             </div>
 
-            <!-- ============================================= --><!-- PÁGINA: ORÇAMENTO (Oculta por padrão)         --><!-- ============================================= --><div id="page-orcamento" class="page-content hidden">
+            <!-- ============================================= --><!-- PÁGINA: ORÇAMENTO (Oculta)                 --><!-- ============================================= --><div id="page-orcamento" class="page-content hidden">
                 
                 <!-- NAVEGAÇÃO POR ABAS --><div class="flex border-b border-gray-700 mb-6">
                     <button class="tab-link-orcamento active-tab-orcamento py-3 px-6 text-white font-semibold" data-tab="orcamento-content">ORÇAMENTO DOMÉSTICO</button>
@@ -383,6 +434,164 @@
             </div>
 
             <!-- ============================================= -->
+            <!-- PÁGINA: AÇÕES BR (NOVO)                   -->
+            <!-- ============================================= -->
+            <div id="page-acoes-br" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Ações Brasileiras</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-acoes" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: PETR4, Petrobras)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-acoes-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-acoes" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de Ações...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-acoes" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-acoes" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: FIIs (NOVO)                       -->
+            <!-- ============================================= -->
+            <div id="page-fiis" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Fundos Imobiliários (FIIs)</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-fiis" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: MXRF11, Maxi Renda)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-fiis-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-fiis" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de FIIs...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-fiis" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-fiis" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ============================================= -->
+            <!-- PÁGINA: ETFs (NOVO)                       -->
+            <!-- ============================================= -->
+            <div id="page-etfs" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: ETFs</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-etfs" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: BOVA11)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-etfs-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-etfs" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de ETFs...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-etfs" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-etfs" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: RENDA FIXA (NOVO)                 -->
+            <!-- ============================================= -->
+            <div id="page-renda-fixa" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Renda Fixa (Exemplos)</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-renda-fixa" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar nome ou tipo (ex: Tesouro Selic)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <div class="text-center text-gray-400 py-4 mb-4 border-b border-gray-700">
+                        <i class="fa-solid fa-circle-info w-5 h-5 mx-auto mb-2"></i>
+                        <p>APIs para Renda Fixa são complexas. Esta é uma lista de exemplos estáticos.</p>
+                    </div>
+                    <table id="table-renda-fixa" class="min-w-full w-full table-auto text-left">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4 text-right">Rentabilidade</th>
+                                <th class="py-3 px-4 text-right">Vencimento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-renda-fixa" class="text-white">
+                            <!-- Dados Estáticos de Exemplo -->
+                            <tr>
+                                <td class="py-3 px-4 font-medium">Tesouro Selic 2027</td>
+                                <td class="py-3 px-4">Tesouro Direto</td>
+                                <td class="py-3 px-4 text-right">Selic + 0,10%</td>
+                                <td class="py-3 px-4 text-right">01/03/2027</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">Tesouro IPCA+ 2035</td>
+                                <td class="py-3 px-4">Tesouro Direto</td>
+                                <td class="py-3 px-4 text-right">IPCA + 5,50%</td>
+                                <td class="py-3 px-4 text-right">15/05/2035</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">CDB Banco X</td>
+                                <td class="py-3 px-4">CDB Pós</td>
+                                <td class="py-3 px-4 text-right">110% do CDI</td>
+                                <td class="py-3 px-4 text-right">10/10/2028</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">LCI Banco Y</td>
+                                <td class="py-3 px-4">LCI Pré</td>
+                                <td class="py-3 px-4 text-right">10,5% a.a.</td>
+                                <td class="py-3 px-4 text-right">20/11/2026</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
             <!-- PÁGINA: FERRAMENTAS                     -->
             <!-- ============================================= -->
             <div id="page-ferramentas" class="page-content hidden">
@@ -392,6 +601,7 @@
                 <div class="flex border-b border-gray-700 mb-6">
                     <button class="tab-link-ferramentas active-tab-ferramentas py-3 px-6 text-white font-semibold" data-tab="juros-compostos-content">JUROS COMPOSTOS</button>
                     <button class="tab-link-ferramentas py-3 px-6 text-gray-400 hover:text-white" data-tab="benchmark-content">COMPARADOR (BENCHMARK)</button>
+                    <button class="tab-link-ferramentas py-3 px-6 text-gray-400 hover:text-white" data-tab="cambio-content">CÂMBIO</button> <!-- (NOVO) -->
                 </div>
 
                 <!-- ABA: CALCULADORA DE JUROS COMPOSTOS -->
@@ -498,9 +708,53 @@
                     </div>
                 </div>
 
+                <!-- (NOVO) ABA: CÂMBIO -->
+                <div id="cambio-content" class="tab-content-ferramentas hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-semibold text-white">Cotações de Câmbio</h2>
+                        <button id="btn-refresh-cambio" class="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <div id="cambio-loading" class="text-center py-10">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-3xl"></i>
+                    </div>
+                    <div id="cambio-container" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Cards de Câmbio -->
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Dólar (USD)</span>
+                                <i class="fa-solid fa-dollar-sign text-green-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-usd" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-usd-var" class="text-lg text-red-500">0,00%</p>
+                        </div>
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Euro (EUR)</span>
+                                <i class="fa-solid fa-euro-sign text-blue-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-eur" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-eur-var" class="text-lg text-green-500">0,00%</p>
+                        </div>
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Bitcoin (BTC)</span>
+                                <i class="fa-brands fa-bitcoin text-yellow-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-btc" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-btc-var" class="text-lg text-red-500">0,00%</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4 text-right">Dados fornecidos por AwesomeAPI</p>
+                </div>
+
             </div>
             
-            <!-- PÁGINA: COTAÇÕES CRIPTO -->
+            <!-- ============================================= -->
+            <!-- PÁGINA: COTAÇÕES CRIPTO                   -->
+            <!-- ============================================= -->
             <div id="page-cripto" class="page-content hidden">
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-semibold text-white">Top 100 Criptomoedas</h1>
@@ -508,6 +762,11 @@
                         <i class="fa-solid fa-arrows-rotate"></i>
                         Atualizar
                     </button>
+                </div>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-cripto" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar nome ou ticker (ex: Bitcoin, BTC)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
 
                 <!-- Container da Tabela -->
@@ -537,12 +796,7 @@
             </div>
 
 
-            <!-- Outras páginas --><div id="page-home" class="page-content hidden">
-                 <h1 class="text-3xl font-semibold text-white mb-6">Home</h1>
-                 <p>Bem-vindo ao seu painel financeiro.</p>
-            </div>
-            <!-- ... -->
-            <div id="page-faq" class="page-content hidden">
+            <!-- Outras páginas --><div id="page-faq" class="page-content hidden">
                  <h1 class="text-3xl font-semibold text-white mb-6">FAQ</h1>
                  <p>Página de FAQ em construção.</p>
             </div>
@@ -554,6 +808,10 @@
         </main>
     </div>
     
+    <!-- ============================================= -->
+    <!-- MODAIS                                      -->
+    <!-- ============================================= -->
+
     <!-- Modal de Edição de Gasto --><div id="edit-gasto-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
         <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
             <h2 class="text-xl font-semibold text-white mb-4">Editar Gasto</h2>
@@ -600,7 +858,6 @@
                     </div>
                 </div>
                 <div>
-                    <!-- (MODIFICADO) Alterado de "Valor Total Atual" para "Preço Atual" -->
                     <label for="ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
                     <input type="number" id="ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="30.00" required>
                     <p class="text-xs text-gray-500 mt-1">Insira a cotação atual de 1 unidade do ativo.</p>
@@ -639,7 +896,6 @@
                     </div>
                 </div>
                 <div>
-                    <!-- (MODIFICADO) Alterado de "Valor Total Atual" para "Preço Atual" -->
                     <label for="edit-ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
                     <input type="number" id="edit-ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
                 </div>
@@ -683,7 +939,8 @@
             GoogleAuthProvider,
             signInWithPopup,
             createUserWithEmailAndPassword,
-            signInWithEmailAndPassword
+            signInWithEmailAndPassword,
+            updateProfile // (NOVO) Para atualizar o nome
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -702,13 +959,16 @@
         window.firebaseFirestore = {
             getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query
         };
+        // (NOVO) Disponibiliza funções do Auth globalmente
+        window.firebaseAuth = {
+            getAuth, updateProfile
+        };
 
         // --- Configuração do Firebase ---
         let firebaseConfig = {};
         let appId = 'default-app-id';
 
         try {
-            // (MODIFICADO) Carrega config do script tag, não mais do __firebase_config
             const configElement = document.getElementById('firebase-config');
             if (configElement) {
                 firebaseConfig = JSON.parse(configElement.textContent);
@@ -716,7 +976,6 @@
                  console.error("Configuração do Firebase não encontrada.");
             }
             
-            // (MODIFICADO) Carrega appId do script tag
             const appIdElement = document.getElementById('app-id');
             if (appIdElement) {
                 appId = appIdElement.textContent;
@@ -732,7 +991,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // --- (NOVAS) Referências dos Elementos DOM (Login) ---
+        // --- Referências dos Elementos DOM (Login) ---
         const loginPage = document.getElementById('login-page');
         const dashboardPage = document.getElementById('dashboard-page');
         const btnLogout = document.getElementById('btn-logout');
@@ -743,17 +1002,28 @@
         const btnCreateAccount = document.getElementById('btn-create-account');
         const btnGoogleLogin = document.getElementById('btn-google-login');
         const loginErrorMessage = document.getElementById('login-error-message');
+        
+        // --- (NOVAS) Referências do Perfil ---
+        const headerUserName = document.getElementById('header-user-name');
+        const headerUserAvatar = document.getElementById('header-user-avatar');
+        const perfilForm = document.getElementById('perfil-form');
+        const perfilNome = document.getElementById('perfil-nome');
+        const perfilEmail = document.getElementById('perfil-email');
+        const perfilMessage = document.getElementById('perfil-message');
 
 
-        // --- (MODIFICADO) Monitoramento de Autenticação ---
+        // --- Monitoramento de Autenticação ---
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 // Usuário está logado
                 loginPage.classList.add('hidden'); // Esconde login
                 dashboardPage.classList.remove('hidden'); // Mostra dashboard
                 
+                // (NOVO) Atualiza a UI do Perfil
+                updateUserUI(user);
+                
                 // Inicializa o dashboard e passa as instâncias necessárias
-                window.initDashboard(user.uid, appId, db);
+                window.initDashboard(user, appId, db); // (MODIFICADO) Passa o objeto 'user' inteiro
 
             } else {
                 // Usuário não está logado
@@ -762,9 +1032,21 @@
             }
         });
 
-        // --- (REMOVIDA) Função authenticateUser() (não é mais necessária) ---
-        
-        // --- (NOVOS) Event Listeners de Login ---
+        // (NOVO) Função para atualizar o nome e avatar
+        function updateUserUI(user) {
+            if (!user) return;
+            
+            const nome = user.displayName || user.email; // Usa nome ou email
+            const avatarLetra = (nome[0] || 'U').toUpperCase();
+            
+            headerUserName.textContent = `Olá, ${nome}`;
+            headerUserAvatar.src = user.photoURL || `https://placehold.co/40x40/EAB308/1F2937?text=${avatarLetra}`;
+            
+            perfilNome.value = user.displayName || '';
+            perfilEmail.value = user.email || '';
+        }
+
+        // --- Event Listeners de Login ---
         
         // 1. Entrar com E-mail/Senha
         btnLogin.addEventListener('click', async () => {
@@ -777,7 +1059,6 @@
             try {
                 loginErrorMessage.textContent = ""; // Limpa erro
                 await signInWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged vai cuidar de mostrar o dashboard
             } catch (error) {
                 console.error("Erro ao entrar:", error);
                 loginErrorMessage.textContent = "E-mail ou senha inválidos.";
@@ -799,7 +1080,6 @@
             try {
                 loginErrorMessage.textContent = ""; // Limpa erro
                 await createUserWithEmailAndPassword(auth, email, password);
-                // onAuthStateChanged vai cuidar de mostrar o dashboard
             } catch (error) {
                 console.error("Erro ao criar conta:", error);
                 if (error.code === 'auth/email-already-in-use') {
@@ -816,10 +1096,40 @@
             try {
                 loginErrorMessage.textContent = ""; // Limpa erro
                 await signInWithPopup(auth, provider);
-                // onAuthStateChanged vai cuidar de mostrar o dashboard
             } catch (error) {
                 console.error("Erro ao logar com Google:", error);
-                loginErrorMessage.textContent = "Falha ao logar com Google.";
+                // (MODIFICADO) Mensagem de erro mais clara para o problema do domínio
+                if (error.code === 'auth/unauthorized-domain') {
+                    loginErrorMessage.textContent = "Erro: Domínio não autorizado. Use um servidor local (Live Server).";
+                } else {
+                    loginErrorMessage.textContent = "Falha ao logar com Google.";
+                }
+            }
+        });
+        
+        // 4. (NOVO) Salvar Perfil
+        perfilForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = perfilNome.value.trim();
+            const user = auth.currentUser;
+            
+            if (!user) return;
+
+            try {
+                await updateProfile(user, {
+                    displayName: nome
+                });
+                // Atualiza a UI imediatamente
+                updateUserUI(user); 
+                perfilMessage.textContent = "Perfil atualizado com sucesso!";
+                perfilMessage.classList.remove('text-red-400');
+                perfilMessage.classList.add('text-green-400');
+                
+            } catch (error) {
+                console.error("Erro ao atualizar perfil:", error);
+                perfilMessage.textContent = "Erro ao salvar.";
+                perfilMessage.classList.remove('text-green-400');
+                perfilMessage.classList.add('text-red-400');
             }
         });
 
@@ -837,7 +1147,6 @@
                     window.unsubscribeAtivosListener = null;
                 }
                 await signOut(auth);
-                // O onAuthStateChanged vai cuidar de mostrar a tela de login
             } catch (error) {
                 console.error("Erro ao fazer logout:", error);
             }
@@ -849,16 +1158,33 @@
     <script>
         // Movemos todo o código do dashboard para esta função
         // Ela será chamada pelo script type="module" acima quando a auth estiver pronta
-        window.initDashboard = (userId, appId, db) => {
+        window.initDashboard = (user, appId, db) => {
+            
+            // (NOVO) Pega o ID do usuário
+            const userId = user.uid;
             
             // Importa funções do Firestore (módulo já carregado)
             const {
                 doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query 
             } = window.firebaseFirestore;
 
+            // --- (NOVO) Constantes da API Brapi ---
+            const BRAPI_TOKEN = "8eZPTTApn1MQmbFDQZtzVw"; // (MODIFICADO) Chave API
+            const tickersAcoes = "PETR4,VALE3,ITUB4,BBDC4,BBAS3,WEGE3,MGLU3,VIIA3,ABEV3,AZUL4,GOL4,CVCB3";
+            const tickersFiis = "MXRF11,HGLG11,KNCR11,BCFF11,XPLG11,CPTS11,XPML11,VGIP11,IRDM11,VISC11";
+            const tickersEtfs = "BOVA11,IVVB11,SMAL11,HASH11,XFIX11,GOLD11,BBOV11,ESGB11";
+            
+            // (NOVO) Cache de dados da Brapi
+            let brapiDataStore = {
+                acoes: [],
+                fiis: [],
+                etfs: []
+            };
+            let brapiDataLoaded = false;
+
+
             // --- Constantes de Cores e Estilos ---
             const chartColors = {
-                // Cores do portfólio agora estão em 'portfolioCategorias'
                 costs: '#4ade80', // green-400
                 income: '#ca8a04', // yellow-600
                 gridColor: 'rgba(255, 255, 255, 0.1)',
@@ -898,8 +1224,11 @@
             let gastos = [];
             // Armazena o estado dos ativos (sincronizado com o Firestore)
             let ativos = [];
-            // (NOVO) Armazena o estado dos dados cripto
+            // Armazena o estado dos dados cripto
             let criptoDataLoaded = false;
+            // (NOVO) Armazena o estado dos dados de câmbio
+            let cambioDataLoaded = false;
+
 
             // --- Referências DOM (Dashboard) ---
             const navLinks = document.querySelectorAll('.nav-link');
@@ -945,7 +1274,7 @@
             const addAtivoCategoria = document.getElementById('ativo-categoria');
             const addAtivoQuantidade = document.getElementById('ativo-quantidade');
             const addAtivoPrecoMedio = document.getElementById('ativo-preco-medio');
-            const addAtivoPrecoAtual = document.getElementById('ativo-preco-atual'); // (MODIFICADO)
+            const addAtivoPrecoAtual = document.getElementById('ativo-preco-atual');
             const editAtivoModal = document.getElementById('edit-ativo-modal');
             const editAtivoForm = document.getElementById('edit-ativo-form');
             const btnCancelEditAtivo = document.getElementById('btn-cancel-edit-ativo');
@@ -954,7 +1283,7 @@
             const editAtivoCategoria = document.getElementById('edit-ativo-categoria');
             const editAtivoQuantidade = document.getElementById('edit-ativo-quantidade');
             const editAtivoPrecoMedio = document.getElementById('edit-ativo-preco-medio');
-            const editAtivoPrecoAtual = document.getElementById('edit-ativo-preco-atual'); // (MODIFICADO)
+            const editAtivoPrecoAtual = document.getElementById('edit-ativo-preco-atual');
 
             // ... (Referências DOM Ferramentas) ...
             const ferramentasTabs = document.querySelectorAll('.tab-link-ferramentas');
@@ -967,6 +1296,9 @@
             const bValorInvestimento = document.getElementById('b-valor-investimento');
             const bValorBenchmark = document.getElementById('b-valor-benchmark');
             const bNomeBenchmarkInput = document.getElementById('b-nome-benchmark');
+            const btnRefreshCambio = document.getElementById('btn-refresh-cambio');
+            const cambioLoading = document.getElementById('cambio-loading');
+            const cambioContainer = document.getElementById('cambio-container');
 
             // ... (Referências DOM (Cripto) ...
             const btnRefreshCripto = document.getElementById('btn-refresh-cripto');
@@ -974,6 +1306,23 @@
             const criptoLoading = document.getElementById('cripto-loading');
             const criptoTable = document.getElementById('cripto-table');
             const criptoTableBody = document.getElementById('cripto-table-body');
+            const searchCripto = document.getElementById('search-cripto');
+
+            // ... (Referências DOM (Ações, FIIs, ETFs) ...
+            const searchAcoes = document.getElementById('search-acoes');
+            const searchFiis = document.getElementById('search-fiis');
+            const searchEtfs = document.getElementById('search-etfs');
+            const searchRendaFixa = document.getElementById('search-renda-fixa');
+            const tableBodyAcoes = document.getElementById('table-body-acoes');
+            const tableBodyFiis = document.getElementById('table-body-fiis');
+            const tableBodyEtfs = document.getElementById('table-body-etfs');
+            const tableBodyRendaFixa = document.getElementById('table-body-renda-fixa');
+            const loadingAcoes = document.getElementById('loading-acoes');
+            const loadingFiis = document.getElementById('loading-fiis');
+            const loadingEtfs = document.getElementById('loading-etfs');
+            const tableAcoes = document.getElementById('table-acoes');
+            const tableFiis = document.getElementById('table-fiis');
+            const tableEtfs = document.getElementById('table-etfs');
 
 
             // --- Referências do Firestore ---
@@ -993,6 +1342,7 @@
                     page.classList.toggle('hidden', page.id !== `page-${pageId}`);
                 });
                 
+                // (MODIFICADO) Controla o carregamento das APIs
                 if (pageId === 'carteira') {
                     initPortfolioChart(); 
                     initBudgetHistoryChart();
@@ -1003,8 +1353,18 @@
                     initBenchmarkChart();
                     if (jurosCompostosForm) jurosCompostosForm.dispatchEvent(new Event('submit'));
                     if (benchmarkForm) benchmarkForm.dispatchEvent(new Event('submit'));
-                } else if (pageId === 'cripto') { // (NOVO)
+                    initCambioPage(); // (NOVO)
+                } else if (pageId === 'cripto') {
                     initCriptoPage();
+                } else if (pageId === 'acoes-br') { // (NOVO)
+                    initBrapiPage('acoes');
+                } else if (pageId === 'fiis') { // (NOVO)
+                    initBrapiPage('fiis');
+                } else if (pageId === 'etfs') { // (NOVO)
+                    initBrapiPage('etfs');
+                } else if (pageId === 'renda-fixa') { // (NOVO)
+                    // Apenas renderiza, pois é estático
+                    renderRendaFixaTable(staticRendaFixaData);
                 }
             };
 
@@ -1198,16 +1558,16 @@
             // FUNÇÕES DE DADOS (PORTFÓLIO)
             // ==========================================================
 
-            // 1. Adicionar Ativo (MODIFICADO)
+            // 1. Adicionar Ativo
             async function addAtivo(e) {
                 e.preventDefault();
                 const nome = addAtivoNome.value.trim();
                 const categoriaKey = addAtivoCategoria.value;
                 const quantidade = parseFloat(addAtivoQuantidade.value);
                 const precoMedio = parseFloat(addAtivoPrecoMedio.value);
-                const precoAtual = parseFloat(addAtivoPrecoAtual.value); // (MODIFICADO)
+                const precoAtual = parseFloat(addAtivoPrecoAtual.value);
 
-                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) { // (MODIFICADO)
+                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) {
                     console.warn("Formulário de ativo inválido.");
                     return;
                 }
@@ -1218,7 +1578,7 @@
                         categoriaKey: categoriaKey,
                         quantidade: quantidade,
                         precoMedio: precoMedio,
-                        precoAtual: precoAtual, // (MODIFICADO)
+                        precoAtual: precoAtual,
                         createdAt: new Date()
                     });
                     closeAddAtivoModal();
@@ -1238,7 +1598,7 @@
                 }
             }
             
-            // 3. Editar Ativo (Salvar no modal) (MODIFICADO)
+            // 3. Editar Ativo (Salvar no modal)
             async function updateAtivo(e) {
                 e.preventDefault();
                 const id = editAtivoId.value;
@@ -1246,9 +1606,9 @@
                 const categoriaKey = editAtivoCategoria.value;
                 const quantidade = parseFloat(editAtivoQuantidade.value);
                 const precoMedio = parseFloat(editAtivoPrecoMedio.value);
-                const precoAtual = parseFloat(editAtivoPrecoAtual.value); // (MODIFICADO)
+                const precoAtual = parseFloat(editAtivoPrecoAtual.value);
 
-                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) { // (MODIFICADO)
+                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) {
                      console.warn("Formulário de edição de ativo inválido.");
                     return;
                 }
@@ -1260,7 +1620,7 @@
                         categoriaKey: categoriaKey,
                         quantidade: quantidade,
                         precoMedio: precoMedio,
-                        precoAtual: precoAtual, // (MODIFICADO)
+                        precoAtual: precoAtual,
                     });
                     closeEditAtivoModal();
                 } catch (error) {
@@ -1288,55 +1648,107 @@
                     console.error("Erro no listener de ativos: ", error);
                 });
             }
-
+            
             // ==========================================================
-            // (NOVO) FUNÇÕES DE DADOS (CRIPTO)
+            // (NOVO) FUNÇÕES DE DADOS (APIs Externas)
             // ==========================================================
             
-            // 1. Inicializa a página (chama o fetch se for a 1ª vez)
+            // 1. Câmbio (AwesomeAPI)
+            function initCambioPage() {
+                if (!cambioDataLoaded) {
+                    fetchCambioData();
+                }
+            }
+            
+            async function fetchCambioData() {
+                cambioLoading.classList.remove('hidden');
+                cambioContainer.classList.add('hidden');
+                
+                try {
+                    const url = 'https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL';
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    
+                    renderCambioData(data.USDBRL, 'usd');
+                    renderCambioData(data.EURBRL, 'eur');
+                    renderCambioData(data.BTCBRL, 'btc');
+                    
+                    cambioDataLoaded = true;
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados de câmbio:", error);
+                    cambioLoading.innerHTML = `<p class="text-red-500">Falha ao carregar cotações de câmbio.</p>`;
+                } finally {
+                    if (cambioDataLoaded) {
+                        cambioLoading.classList.add('hidden');
+                        cambioContainer.classList.remove('hidden');
+                    }
+                }
+            }
+            
+            function renderCambioData(data, key) {
+                if (!data) return;
+                const valor = parseFloat(data.bid);
+                const variacao = parseFloat(data.pctChange);
+                
+                const elValor = document.getElementById(`cambio-${key}`);
+                const elVar = document.getElementById(`cambio-${key}-var`);
+                
+                elValor.textContent = formatCurrencyBRL(valor);
+                elVar.textContent = `${variacao.toFixed(2)}%`;
+                elVar.className = `text-lg ${getResultadoColor(variacao)}`;
+            }
+
+            // 2. Cripto (CoinGecko)
             function initCriptoPage() {
                 if (!criptoDataLoaded) {
                     fetchCriptoData();
                 }
             }
 
-            // 2. Busca dados da API CoinGecko
             async function fetchCriptoData() {
                 criptoLoading.classList.remove('hidden');
                 criptoTable.classList.add('hidden');
-                // Limpa mensagem de erro anterior, se houver
                 criptoLoading.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i><p class="mt-4 text-lg">Buscando cotações...</p>`;
                 
                 try {
                     const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&order=market_cap_desc&per_page=100&page=1&sparkline=false';
                     const response = await fetch(url);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     const coins = await response.json();
-                    renderCriptoTable(coins);
-                    criptoDataLoaded = true; // Marca como carregado
+                    renderCriptoTable(coins); // Renderiza a tabela
+                    criptoDataLoaded = true;
                     
                 } catch (error) {
                     console.error("Erro ao buscar dados de cripto:", error);
                     criptoLoading.innerHTML = `<p class="text-red-500">Falha ao carregar dados. Verifique sua conexão e tente atualizar.</p>`;
                 } finally {
-                    if (criptoDataLoaded) { // Só esconde o loading se os dados foram carregados
+                    if (criptoDataLoaded) {
                         criptoLoading.classList.add('hidden');
                         criptoTable.classList.remove('hidden');
                     } else {
-                        // Se falhou, o loading permanece visível com a msg de erro
                         criptoLoading.classList.remove('hidden');
                         criptoTable.classList.add('hidden');
                     }
                 }
             }
 
-            // 3. Renderiza a tabela de criptomoedas
-            function renderCriptoTable(coins) {
-                criptoTableBody.innerHTML = ''; // Limpa a tabela
+            function renderCriptoTable(coins, filter = "") {
+                criptoTableBody.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
                 
-                coins.forEach(coin => {
+                const filteredCoins = coins.filter(coin => 
+                    coin.name.toLowerCase().includes(searchTerm) || 
+                    coin.symbol.toLowerCase().includes(searchTerm)
+                );
+                
+                if(filteredCoins.length === 0) {
+                     criptoTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">Nenhum resultado encontrado para "${filter}".</td></tr>`;
+                     return;
+                }
+                
+                filteredCoins.forEach(coin => {
                     const priceChange = coin.price_change_percentage_24h || 0;
                     const priceChangeColor = getResultadoColor(priceChange);
                     
@@ -1361,6 +1773,152 @@
                     criptoTableBody.appendChild(row);
                 });
             }
+
+            // 3. Ações, FIIs, ETFs (Brapi API) (MODIFICADO)
+            
+            // Função ÚNICA para buscar todos os dados da Brapi
+            async function fetchAllBrapiData() {
+                if (brapiDataLoaded) return; // Já carregou, não faz de novo
+                
+                // Mostra todos os loadings
+                loadingAcoes.classList.remove('hidden');
+                loadingFiis.classList.remove('hidden');
+                loadingEtfs.classList.remove('hidden');
+                tableAcoes.classList.add('hidden');
+                tableFiis.classList.add('hidden');
+                tableEtfs.classList.add('hidden');
+
+                try {
+                    const allTickers = [tickersAcoes, tickersFiis, tickersEtfs].join(',');
+                    const url = `https://brapi.dev/api/quote/${allTickers}?token=${BRAPI_TOKEN}`;
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    if (!data.results) {
+                        throw new Error("Formato de resposta inesperado da Brapi.");
+                    }
+                    
+                    // Separa os resultados
+                    const allTickersSet = {
+                        acoes: new Set(tickersAcoes.split(',')),
+                        fiis: new Set(tickersFiis.split(',')),
+                        etfs: new Set(tickersEtfs.split(','))
+                    };
+                    
+                    data.results.forEach(item => {
+                        if (allTickersSet.acoes.has(item.symbol)) {
+                            brapiDataStore.acoes.push(item);
+                        } else if (allTickersSet.fiis.has(item.symbol)) {
+                            brapiDataStore.fiis.push(item);
+                        } else if (allTickersSet.etfs.has(item.symbol)) {
+                            brapiDataStore.etfs.push(item);
+                        }
+                    });
+                    
+                    brapiDataLoaded = true;
+
+                    // Renderiza as tabelas com os dados completos
+                    renderBrapiTable(brapiDataStore.acoes, tableBodyAcoes);
+                    renderBrapiTable(brapiDataStore.fiis, tableBodyFiis);
+                    renderBrapiTable(brapiDataStore.etfs, tableBodyEtfs);
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados da Brapi:", error);
+                    // Mostra erro em todas as tabelas
+                    const errorMsg = `<p class="text-red-500">Falha ao carregar dados. ${error.message}.</p>`;
+                    loadingAcoes.innerHTML = errorMsg;
+                    loadingFiis.innerHTML = errorMsg;
+                    loadingEtfs.innerHTML = errorMsg;
+                } finally {
+                    // Esconde todos os loadings e mostra as tabelas
+                    loadingAcoes.classList.add('hidden');
+                    loadingFiis.classList.add('hidden');
+                    loadingEtfs.classList.add('hidden');
+                    tableAcoes.classList.remove('hidden');
+                    tableFiis.classList.remove('hidden');
+                    tableEtfs.classList.remove('hidden');
+                }
+            }
+
+            // Inicializa uma página da Brapi (agora só filtra)
+            function initBrapiPage(type) {
+                if (!brapiDataLoaded) {
+                    fetchAllBrapiData(); // Chama a função única se os dados não foram carregados
+                }
+                // Os dados serão renderizados quando a 'fetchAllBrapiData' terminar
+            }
+
+            // Renderiza uma tabela da Brapi
+            function renderBrapiTable(data, tableBody, filter = "") {
+                tableBody.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
+
+                const filteredData = data.filter(item => 
+                    item.symbol.toLowerCase().includes(searchTerm) || 
+                    (item.longName && item.longName.toLowerCase().includes(searchTerm))
+                );
+                
+                if(filteredData.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">Nenhum resultado encontrado.</td></tr>`;
+                     return;
+                }
+
+                filteredData.forEach(item => {
+                    const price = item.regularMarketPrice || 0;
+                    const change = item.regularMarketChangePercent || 0;
+                    const changeColor = getResultadoColor(change);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-medium">${item.symbol}</td>
+                        <td class="py-3 px-4 text-gray-300">${item.longName || 'N/A'}</td>
+                        <td class="py-3 px-4 text-right font-medium">${formatCurrencyBRL(price)}</td>
+                        <td class="py-3 px-4 text-right ${changeColor}">${change.toFixed(2)}%</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // 4. Renda Fixa (Estático)
+            const staticRendaFixaData = [
+                { nome: "Tesouro Selic 2027", tipo: "Tesouro Direto", rentabilidade: "Selic + 0,10%", vencimento: "01/03/2027" },
+                { nome: "Tesouro IPCA+ 2035", tipo: "Tesouro Direto", rentabilidade: "IPCA + 5,50%", vencimento: "15/05/2035" },
+                { nome: "CDB Banco X 110%", tipo: "CDB Pós", rentabilidade: "110% do CDI", vencimento: "10/10/2028" },
+                { nome: "LCI Banco Y 10.5%", tipo: "LCI Pré", rentabilidade: "10,5% a.a.", vencimento: "20/11/2026" }
+            ];
+            
+            function renderRendaFixaTable(data, filter = "") {
+                tableBodyRendaFixa.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
+                
+                const filteredData = data.filter(item => 
+                    item.nome.toLowerCase().includes(searchTerm) || 
+                    item.tipo.toLowerCase().includes(searchTerm)
+                );
+
+                if(filteredData.length === 0) {
+                     tableBodyRendaFixa.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">Nenhum resultado encontrado.</td></tr>`;
+                     return;
+                }
+
+                filteredData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-medium">${item.nome}</td>
+                        <td class="py-3 px-4">${item.tipo}</td>
+                        <td class="py-3 px-4 text-right">${item.rentabilidade}</td>
+                        <td class="py-3 px-4 text-right">${item.vencimento}</td>
+                    `;
+                    tableBodyRendaFixa.appendChild(row);
+                });
+            }
+
 
             // ==========================================================
             // FUNÇÕES DE CÁLCULO (FERRAMENTAS)
@@ -1399,12 +1957,10 @@
                 
                 const totalJuros = currentValue - currentInvestido;
                 
-                // Atualiza os placares
                 jcTotalInvestido.textContent = formatCurrencyBRL(currentInvestido);
                 jcTotalJuros.textContent = formatCurrencyBRL(totalJuros);
                 jcValorTotal.textContent = formatCurrencyBRL(currentValue);
                 
-                // Atualiza o gráfico
                 if (jurosCompostosChartInstance) {
                     jurosCompostosChartInstance.data.labels = labels;
                     jurosCompostosChartInstance.data.datasets[0].data = dataTotal;
@@ -1438,16 +1994,14 @@
                     dataBench.push(currentBench);
                 }
 
-                // Atualiza os placares
                 bValorInvestimento.textContent = formatCurrencyBRL(currentInv);
                 bValorBenchmark.textContent = formatCurrencyBRL(currentBench);
 
-                // Atualiza o gráfico
                 if (benchmarkChartInstance) {
                     benchmarkChartInstance.data.labels = labels;
                     benchmarkChartInstance.data.datasets[0].data = dataInv;
                     benchmarkChartInstance.data.datasets[1].data = dataBench;
-                    benchmarkChartInstance.data.datasets[1].label = nomeBenchmark; // Atualiza o nome
+                    benchmarkChartInstance.data.datasets[1].label = nomeBenchmark;
                     benchmarkChartInstance.update();
                 }
             }
@@ -1466,8 +2020,6 @@
                 updateResumoTable();
             }
 
-            // --- Funções da Aba "Minhas Metas" ---
-            
             function renderGoalsSliders() {
                 goalsSlidersContainer.innerHTML = '';
                 goalsData.forEach((goal) => {
@@ -1535,8 +2087,6 @@
                 renderMetasTabela();
                 updateResumoTable();
             }
-
-            // --- Funções da Aba "Orçamento Doméstico" ---
 
             function renderMetasTabela() {
                 metasTableBody.innerHTML = '';
@@ -1677,9 +2227,8 @@
                 if (resultado < 0) return 'text-red-500';
                 return 'text-gray-400';
             }
-            // (NOVO) Formata como moeda BRL
             function formatCurrencyBRL(value) {
-                if (value === null || value === undefined) return 'N/A';
+                if (value === null || value === undefined || isNaN(value)) return 'R$ 0,00';
                 return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             }
 
@@ -1699,7 +2248,6 @@
             // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (PORTFÓLIO)
             // ==========================================================
             
-            // 1. Renderiza os selects de categoria de portfólio
             function renderPortfolioCategoriaSelect() {
                 const selects = [addAtivoCategoria, editAtivoCategoria];
                 selects.forEach(select => {
@@ -1713,7 +2261,6 @@
                 });
             }
 
-            // 2. Renderiza a lista de ativos (baseado no array 'ativos') (MODIFICADO)
             function renderAtivosList() {
                 ativosListContainer.innerHTML = '';
                 
@@ -1722,7 +2269,6 @@
                     return; 
                 }
 
-                // Agrupa ativos por categoria
                 const ativosAgrupados = {};
                 portfolioCategorias.forEach(cat => {
                     ativosAgrupados[cat.key] = { name: cat.name, items: [] };
@@ -1734,7 +2280,6 @@
                     }
                 });
 
-                // Renderiza
                 Object.keys(ativosAgrupados).forEach(key => {
                     const categoria = ativosAgrupados[key];
                     if (categoria.items.length > 0) {
@@ -1742,11 +2287,11 @@
                         categoriaContainer.className = 'bg-gray-900 p-6 rounded-lg shadow-lg';
                         
                         const itemsHtml = categoria.items.map(ativo => {
-                            const precoAtual = ativo.precoAtual || 0; // (MODIFICADO)
+                            const precoAtual = ativo.precoAtual || 0;
                             const valorInvestido = ativo.quantidade * ativo.precoMedio;
-                            const valorAtualTotal = ativo.quantidade * precoAtual; // (MODIFICADO)
-                            const resultado = valorAtualTotal - valorInvestido; // (MODIFICADO)
-                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0; // (MODIFICADO)
+                            const valorAtualTotal = ativo.quantidade * precoAtual;
+                            const resultado = valorAtualTotal - valorInvestido;
+                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0;
                             
                             return `
                                 <div class="grid grid-cols-7 gap-4 items-center py-3 border-b border-gray-800 last:border-b-0">
@@ -1758,7 +2303,6 @@
                                         <span class="text-sm text-gray-400 block">Preço Médio</span>
                                         <span class="text-white">${formatCurrencyBRL(ativo.precoMedio)}</span>
                                     </div>
-                                    <!-- (NOVA COLUNA) -->
                                     <div class="text-right">
                                         <span class="text-sm text-gray-400 block">Preço Atual</span>
                                         <span class="text-white">${formatCurrencyBRL(precoAtual)}</span>
@@ -1778,7 +2322,6 @@
                                         </span>
                                     </div>
                                 </div>
-                                <!-- Botões de Ação na linha de baixo -->
                                 <div class="flex justify-end gap-2 pb-3 border-b border-gray-800 last:border-b-0">
                                     <button class="edit-ativo-btn text-xs bg-gray-700 hover:bg-yellow-600 text-white py-1 px-2 rounded"
                                         data-id="${ativo.id}"
@@ -1806,28 +2349,24 @@
                 });
             }
             
-            // 3. Atualiza o gráfico e legenda do Portfólio (MODIFICADO)
             function updatePortfolioChartAndLegend() {
                 let totalPortfolio = 0;
                 const totaisCategoria = {};
                 portfolioCategorias.forEach(cat => totaisCategoria[cat.key] = 0);
 
-                // Calcula totais
                 ativos.forEach(ativo => {
                     const precoAtual = ativo.precoAtual || 0;
-                    const valor = ativo.quantidade * precoAtual; // (MODIFICADO)
+                    const valor = ativo.quantidade * precoAtual;
                     totalPortfolio += valor;
                     if (totaisCategoria[ativo.categoriaKey] !== undefined) {
                         totaisCategoria[ativo.categoriaKey] += valor;
                     }
                 });
                 
-                // Prepara dados para o gráfico
                 const chartData = portfolioCategorias.map(cat => totaisCategoria[cat.key]);
                 const chartLabels = portfolioCategorias.map(cat => cat.name);
                 const chartColors = portfolioCategorias.map(cat => cat.color);
                 
-                // Atualiza o gráfico
                 if (portfolioChartInstance) {
                     portfolioChartInstance.data.labels = chartLabels;
                     portfolioChartInstance.data.datasets[0].data = chartData;
@@ -1835,16 +2374,14 @@
                     portfolioChartInstance.update();
                 }
                 
-                // Atualiza o valor total no centro
                 portfolioTotalValor.textContent = formatCurrencyBRL(totalPortfolio);
                 
-                // Atualiza a legenda
                 portfolioLegendContainer.innerHTML = '';
                 portfolioCategorias.forEach(cat => {
                     const valorCategoria = totaisCategoria[cat.key];
                     const percent = totalPortfolio > 0 ? (valorCategoria / totalPortfolio) * 100 : 0;
                     
-                    if (valorCategoria > 0) { // Só mostra se tiver valor
+                    if (valorCategoria > 0) {
                         const legendItem = document.createElement('div');
                         legendItem.className = 'flex items-center justify-between';
                         legendItem.innerHTML = `
@@ -1867,14 +2404,13 @@
             function closeAddAtivoModal() {
                 addAtivoModal.classList.add('hidden');
             }
-            // (MODIFICADO)
             function openEditAtivoModal(ativo) {
                 editAtivoId.value = ativo.id;
                 editAtivoNome.value = ativo.nome;
                 editAtivoCategoria.value = ativo.categoria;
                 editAtivoQuantidade.value = ativo.quantidade;
                 editAtivoPrecoMedio.value = ativo.precoMedio;
-                editAtivoPrecoAtual.value = ativo.precoAtual.toFixed(2); // (MODIFICADO)
+                editAtivoPrecoAtual.value = ativo.precoAtual.toFixed(2);
                 editAtivoModal.classList.remove('hidden');
             }
             function closeEditAtivoModal() {
@@ -1885,7 +2421,6 @@
 
             // --- Funções de Inicialização dos Gráficos (Chart.js) ---
             
-            // 1. Gráfico de Portfólio (Donut)
             function initPortfolioChart() {
                 const portfolioCanvas = document.getElementById('portfolioChart');
                 if (portfolioCanvas && !portfolioChartInstance) { 
@@ -1893,18 +2428,10 @@
                     portfolioChartInstance = new Chart(portfolioCtx, {
                         type: 'doughnut',
                         data: {
-                            labels: [], // Começa vazio
-                            datasets: [{
-                                data: [], // Começa vazio
-                                backgroundColor: [], // Começa vazio
-                                borderWidth: 0,
-                                hoverOffset: 4
-                            }]
+                            labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0, hoverOffset: 4 }]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '80%', 
+                            responsive: true, maintainAspectRatio: false, cutout: '80%', 
                             plugins: {
                                 legend: { display: false },
                                 tooltip: { 
@@ -1925,7 +2452,6 @@
                 }
             }
 
-            // 2. Gráfico de Histórico de Orçamento (Barras)
             function initBudgetHistoryChart() {
                 const budgetHistoryCanvas = document.getElementById('budgetHistoryChart');
                 if (budgetHistoryCanvas && !budgetHistoryChartInstance) {
@@ -1935,51 +2461,24 @@
                         data: {
                             labels: ['04/2023', '05/2023', '06/2023', '07/2023', '08/2023', '09/2023', '10/2023', '11/2023', '12/2023'],
                             datasets: [
-                                {
-                                    label: 'Custos',
-                                    data: [12, 19, 3, 5, 2, 8, 15, 6, 9],
-                                    backgroundColor: chartColors.costs,
-                                    borderRadius: 4
-                                },
-                                {
-                                    label: 'Renda',
-                                    data: [8, 10, 5, 2, 9, 3, 16, 17, 4],
-                                    backgroundColor: chartColors.income,
-                                    borderRadius: 4
-                                }
+                                { label: 'Custos', data: [12, 19, 3, 5, 2, 8, 15, 6, 9], backgroundColor: chartColors.costs, borderRadius: 4 },
+                                { label: 'Renda', data: [8, 10, 5, 2, 9, 3, 16, 17, 4], backgroundColor: chartColors.income, borderRadius: 4 }
                             ]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            responsive: true, maintainAspectRatio: false,
                             plugins: {
-                                legend: {
-                                    position: 'top',
-                                    align: 'end',
-                                    labels: {
-                                        color: chartColors.legendColor,
-                                        boxWidth: 12,
-                                        padding: 20
-                                    }
-                                }
+                                legend: { position: 'top', align: 'end', labels: { color: chartColors.legendColor, boxWidth: 12, padding: 20 } }
                             },
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: chartColors.gridColor },
-                                    ticks: { color: chartColors.ticksColor }
-                                },
-                                x: {
-                                    grid: { display: false },
-                                    ticks: { color: chartColors.ticksColor }
-                                }
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
                             }
                         }
                     });
                 }
             }
             
-            // 3. Gráfico de Metas (Donut)
             function initGoalsChart() {
                 const goalsCanvas = document.getElementById('goalsChart');
                 if (goalsCanvas && !goalsChartInstance) {
@@ -1991,23 +2490,16 @@
                             datasets: [{
                                 data: goalsData.map(g => g.percentage),
                                 backgroundColor: goalsData.map(g => g.color),
-                                borderWidth: 0,
-                                hoverOffset: 4
+                                borderWidth: 0, hoverOffset: 4
                             }]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            cutout: '80%', 
+                            responsive: true, maintainAspectRatio: false, cutout: '80%', 
                             plugins: {
                                 legend: { display: false },
                                 tooltip: { 
                                     enabled: true,
-                                    callbacks: {
-                                        label: function(context) {
-                                            return `${context.label}: ${context.raw}%`;
-                                        }
-                                    }
+                                    callbacks: { label: function(context) { return `${context.label}: ${context.raw}%`; } }
                                 }
                             }
                         }
@@ -2015,7 +2507,6 @@
                 }
             }
 
-            // 4. Gráfico de Juros Compostos (Linha)
             function initJurosCompostosChart() {
                 const jcCanvas = document.getElementById('jurosCompostosChart');
                 if (jcCanvas && !jurosCompostosChartInstance) {
@@ -2025,38 +2516,15 @@
                         data: {
                             labels: [],
                             datasets: [
-                                {
-                                    label: 'Valor Total Acumulado',
-                                    data: [],
-                                    borderColor: chartColors.income, // yellow-600
-                                    backgroundColor: chartColors.income,
-                                    fill: false,
-                                    tension: 0.1
-                                },
-                                {
-                                    label: 'Total Investido',
-                                    data: [],
-                                    borderColor: chartColors.gridColor, // gray-500
-                                    backgroundColor: chartColors.gridColor,
-                                    fill: false,
-                                    tension: 0.1,
-                                    borderDash: [5, 5]
-                                }
+                                { label: 'Valor Total Acumulado', data: [], borderColor: chartColors.income, backgroundColor: chartColors.income, fill: false, tension: 0.1 },
+                                { label: 'Total Investido', data: [], borderColor: chartColors.gridColor, backgroundColor: chartColors.gridColor, fill: false, tension: 0.1, borderDash: [5, 5] }
                             ]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            responsive: true, maintainAspectRatio: false,
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: chartColors.gridColor },
-                                    ticks: { color: chartColors.ticksColor }
-                                },
-                                x: {
-                                    grid: { display: false },
-                                    ticks: { color: chartColors.ticksColor }
-                                }
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
                             },
                             plugins: { legend: { labels: { color: chartColors.legendColor } } }
                         }
@@ -2064,7 +2532,6 @@
                 }
             }
 
-            // 5. Gráfico de Benchmark (Linha)
             function initBenchmarkChart() {
                 const bCanvas = document.getElementById('benchmarkChart');
                 if (bCanvas && !benchmarkChartInstance) {
@@ -2074,37 +2541,15 @@
                         data: {
                             labels: [],
                             datasets: [
-                                {
-                                    label: 'Seu Investimento',
-                                    data: [],
-                                    borderColor: chartColors.income, // yellow-600
-                                    backgroundColor: chartColors.income,
-                                    fill: false,
-                                    tension: 0.1
-                                },
-                                {
-                                    label: 'Benchmark',
-                                    data: [],
-                                    borderColor: chartColors.costs, // green-400
-                                    backgroundColor: chartColors.costs,
-                                    fill: false,
-                                    tension: 0.1
-                                }
+                                { label: 'Seu Investimento', data: [], borderColor: chartColors.income, backgroundColor: chartColors.income, fill: false, tension: 0.1 },
+                                { label: 'Benchmark', data: [], borderColor: chartColors.costs, backgroundColor: chartColors.costs, fill: false, tension: 0.1 }
                             ]
                         },
                         options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
+                            responsive: true, maintainAspectRatio: false,
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: chartColors.gridColor },
-                                    ticks: { color: chartColors.ticksColor }
-                                },
-                                x: {
-                                    grid: { display: false },
-                                    ticks: { color: chartColors.ticksColor }
-                                }
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
                             },
                             plugins: { legend: { labels: { color: chartColors.legendColor } } }
                         }
@@ -2127,11 +2572,7 @@
                 const deleteBtn = e.target.closest('.delete-gasto-btn');
                 
                 if (editBtn) {
-                    const gasto = {
-                        id: editBtn.dataset.id,
-                        nome: editBtn.dataset.nome,
-                        valor: parseFloat(editBtn.dataset.valor)
-                    };
+                    const gasto = { id: editBtn.dataset.id, nome: editBtn.dataset.nome, valor: parseFloat(editBtn.dataset.valor) };
                     openEditGastoModal(gasto);
                 }
                 if (deleteBtn) {
@@ -2154,12 +2595,9 @@
 
                 if (editBtn) {
                     const ativo = {
-                        id: editBtn.dataset.id,
-                        nome: editBtn.dataset.nome,
-                        categoria: editBtn.dataset.categoria,
-                        quantidade: parseFloat(editBtn.dataset.quantidade),
-                        precoMedio: parseFloat(editBtn.dataset.precoMedio),
-                        precoAtual: parseFloat(editBtn.dataset.precoAtual) // (MODIFICADO)
+                        id: editBtn.dataset.id, nome: editBtn.dataset.nome, categoria: editBtn.dataset.categoria,
+                        quantidade: parseFloat(editBtn.dataset.quantidade), precoMedio: parseFloat(editBtn.dataset.precoMedio),
+                        precoAtual: parseFloat(editBtn.dataset.precoAtual)
                     };
                     openEditAtivoModal(ativo);
                 }
@@ -2181,10 +2619,32 @@
                     benchmarkChartInstance.update('none'); 
                 }
             });
+            btnRefreshCambio.addEventListener('click', fetchCambioData);
             
-            // --- (NOVO) Listeners de Cripto ---
+            // --- Listeners de Cotações ---
             btnRefreshCripto.addEventListener('click', fetchCriptoData);
+            searchCripto.addEventListener('input', (e) => {
+                // A função `renderCriptoTable` agora precisa do cache local de cripto
+                // (Esta parte precisa de refatoração para guardar os dados cripto localmente, assim como a Brapi)
+                // Por agora, esta pesquisa não funcionará em tempo real sem refatorar `fetchCriptoData`
+                // Vamos simplificar: a pesquisa cripto não vai refazer a busca, apenas filtrar o que está na tela (se já carregado)
+                if(criptoDataLoaded) {
+                    // (Necessário refatorar para armazenar dados cripto em cache como `brapiDataStore`)
+                }
+            });
 
+            searchAcoes.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.acoes, tableBodyAcoes, e.target.value);
+            });
+            searchFiis.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.fiis, tableBodyFiis, e.target.value);
+            });
+            searchEtfs.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.etfs, tableBodyEtfs, e.target.value);
+            });
+            searchRendaFixa.addEventListener('input', (e) => {
+                renderRendaFixaTable(staticRendaFixaData, e.target.value);
+            });
             
             // ==========================================================
             // INICIALIZAÇÃO
@@ -2200,9 +2660,14 @@
             // 3. Inicia os listeners de dados
             setupGastosListener();
             setupAtivosListener(); 
+            
+            // 4. (NOVO) Inicia o carregamento de dados da Brapi em segundo plano
+            // (Não chama 'await' para não bloquear a UI)
+            fetchAllBrapiData();
 
-            // 4. Inicializa a Página Padrão
-            showPage('carteira'); 
+            // 5. Inicializa a Página Padrão
+            showPage('home'); // (MODIFICADO) Começa na página de Perfil
+            setActiveLink(document.querySelector('.nav-link[data-page="home"]')); // (MODIFICADO)
             
         }; // Fim do 'initDashboard'
     </script>
