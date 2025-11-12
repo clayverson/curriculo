@@ -1163,19 +1163,5 @@
     </script>
 </body>
 </html>
-```
 
-### **Ação Necessária para a Auditoria Funcionar**
-
-Para que a página de auditoria funcione, você precisa ajustar as **Regras de Segurança** do seu Firestore.
-
-1.  Acesse o seu projeto no [Console do Firebase](https://console.firebase.google.com/).
-2.  No menu à esquerda, vá em **Build > Firestore Database**.
-3.  Clique na aba **Regras (Rules)**.
-4.  Adicione o seguinte bloco de código dentro das suas regras existentes:
-
-```
-match /audit_logs/{logId} {
-  allow read, create: if request.auth != null;
-}
 
