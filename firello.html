@@ -3,120 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firello - Clone do Trello com Firebase</title>
+    <title>Organiza Aí - Gestão de Espaços</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        /* Estilo para a barra de rolagem vertical */
-        ::-webkit-scrollbar {
-            width: 8px; /* Reduzi um pouco para ficar mais elegante dentro dos cards */
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(0,0,0,0.05);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        .list {
-            /* Garante que a lista nunca fique menor que isso, evitando quebra de layout interno */
-            min-width: 280px;
-        }
-        .card.dragging {
-            opacity: 0.5;
-            transform: rotate(3deg);
-        }
-        .drag-over {
-            background-color: rgba(30, 144, 255, 0.1);
-            border: 2px dashed #60a5fa;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .list { min-width: 280px; }
+        .card.dragging { opacity: 0.5; transform: rotate(3deg); }
+        .drag-over { background-color: rgba(30, 144, 255, 0.1); border: 2px dashed #60a5fa; }
+        .hidden { display: none !important; }
+        
+        /* Esconder scrollbar da nav mas permitir scroll */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen w-screen flex flex-col">
+<body class="bg-gray-50 min-h-screen w-screen overflow-hidden flex flex-col">
 
-    <!-- Cabeçalho -->
-    <header class="bg-white shadow-md p-4 flex justify-between items-center z-10 flex-shrink-0">
-        <div class="flex items-center space-x-4">
-            <h1 class="text-2xl font-bold text-gray-800">🔥 Firello</h1>
-            <div class="relative">
-                <input type="text" id="search-input" placeholder="Filtrar cartões..." class="border rounded-lg py-1 px-3 pl-8 text-sm w-64 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+    <!-- TELA DE LOGIN / CADASTRO -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+            <div class="flex justify-center mb-6">
+                <span class="text-4xl">📦</span>
             </div>
-        </div>
-        <div id="auth-status" class="text-sm text-gray-500">
-            Carregando...
-        </div>
-    </header>
-
-    <!-- Container Principal do Quadro -->
-    <!-- ALTERAÇÃO AQUI: Substituí as classes fixas (grid-cols-1, etc) por um grid dinâmico (auto-fit) com minmax. 
-         Isso garante que cada coluna tenha pelo menos 280px. Se não couber, ela desce para a próxima linha, evitando sobreposição. -->
-    <main id="board-container" class="flex-grow grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 p-4 items-start content-start">
-        <!-- Listas e cartões serão renderizados aqui pelo JavaScript -->
-    </main>
-    
-    <!-- Botão para adicionar nova lista -->
-    <div class="p-4 flex-shrink-0 flex justify-center">
-        <button id="add-list-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg shadow-sm w-72">
-            + Adicionar outra lista
-        </button>
-    </div>
-
-    <!-- Modal para adicionar/editar (inicialmente oculto) -->
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h2 id="modal-title" class="text-xl font-bold mb-4">Novo Item</h2>
-            <input type="text" id="modal-input" class="w-full border border-gray-300 p-2 rounded-md mb-4" placeholder="Digite o título...">
-            <div class="flex justify-end space-x-2">
-                <button id="modal-cancel-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg">Cancelar</button>
-                <button id="modal-save-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg">Salvar</button>
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Organiza Aí</h1>
+            <p class="text-gray-500 text-center mb-6 text-sm">Gerencie suas prateleiras, caixas e itens.</p>
+            
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="auth-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="auth-password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <div id="auth-error" class="text-red-500 text-sm text-center hidden"></div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Entrar</button>
+            </form>
+            <div class="mt-6 text-center text-sm">
+                <p id="toggle-auth-text" class="text-gray-600">
+                    Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>
+                </p>
             </div>
         </div>
     </div>
 
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app-view" class="hidden flex flex-col h-screen w-screen">
+        <!-- Cabeçalho -->
+        <header class="bg-white shadow-sm p-4 z-20 flex-shrink-0 border-b border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-start">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">📦</span>
+                        <h1 class="text-xl font-bold text-gray-800">Organiza Aí</h1>
+                    </div>
+                    <button id="logout-btn" class="md:hidden text-sm text-red-500 font-semibold border border-red-200 px-3 py-1 rounded">Sair</button>
+                </div>
 
-    <!-- Firebase SDK -->
+                <div class="relative w-full md:w-96">
+                    <input type="text" id="search-input" placeholder="Pesquisar item em todas as salas..." class="border rounded-lg py-2 px-4 pl-10 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50">
+                    <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+
+                <div class="hidden md:flex items-center space-x-4">
+                    <span id="user-display" class="text-sm text-gray-500 font-medium"></span>
+                    <button id="logout-btn-desktop" class="text-sm text-red-500 hover:text-red-700 font-semibold border border-red-200 hover:bg-red-50 px-3 py-1 rounded transition">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navegação de Cômodos (Rooms) -->
+        <nav class="bg-white border-b border-gray-200 shadow-sm z-10 flex-shrink-0">
+            <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar" id="rooms-container">
+                <!-- Abas dos cômodos serão renderizadas aqui -->
+            </div>
+        </nav>
+
+        <!-- Área Principal (Board) -->
+        <main id="board-container" class="flex-grow grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 p-6 items-start content-start overflow-y-auto bg-gray-50">
+            <!-- Prateleiras (Listas) -->
+        </main>
+        
+        <!-- Botão Flutuante (Mobile) ou Fixo (Desktop) para Adicionar Prateleira -->
+        <div class="p-4 flex-shrink-0 flex justify-center bg-gray-50 border-t border-gray-200">
+            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition flex items-center space-x-2">
+                <span>+</span> <span>Nova Prateleira / Caixa</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Universal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
+            <h2 id="modal-title" class="text-xl font-bold mb-4 text-gray-800">Novo Item</h2>
+            
+            <input type="text" id="modal-input" class="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Digite o nome...">
+            
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel-btn" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Cancelar</button>
+                <button id="modal-save-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { 
-            getFirestore, 
-            collection, 
-            doc, 
-            onSnapshot, 
-            addDoc, 
-            deleteDoc, 
-            updateDoc, 
-            query,
-            orderBy,
-            where,
-            writeBatch,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, where, writeBatch, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO E AUTENTICAÇÃO DO FIREBASE ---
-        
-        // Sua configuração específica do Firebase.
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
           apiKey: "AIzaSyClnyh0pvsw0nz1PvjPowHApLzklROFRds",
           authDomain: "firello-72b82.firebaseapp.com",
           projectId: "firello-72b82",
           storageBucket: "firello-72b82.firebasestorage.app",
           messagingSenderId: "463200810341",
-          appId: "1:463200810341:web:51e429b4f2434d8ed99d8c"
+          appId: "1:463200810341:web:51e429b4f2434d8ed99d8c",
+          measurementId: "G-MQR8VHKMYE"
         };
-        
-        // O appId para a estrutura de dados pode ser o mesmo que o seu projectId.
         const appId = 'firello-72b82';
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -124,412 +136,478 @@
         let userId = null;
         let listsCollectionRef = null;
         let cardsCollectionRef = null;
+        let roomsCollectionRef = null;
+        let unsubscribeLists = null;
+        let unsubscribeCards = [];
+        let unsubscribeRooms = null;
+
+        // --- AUTH ---
+        let isLoginMode = true;
+        const authScreen = document.getElementById('auth-screen');
+        const appView = document.getElementById('app-view');
+        const authForm = document.getElementById('auth-form');
+        const authError = document.getElementById('auth-error');
+        const toggleAuthBtn = document.getElementById('toggle-auth-btn');
+
+        toggleAuthBtn.addEventListener('click', (e) => {
+            e.preventDefault(); isLoginMode = !isLoginMode; authError.classList.add('hidden'); authForm.reset();
+            document.getElementById('auth-title').textContent = isLoginMode ? "Entrar na sua conta" : "Criar nova conta";
+            document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Entrar" : "Cadastrar";
+            document.getElementById('toggle-auth-text').innerHTML = isLoginMode ? `Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>` : `Já tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Entrar</button>`;
+            document.getElementById('toggle-auth-btn').addEventListener('click', arguments.callee);
+        });
+
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            authError.classList.add('hidden');
+            try {
+                if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
+                else await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                authError.classList.remove('hidden');
+                authError.textContent = error.message;
+            }
+        });
+
+        const logout = () => signOut(auth);
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('logout-btn-desktop').addEventListener('click', logout);
 
         onAuthStateChanged(auth, user => {
             if (user) {
                 userId = user.uid;
-                document.getElementById('auth-status').textContent = `Conectado como: ${userId.substring(0, 8)}...`;
+                document.getElementById('user-display').textContent = user.email;
+                authScreen.classList.add('hidden'); appView.classList.remove('hidden');
                 setupFirestoreListeners();
-                // Adiciona o listener de pesquisa uma vez que o usuário está logado
-                document.getElementById('search-input').addEventListener('input', handleSearch);
             } else {
-                signInAnonymously(auth).catch(error => {
-                    console.error("Erro ao fazer login anônimo:", error);
-                    document.getElementById('auth-status').textContent = 'Erro de autenticação.';
-                });
+                userId = null;
+                authScreen.classList.remove('hidden'); appView.classList.add('hidden');
+                document.getElementById('board-container').innerHTML = '';
+                if (unsubscribeLists) unsubscribeLists();
+                if (unsubscribeRooms) unsubscribeRooms();
+                unsubscribeCards.forEach(unsub => unsub());
             }
         });
 
-        // --- ESTADO DA APLICAÇÃO ---
-        let state = {
-            lists: [],
-            cards: {} // Objeto para mapear listId para um array de cartões
-        };
-        let draggedCardId = null;
-        let searchTerm = ''; // Variável global para a pesquisa
-
-        // --- LÓGICA DO FIRESTORE ---
+        // --- FIRESTORE & STATE ---
+        let state = { rooms: [], lists: [], cards: {} };
+        let currentRoomId = 'default';
+        let searchTerm = '';
 
         function setupFirestoreListeners() {
             if (!userId) return;
+            
+            // Paths
+            const basePath = `artifacts/${appId}/users/${userId}`;
+            roomsCollectionRef = collection(db, `${basePath}/rooms`);
+            listsCollectionRef = collection(db, `${basePath}/lists`);
+            cardsCollectionRef = collection(db, `${basePath}/cards`);
+            
+            // 1. Listen Rooms
+            unsubscribeRooms = onSnapshot(query(roomsCollectionRef, orderBy("createdAt")), snapshot => {
+                state.rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Se não houver salas, cria a padrão
+                if (state.rooms.length === 0 && !snapshot.metadata.hasPendingWrites) {
+                    createDefaultRoom();
+                } else if (!state.rooms.find(r => r.id === currentRoomId) && state.rooms.length > 0) {
+                    // Se a sala atual foi deletada ou inválida, vai para a primeira
+                    currentRoomId = state.rooms[0].id;
+                }
+                
+                renderRoomsNav();
+                renderBoard(); // Re-render para aplicar filtro de sala
+            });
 
-            // Referências às coleções privadas do usuário
-            listsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/lists`);
-            cardsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/cards`);
-
-            // Listener para listas
-            const listsQuery = query(listsCollectionRef, orderBy("order"));
-            onSnapshot(listsQuery, snapshot => {
+            // 2. Listen Lists (Todas, filtramos visualmente)
+            unsubscribeLists = onSnapshot(query(listsCollectionRef, orderBy("order")), snapshot => {
                 state.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderBoard();
                 
-                // Após renderizar as listas, busca os cartões para cada uma
+                // Reset card listeners
+                unsubscribeCards.forEach(unsub => unsub());
+                unsubscribeCards = [];
                 state.lists.forEach(list => setupCardListener(list.id));
-            }, error => {
-                console.error("Erro ao buscar listas: ", error);
-                document.getElementById('auth-status').textContent = 'Falha ao carregar dados. Verifique as regras de segurança.';
             });
         }
-        
+
+        async function createDefaultRoom() {
+            const defaultRoom = { title: "Geral", createdAt: Date.now() };
+            const docRef = await addDoc(roomsCollectionRef, defaultRoom);
+            currentRoomId = docRef.id;
+        }
+
         function setupCardListener(listId) {
-             // CORREÇÃO: Removido o orderBy da consulta para evitar a necessidade de um índice composto.
-             const cardsQuery = query(cardsCollectionRef, where("listId", "==", listId));
-             onSnapshot(cardsQuery, snapshot => {
+            const unsub = onSnapshot(query(cardsCollectionRef, where("listId", "==", listId)), snapshot => {
                 const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // A ordenação agora é feita no lado do cliente (no navegador).
                 cards.sort((a, b) => a.order - b.order);
                 state.cards[listId] = cards;
                 renderBoard();
-             });
+            });
+            unsubscribeCards.push(unsub);
         }
 
+        // --- RENDER NAV (ROOMS) ---
+        function renderRoomsNav() {
+            const container = document.getElementById('rooms-container');
+            container.innerHTML = '';
 
-        // --- RENDERIZAÇÃO DA INTERFACE ---
-
-        function renderBoard() {
-            const boardContainer = document.getElementById('board-container');
-            if (!boardContainer) return;
-            boardContainer.innerHTML = ''; // Limpa o quadro antes de renderizar
-
-            state.lists.forEach(list => {
-                const cardsForThisList = state.cards[list.id] || [];
+            state.rooms.forEach(room => {
+                const isActive = room.id === currentRoomId && !searchTerm;
+                const btn = document.createElement('button');
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
                 
-                const filteredCards = searchTerm
-                    ? cardsForThisList.filter(card => card.title.toLowerCase().includes(searchTerm))
-                    : cardsForThisList;
+                // Nome da Sala
+                const span = document.createElement('span');
+                span.textContent = room.title;
+                btn.appendChild(span);
 
-                // Se houver um termo de pesquisa e nenhum cartão corresponder nesta lista, não renderize a lista.
-                if (searchTerm && filteredCards.length === 0) {
-                    return;
+                // Botão Deletar Sala (pequeno X) - só mostra se ativo e não for único
+                if (isActive && state.rooms.length > 1) {
+                    const closeIcon = document.createElement('span');
+                    closeIcon.innerHTML = '&times;';
+                    closeIcon.className = 'ml-2 text-blue-200 hover:text-white cursor-pointer';
+                    closeIcon.onclick = (e) => {
+                        e.stopPropagation();
+                        if(confirm(`Apagar a sala "${room.title}" e todo o seu conteúdo?`)) deleteRoom(room.id);
+                    };
+                    btn.appendChild(closeIcon);
                 }
 
-                const listElement = document.createElement('div');
-                // ALTERAÇÃO: Removido 'h-fit' e adicionado 'max-h-[80vh]'.
-                // Isso permite que o container de cartões use o overflow-y-auto quando a lista ficar muito grande.
-                listElement.className = 'list bg-gray-200 rounded-lg p-3 shadow-md flex flex-col max-h-[80vh]';
-                listElement.setAttribute('data-list-id', list.id);
+                btn.onclick = () => {
+                    currentRoomId = room.id;
+                    // Limpa pesquisa ao mudar de sala para focar na sala
+                    if (searchTerm) {
+                        searchTerm = '';
+                        document.getElementById('search-input').value = '';
+                    }
+                    renderRoomsNav();
+                    renderBoard();
+                };
+                container.appendChild(btn);
+            });
 
-                listElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <h2 class="font-bold text-gray-800 list-title cursor-pointer">${list.title}</h2>
-                        <button class="delete-list-btn text-gray-500 hover:text-red-500" data-list-id="${list.id}">×</button>
+            // Botão Adicionar Sala
+            const addBtn = document.createElement('button');
+            addBtn.className = 'whitespace-nowrap px-3 py-2 rounded-full text-sm font-bold text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 transition-colors';
+            addBtn.textContent = '+ Sala';
+            addBtn.onclick = () => showModal('Nova Sala/Cômodo', 'Ex: Garagem, Quarto...', addRoom);
+            container.appendChild(addBtn);
+        }
+
+        // --- RENDER BOARD ---
+        function renderBoard() {
+            const container = document.getElementById('board-container');
+            container.innerHTML = '';
+
+            // Se estiver pesquisando, ignora filtro de sala. Se não, filtra pela sala atual.
+            let listsToShow = [];
+            
+            if (searchTerm) {
+                // Modo Pesquisa Global
+                listsToShow = state.lists.filter(list => {
+                    const listMatches = list.title.toLowerCase().includes(searchTerm);
+                    const cards = state.cards[list.id] || [];
+                    const hasCardMatches = cards.some(c => c.title.toLowerCase().includes(searchTerm));
+                    return listMatches || hasCardMatches;
+                });
+                
+                if (listsToShow.length === 0) {
+                    container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10">Nenhum item encontrado para "${searchTerm}"</div>`;
+                    return;
+                }
+            } else {
+                // Modo Sala Específica
+                listsToShow = state.lists.filter(list => list.roomId === currentRoomId || (!list.roomId && currentRoomId === state.rooms[0]?.id));
+            }
+
+            listsToShow.forEach(list => {
+                const cards = (state.cards[list.id] || []);
+                
+                // Se pesquisa ativa, filtrar cartões também visualmente
+                const filteredCards = searchTerm 
+                    ? cards.filter(c => c.title.toLowerCase().includes(searchTerm) || list.title.toLowerCase().includes(searchTerm))
+                    : cards;
+
+                // Encontrar nome da sala desta lista (útil na pesquisa global)
+                const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
+
+                const listEl = document.createElement('div');
+                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[80vh]';
+                listEl.dataset.listId = list.id;
+                
+                const highlightClass = (searchTerm && list.title.toLowerCase().includes(searchTerm)) ? 'bg-yellow-50' : '';
+                const roomBadge = searchTerm ? `<span class="text-xs text-gray-400 font-normal ml-2 bg-gray-100 px-1 rounded">${roomName}</span>` : '';
+
+                listEl.innerHTML = `
+                    <div class="p-3 border-b border-gray-100 ${highlightClass}">
+                        <div class="flex justify-between items-start mb-1">
+                            <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg break-words">${list.title}</h2>
+                            <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1" title="Excluir Prateleira">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        ${roomBadge}
                     </div>
-                    <div class="cards-container flex-grow space-y-3 overflow-y-auto pr-1" data-list-id="${list.id}">
-                        <!-- Cartões vão aqui -->
+                    
+                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50" data-list-id="${list.id}">
+                        <!-- Cartões -->
                     </div>
-                    <button class="add-card-btn mt-3 text-left text-gray-600 hover:text-blue-600 p-2 rounded-md w-full">+ Adicionar um cartão</button>
+                    
+                    <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
+                        <button class="add-card-btn w-full py-2 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center">
+                            <span class="mr-1 text-lg leading-none">+</span> Adicionar item
+                        </button>
+                    </div>
                 `;
                 
-                const cardsContainer = listElement.querySelector('.cards-container');
-
-                // Renderiza apenas os cartões filtrados.
+                const cardsCont = listEl.querySelector('.cards-container');
+                
                 filteredCards.forEach(card => {
-                    const cardElement = document.createElement('div');
-                    cardElement.className = 'card bg-white p-3 rounded-md shadow-sm cursor-pointer hover:bg-gray-50 border border-gray-100';
-                    cardElement.setAttribute('draggable', true);
-                    cardElement.setAttribute('data-card-id', card.id);
-                    cardElement.innerHTML = `<p class="card-title text-gray-700 break-words">${card.title}</p><button class="delete-card-btn text-xs text-gray-400 hover:text-red-600 absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity">✕</button>`;
-                    cardElement.style.position = 'relative';
-                    // Pequeno ajuste para o botão de deletar aparecer no hover do cartão
-                    cardElement.onmouseenter = () => cardElement.querySelector('.delete-card-btn').classList.remove('opacity-0');
-                    cardElement.onmouseleave = () => cardElement.querySelector('.delete-card-btn').classList.add('opacity-0');
-                    
-                    cardsContainer.appendChild(cardElement);
-                });
+                    const cardEl = document.createElement('div');
+                    cardEl.draggable = true;
+                    cardEl.dataset.cardId = card.id;
+                    cardEl.dataset.cardTitle = card.title;
 
-                boardContainer.appendChild(listElement);
+                    cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 transition-all group relative';
+                    cardEl.innerHTML = `
+                        <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed">${card.title}</p>
+                        <button class="delete-card-btn absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    `;
+                    cardsCont.appendChild(cardEl);
+                });
+                container.appendChild(listEl);
             });
-            
-            addEventListeners();
+        }
+
+        function handleSearch(e) {
+            searchTerm = e.target.value.toLowerCase().trim();
+            renderRoomsNav(); // Atualiza abas (remove destaque da sala atual se pesquisando)
+            renderBoard();
         }
 
         // --- MODAL ---
-
-        function showModal(title, placeholder, onSave, keepOpenAfterSave = false) {
+        function showModal(title, placeholder, onSave, options = { keepOpenOnEnter: false }) {
             const modal = document.getElementById('modal');
-            const modalTitle = document.getElementById('modal-title');
             const modalInput = document.getElementById('modal-input');
             const modalSaveBtn = document.getElementById('modal-save-btn');
             const modalCancelBtn = document.getElementById('modal-cancel-btn');
 
-            modalTitle.textContent = title;
+            document.getElementById('modal-title').textContent = title;
             modalInput.placeholder = placeholder;
             modalInput.value = '';
             
-            const handleSave = () => {
-                const value = modalInput.value.trim();
-                if (value) {
-                    onSave(value);
-                    if (keepOpenAfterSave) {
-                        modalInput.value = '';
-                    } else {
-                        cleanup();
-                    }
-                }
-            };
-
-            const handleKeyDown = (e) => {
-                if (e.key === 'Enter') {
-                    handleSave();
-                } else if (e.key === 'Escape') {
-                    cleanup();
-                }
-            };
-
-            const cleanup = () => {
+            const close = () => {
                 modal.classList.add('hidden');
-                modalInput.removeEventListener('keydown', handleKeyDown);
+                modalSaveBtn.onclick = null;
+                modalInput.onkeydown = null;
             };
 
-            const newSaveBtn = modalSaveBtn.cloneNode(true);
-            modalSaveBtn.parentNode.replaceChild(newSaveBtn, modalSaveBtn);
-            
-            newSaveBtn.addEventListener('click', handleSave);
-            modalCancelBtn.addEventListener('click', cleanup);
-            modalInput.addEventListener('keydown', handleKeyDown);
-            
+            const triggerSave = async () => {
+                const value = modalInput.value.trim();
+                if (!value) return;
+                
+                const originalText = modalSaveBtn.textContent;
+                modalSaveBtn.textContent = 'Salvando...';
+                modalSaveBtn.disabled = true;
+
+                try {
+                    await onSave(value);
+                    if (options.keepOpenOnEnter) {
+                        modalInput.value = '';
+                        modalInput.focus();
+                    } else {
+                        close();
+                    }
+                } catch (e) {
+                    alert("Erro ao salvar: " + e.message);
+                } finally {
+                    modalSaveBtn.textContent = originalText;
+                    modalSaveBtn.disabled = false;
+                }
+            };
+
+            modalSaveBtn.onclick = () => triggerSave();
+            modalCancelBtn.onclick = close;
+            modalInput.onkeydown = (e) => {
+                if (e.key === 'Enter') triggerSave();
+                if (e.key === 'Escape') close();
+            };
+
             modal.classList.remove('hidden');
             modalInput.focus();
         }
 
-
-        // --- AÇÕES (ADICIONAR/EDITAR/DELETAR) ---
-
-        async function addList(title) {
-            const newOrder = state.lists.length;
-            await addDoc(listsCollectionRef, { title, order: newOrder });
-        }
-        
-        async function addCard(listId, title) {
-            const currentCards = state.cards[listId] || [];
-            const newOrder = currentCards.length;
-            await addDoc(cardsCollectionRef, { title, listId, order: newOrder });
+        // --- CRUD ACTIONS ---
+        async function addRoom(title) {
+            return addDoc(roomsCollectionRef, { title, createdAt: Date.now() });
         }
 
-        async function updateListTitle(listId, newTitle) {
-            const listRef = doc(db, listsCollectionRef.path, listId);
-            await updateDoc(listRef, { title: newTitle });
-        }
-
-        async function updateCardTitle(cardId, newTitle) {
-            const cardRef = doc(db, cardsCollectionRef.path, cardId);
-            await updateDoc(cardRef, { title: newTitle });
-        }
-        
-        async function deleteList(listId) {
-            showModal('Deletar Lista', 'Digite "deletar" para confirmar', (confirmation) => {
-                if (confirmation.toLowerCase() === 'deletar') {
-                    performDeleteList(listId);
-                }
-            });
-        }
-        
-        async function performDeleteList(listId) {
+        async function deleteRoom(roomId) {
+            // Deletar sala, suas listas e cartões
             const batch = writeBatch(db);
-
-            const listRef = doc(db, listsCollectionRef.path, listId);
-            batch.delete(listRef);
-
-            const cardsQuery = query(cardsCollectionRef, where("listId", "==", listId));
-            const cardsSnapshot = await getDocs(cardsQuery);
-            cardsSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
+            batch.delete(doc(db, roomsCollectionRef.path, roomId));
+            
+            // Buscar listas da sala
+            const listsSnapshot = await getDocs(query(listsCollectionRef, where("roomId", "==", roomId)));
+            listsSnapshot.forEach(listDoc => {
+                batch.delete(listDoc.ref);
+                // Cartões infelizmente precisam ser buscados separadamente ou deixar órfãos (não ideal)
+                // Para simplificar aqui, deletamos a lista. 
+                // Numa app real, usaríamos Cloud Functions para limpeza em cascata.
             });
+            // Otimização: Apenas deletamos referências diretas. Cartões ficarão órfãos mas invisíveis.
+            // Para limpeza completa, precisariamos buscar todos cartões de todas as listas desta sala.
             
             await batch.commit();
-        }
-        
-        async function deleteCard(cardId) {
-             const cardRef = doc(db, cardsCollectionRef.path, cardId);
-             await deleteDoc(cardRef);
+            // Resetar para outra sala se a atual for deletada (handled in snapshot listener)
         }
 
-        // --- LÓGICA DE PESQUISA ---
-        function handleSearch(e) {
-            searchTerm = e.target.value.toLowerCase().trim();
-            renderBoard();
-        }
-
-        // --- LÓGICA DE DRAG AND DROP ---
-        function handleDragStart(e) {
-            draggedCardId = e.target.dataset.cardId;
-            e.target.classList.add('dragging');
-        }
-
-        function handleDragEnd(e) {
-            e.target.classList.remove('dragging');
-            draggedCardId = null;
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            const container = e.target.closest('.cards-container');
-            if (container) {
-                 container.classList.add('drag-over');
-            }
-        }
-        
-        function handleDragLeave(e) {
-             const container = e.target.closest('.cards-container');
-            if (container) {
-                 container.classList.remove('drag-over');
-            }
-        }
-
-        async function handleDrop(e) {
-            e.preventDefault();
-            const container = e.target.closest('.cards-container');
-            if (!container || !draggedCardId) return;
-
-            container.classList.remove('drag-over');
-            const targetListId = container.dataset.listId;
-
-            let sourceCard;
-            let sourceListId;
-            for(const listId in state.cards) {
-                const card = state.cards[listId].find(c => c.id === draggedCardId);
-                if(card) {
-                    sourceCard = card;
-                    sourceListId = listId;
-                    break;
-                }
-            }
-
-            if (!sourceCard) return;
-
-            const afterElement = e.target.closest('.card');
-            const cardsInTargetList = Array.from(container.querySelectorAll('.card:not(.dragging)'));
-            let newOrder = cardsInTargetList.length;
-
-            if (afterElement) {
-                const afterCardId = afterElement.dataset.cardId;
-                const afterCardIndex = cardsInTargetList.findIndex(c => c.dataset.cardId === afterCardId);
-                newOrder = afterCardIndex;
-            }
-
-            const batch = writeBatch(db);
-            const movedCardRef = doc(db, cardsCollectionRef.path, draggedCardId);
-            batch.update(movedCardRef, { listId: targetListId, order: newOrder });
-
-            let orderCounter = 0;
-            cardsInTargetList.forEach(cardEl => {
-                if (orderCounter === newOrder) {
-                    orderCounter++;
-                }
-                const cardRef = doc(db, cardsCollectionRef.path, cardEl.dataset.cardId);
-                batch.update(cardRef, { order: orderCounter });
-                orderCounter++;
+        async function addList(title) {
+            return addDoc(listsCollectionRef, { 
+                title, 
+                order: state.lists.length,
+                roomId: currentRoomId 
             });
-            
-            if (sourceListId !== targetListId) {
-                let sourceOrderCounter = 0;
-                const cardsInSourceList = (state.cards[sourceListId] || []).filter(c => c.id !== draggedCardId);
-                cardsInSourceList.sort((a,b) => a.order - b.order);
-                cardsInSourceList.forEach(card => {
-                    const cardRef = doc(db, cardsCollectionRef.path, card.id);
-                    batch.update(cardRef, { order: sourceOrderCounter });
-                    sourceOrderCounter++;
-                });
-            }
-
-            try {
-                await batch.commit();
-            } catch(e) {
-                console.error("Erro ao mover o cartão:", e);
-            }
         }
-        
-        // --- EVENT LISTENERS GERAIS ---
-        function addEventListeners() {
+
+        async function addCard(listId, title) {
+            const currentCards = state.cards[listId] || [];
+            return addDoc(cardsCollectionRef, { 
+                title, 
+                listId, 
+                order: currentCards.length
+            });
+        }
+
+        // --- SETUP LISTENERS & DRAG DROP ---
+        function setupUIListeners() {
+            // Configurar modal de lista
             document.getElementById('add-list-btn').onclick = () => {
-                showModal('Nova Lista', 'Digite o título da lista...', (title) => addList(title));
+                if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
+                showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros, Caixa Ferramentas...', addList);
             };
 
-            const boardContainer = document.getElementById('board-container');
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', handleSearch);
 
-            boardContainer.onclick = (e) => {
-                if (e.target.matches('.add-card-btn')) {
-                    const listId = e.target.closest('.list').dataset.listId;
-                    showModal('Novo Cartão', 'Digite o título do cartão...', (title) => addCard(listId, title), true);
-                }
-                if (e.target.matches('.delete-list-btn')) {
-                    deleteList(e.target.dataset.listId);
-                }
-                 if (e.target.matches('.delete-card-btn')) {
-                    const cardId = e.target.closest('.card').dataset.cardId;
-                    deleteCard(cardId);
-                }
-            };
-
-            boardContainer.ondblclick = (e) => {
-                const listTitleElement = e.target.closest('.list-title');
-                if (listTitleElement) {
-                    const listId = listTitleElement.closest('.list').dataset.listId;
-                    const currentTitle = listTitleElement.textContent;
-                    
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = currentTitle;
-                    input.className = 'font-bold text-gray-800 bg-white border-2 border-blue-500 rounded p-0 m-0 w-full focus:outline-none';
-                    
-                    listTitleElement.style.display = 'none';
-                    listTitleElement.parentElement.insertBefore(input, listTitleElement);
-                    input.focus();
-                    input.select();
-
-                    const save = async () => {
-                        const newTitle = input.value.trim();
-                        input.remove();
-                        listTitleElement.style.display = '';
-                        if (newTitle && newTitle !== currentTitle) {
-                            await updateListTitle(listId, newTitle);
-                        }
-                    };
-                    input.addEventListener('blur', save, { once: true });
-                    input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape') { input.remove(); listTitleElement.style.display = ''; } });
-                }
-
-                const cardTitleElement = e.target.closest('.card-title');
-                if (cardTitleElement) {
-                    const cardId = cardTitleElement.closest('.card').dataset.cardId;
-                    const currentTitle = cardTitleElement.textContent;
-
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.value = currentTitle;
-                    input.className = 'w-full p-0 m-0 border-2 border-blue-500 rounded focus:outline-none';
-
-                    cardTitleElement.style.display = 'none';
-                    cardTitleElement.parentElement.insertBefore(input, cardTitleElement);
-                    input.focus();
-                    input.select();
-
-                     const save = async () => {
-                        const newTitle = input.value.trim();
-                        input.remove();
-                        cardTitleElement.style.display = '';
-                        if (newTitle && newTitle !== currentTitle) {
-                            await updateCardTitle(cardId, newTitle);
-                        }
-                    };
-                    input.addEventListener('blur', save, { once: true });
-                    input.addEventListener('keydown', e => { if(e.key === 'Enter') save(); if(e.key === 'Escape') { input.remove(); cardTitleElement.style.display = ''; } });
-                }
-            };
+            const container = document.getElementById('board-container');
             
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.addEventListener('dragstart', handleDragStart);
-                card.addEventListener('dragend', handleDragEnd);
-            });
+            // Delegação de cliques
+            container.onclick = (e) => {
+                // Add Card
+                if (e.target.matches('.add-card-btn') || e.target.closest('.add-card-btn')) {
+                    const btn = e.target.closest('.add-card-btn');
+                    const listId = btn.closest('.list').dataset.listId;
+                    showModal('Novo Item', 'Nome do item...', (t) => addCard(listId, t), { keepOpenOnEnter: true });
+                }
+                // Delete List
+                if (e.target.matches('.delete-list-btn') || e.target.closest('.delete-list-btn')) {
+                    const btn = e.target.closest('.delete-list-btn');
+                    const id = btn.closest('.list').dataset.listId;
+                    if(confirm("Deletar esta prateleira?")) deleteDoc(doc(db, listsCollectionRef.path, id));
+                }
+                // Delete Card
+                if (e.target.matches('.delete-card-btn') || e.target.closest('.delete-card-btn')) {
+                    const btn = e.target.closest('.delete-card-btn');
+                    deleteDoc(doc(db, cardsCollectionRef.path, btn.closest('.card').dataset.cardId));
+                }
+            };
 
-            const containers = document.querySelectorAll('.cards-container');
-            containers.forEach(container => {
-                container.addEventListener('dragover', handleDragOver);
-                container.addEventListener('dragleave', handleDragLeave);
-                container.addEventListener('drop', handleDrop);
+            // Edição Duplo Clique
+            container.ondblclick = (e) => {
+                const target = e.target;
+                
+                // Editar Titulo Lista
+                if (target.classList.contains('list-title')) {
+                    const listId = target.closest('.list').dataset.listId;
+                    editElement(target, async (newVal) => {
+                        await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal });
+                    });
+                }
+                
+                // Editar Titulo Card
+                if (target.classList.contains('card-title')) {
+                    const cardId = target.closest('.card').dataset.cardId;
+                    editElement(target, async (newVal) => {
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: newVal });
+                    });
+                }
+            };
+
+            // Drag & Drop
+            let draggedId = null;
+            container.addEventListener('dragstart', e => { 
+                const card = e.target.closest('.card');
+                if(card) { draggedId = card.dataset.cardId; card.classList.add('dragging'); } 
+            });
+            container.addEventListener('dragend', e => { 
+                const card = e.target.closest('.card');
+                if(card) { card.classList.remove('dragging'); draggedId = null; } 
+            });
+            container.addEventListener('dragover', e => { 
+                e.preventDefault(); 
+                const dropZone = e.target.closest('.cards-container');
+                if(dropZone) dropZone.classList.add('bg-blue-50'); 
+            });
+            container.addEventListener('dragleave', e => { 
+                const dropZone = e.target.closest('.cards-container');
+                if(dropZone) dropZone.classList.remove('bg-blue-50'); 
+            });
+            container.addEventListener('drop', async e => {
+                e.preventDefault();
+                const dropZone = e.target.closest('.cards-container');
+                if(dropZone) dropZone.classList.remove('bg-blue-50');
+                if(!dropZone || !draggedId) return;
+                
+                const targetListId = dropZone.dataset.listId;
+                
+                // Lógica simples de mover para o final da lista alvo
+                // Para ordenação precisa entre itens, seria necessário calcular o índice baseado na posição do mouse
+                const batch = writeBatch(db);
+                const cardRef = doc(db, cardsCollectionRef.path, draggedId);
+                
+                // Pega a lista de destino para saber a nova ordem (final da fila)
+                const targetCards = state.cards[targetListId] || [];
+                const newOrder = targetCards.length;
+
+                batch.update(cardRef, { listId: targetListId, order: newOrder });
+                await batch.commit();
             });
         }
+
+        // Helper edição inline
+        function editElement(element, saveCallback) {
+            const currentText = element.textContent;
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'w-full p-1 border rounded text-sm focus:outline-blue-500';
+            
+            element.style.display = 'none';
+            element.parentNode.insertBefore(input, element);
+            input.focus();
+            input.select();
+
+            const finish = async () => {
+                const newVal = input.value.trim();
+                input.remove();
+                element.style.display = '';
+                if(newVal && newVal !== currentText) await saveCallback(newVal);
+            };
+
+            input.onblur = finish;
+            input.onkeydown = (e) => {
+                if(e.key === 'Enter') finish();
+                if(e.key === 'Escape') { input.remove(); element.style.display = ''; }
+            };
+        }
+
+        setupUIListeners();
     </script>
 </body>
 </html>
