@@ -12,10 +12,11 @@
         }
         /* Estilo para a barra de rolagem vertical */
         ::-webkit-scrollbar {
-            width: 12px;
+            width: 8px; /* Reduzi um pouco para ficar mais elegante dentro dos cards */
+            height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: rgba(0,0,0,0.05);
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
@@ -26,8 +27,8 @@
             background: #94a3b8;
         }
         .list {
+            /* Garante que a lista nunca fique menor que isso, evitando quebra de layout interno */
             min-width: 280px;
-            width: 280px;
         }
         .card.dragging {
             opacity: 0.5;
@@ -55,8 +56,10 @@
         </div>
     </header>
 
-    <!-- Container Principal do Quadro (agora um grid responsivo) -->
-    <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 p-4">
+    <!-- Container Principal do Quadro -->
+    <!-- ALTERAÇÃO AQUI: Substituí as classes fixas (grid-cols-1, etc) por um grid dinâmico (auto-fit) com minmax. 
+         Isso garante que cada coluna tenha pelo menos 280px. Se não couber, ela desce para a próxima linha, evitando sobreposição. -->
+    <main id="board-container" class="flex-grow grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6 p-4 items-start content-start">
         <!-- Listas e cartões serão renderizados aqui pelo JavaScript -->
     </main>
     
@@ -201,8 +204,9 @@
                 }
 
                 const listElement = document.createElement('div');
-                // Alteração: de h-full para h-fit para que a altura da lista se ajuste ao conteúdo no grid.
-                listElement.className = 'list bg-gray-200 rounded-lg p-3 shadow-md flex flex-col h-fit';
+                // ALTERAÇÃO: Removido 'h-fit' e adicionado 'max-h-[80vh]'.
+                // Isso permite que o container de cartões use o overflow-y-auto quando a lista ficar muito grande.
+                listElement.className = 'list bg-gray-200 rounded-lg p-3 shadow-md flex flex-col max-h-[80vh]';
                 listElement.setAttribute('data-list-id', list.id);
 
                 listElement.innerHTML = `
@@ -210,7 +214,7 @@
                         <h2 class="font-bold text-gray-800 list-title cursor-pointer">${list.title}</h2>
                         <button class="delete-list-btn text-gray-500 hover:text-red-500" data-list-id="${list.id}">×</button>
                     </div>
-                    <div class="cards-container flex-grow space-y-3 overflow-y-auto" data-list-id="${list.id}">
+                    <div class="cards-container flex-grow space-y-3 overflow-y-auto pr-1" data-list-id="${list.id}">
                         <!-- Cartões vão aqui -->
                     </div>
                     <button class="add-card-btn mt-3 text-left text-gray-600 hover:text-blue-600 p-2 rounded-md w-full">+ Adicionar um cartão</button>
@@ -221,11 +225,15 @@
                 // Renderiza apenas os cartões filtrados.
                 filteredCards.forEach(card => {
                     const cardElement = document.createElement('div');
-                    cardElement.className = 'card bg-white p-3 rounded-md shadow-sm cursor-pointer hover:bg-gray-50';
+                    cardElement.className = 'card bg-white p-3 rounded-md shadow-sm cursor-pointer hover:bg-gray-50 border border-gray-100';
                     cardElement.setAttribute('draggable', true);
                     cardElement.setAttribute('data-card-id', card.id);
-                    cardElement.innerHTML = `<p class="card-title">${card.title}</p><button class="delete-card-btn text-xs text-gray-400 hover:text-red-600 absolute top-1 right-1">✕</button>`;
+                    cardElement.innerHTML = `<p class="card-title text-gray-700 break-words">${card.title}</p><button class="delete-card-btn text-xs text-gray-400 hover:text-red-600 absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity">✕</button>`;
                     cardElement.style.position = 'relative';
+                    // Pequeno ajuste para o botão de deletar aparecer no hover do cartão
+                    cardElement.onmouseenter = () => cardElement.querySelector('.delete-card-btn').classList.remove('opacity-0');
+                    cardElement.onmouseleave = () => cardElement.querySelector('.delete-card-btn').classList.add('opacity-0');
+                    
                     cardsContainer.appendChild(cardElement);
                 });
 
@@ -525,4 +533,3 @@
     </script>
 </body>
 </html>
-
