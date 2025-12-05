@@ -55,33 +55,40 @@
 
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="app-view" class="hidden flex flex-col h-screen w-screen">
-        <!-- Cabeçalho -->
-        <header class="bg-white shadow-sm p-4 z-20 flex-shrink-0 border-b border-gray-200">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div class="flex items-center space-x-2 w-full md:w-auto justify-between md:justify-start">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-2xl">📦</span>
-                        <h1 class="text-xl font-bold text-gray-800">Organiza Aí</h1>
-                    </div>
-                    <button id="logout-btn" class="md:hidden text-sm text-red-500 font-semibold border border-red-200 px-3 py-1 rounded">Sair</button>
+        
+        <!-- Cabeçalho Principal (Fixo) -->
+        <header class="bg-white shadow-sm p-3 z-30 sticky top-0 border-b border-gray-200">
+            <div class="flex justify-between items-center w-full gap-3">
+                
+                <!-- Esquerda: Logo -->
+                <div class="flex items-center space-x-2 flex-shrink-0">
+                    <span class="text-2xl">📦</span>
+                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Organiza Aí</h1>
                 </div>
 
-                <div class="relative w-full md:w-96">
-                    <input type="text" id="search-input" placeholder="Pesquisar item em todas as salas..." class="border rounded-lg py-2 px-4 pl-10 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50">
+                <!-- Centro: Barra de Pesquisa (Estica para preencher o espaço) -->
+                <div class="flex-grow max-w-2xl relative">
+                    <input type="text" id="search-input" placeholder="Pesquisar item..." class="border rounded-lg py-2 px-4 pl-10 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50">
                     <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </div>
 
-                <div class="hidden md:flex items-center space-x-4">
-                    <span id="user-display" class="text-sm text-gray-500 font-medium"></span>
-                    <button id="logout-btn-desktop" class="text-sm text-red-500 hover:text-red-700 font-semibold border border-red-200 hover:bg-red-50 px-3 py-1 rounded transition">Sair</button>
+                <!-- Direita: Usuário e Botão Sair -->
+                <div class="flex items-center space-x-3 flex-shrink-0">
+                    <span id="user-display" class="text-xs text-gray-500 hidden md:inline-block max-w-[100px] truncate"></span>
+                    
+                    <button id="logout-btn" class="flex items-center bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold py-2 px-3 sm:px-4 rounded-lg shadow-md transition">
+                        <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        <span class="hidden sm:inline">SAIR</span>
+                    </button>
                 </div>
+
             </div>
         </header>
 
-        <!-- Navegação de Cômodos (Rooms) -->
-        <nav class="bg-white border-b border-gray-200 shadow-sm z-10 flex-shrink-0">
+        <!-- Navegação de Cômodos (Sticky logo abaixo do header) -->
+        <nav class="bg-white border-b border-gray-200 shadow-sm z-20 flex-shrink-0 sticky top-[64px]">
             <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar" id="rooms-container">
-                <!-- Abas dos cômodos serão renderizadas aqui -->
+                <!-- Abas dos cômodos renderizadas via JS -->
             </div>
         </nav>
 
@@ -90,8 +97,8 @@
             <!-- Prateleiras (Listas) -->
         </main>
         
-        <!-- Botão Flutuante (Mobile) ou Fixo (Desktop) para Adicionar Prateleira -->
-        <div class="p-4 flex-shrink-0 flex justify-center bg-gray-50 border-t border-gray-200">
+        <!-- Botão Adicionar Prateleira -->
+        <div class="p-4 flex-shrink-0 flex justify-center bg-gray-50 border-t border-gray-200 z-20">
             <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition flex items-center space-x-2">
                 <span>+</span> <span>Nova Prateleira / Caixa</span>
             </button>
@@ -102,9 +109,7 @@
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
             <h2 id="modal-title" class="text-xl font-bold mb-4 text-gray-800">Novo Item</h2>
-            
             <input type="text" id="modal-input" class="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Digite o nome...">
-            
             <div class="flex justify-end space-x-3">
                 <button id="modal-cancel-btn" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Cancelar</button>
                 <button id="modal-save-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition">Salvar</button>
@@ -149,13 +154,22 @@
         const authError = document.getElementById('auth-error');
         const toggleAuthBtn = document.getElementById('toggle-auth-btn');
 
-        toggleAuthBtn.addEventListener('click', (e) => {
-            e.preventDefault(); isLoginMode = !isLoginMode; authError.classList.add('hidden'); authForm.reset();
+        function toggleAuthMode(e) {
+            e.preventDefault(); 
+            isLoginMode = !isLoginMode; 
+            authError.classList.add('hidden'); 
+            authForm.reset();
+            
             document.getElementById('auth-title').textContent = isLoginMode ? "Entrar na sua conta" : "Criar nova conta";
             document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Entrar" : "Cadastrar";
-            document.getElementById('toggle-auth-text').innerHTML = isLoginMode ? `Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>` : `Já tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Entrar</button>`;
-            document.getElementById('toggle-auth-btn').addEventListener('click', arguments.callee);
-        });
+            document.getElementById('toggle-auth-text').innerHTML = isLoginMode 
+                ? `Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>` 
+                : `Já tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Entrar</button>`;
+            
+            document.getElementById('toggle-auth-btn').addEventListener('click', toggleAuthMode);
+        }
+
+        toggleAuthBtn.addEventListener('click', toggleAuthMode);
 
         authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -171,9 +185,8 @@
             }
         });
 
-        const logout = () => signOut(auth);
-        document.getElementById('logout-btn').addEventListener('click', logout);
-        document.getElementById('logout-btn-desktop').addEventListener('click', logout);
+        // Configura botão de sair único
+        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -198,35 +211,25 @@
 
         function setupFirestoreListeners() {
             if (!userId) return;
-            
-            // Paths
             const basePath = `artifacts/${appId}/users/${userId}`;
             roomsCollectionRef = collection(db, `${basePath}/rooms`);
             listsCollectionRef = collection(db, `${basePath}/lists`);
             cardsCollectionRef = collection(db, `${basePath}/cards`);
             
-            // 1. Listen Rooms
             unsubscribeRooms = onSnapshot(query(roomsCollectionRef, orderBy("createdAt")), snapshot => {
                 state.rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
-                // Se não houver salas, cria a padrão
                 if (state.rooms.length === 0 && !snapshot.metadata.hasPendingWrites) {
                     createDefaultRoom();
                 } else if (!state.rooms.find(r => r.id === currentRoomId) && state.rooms.length > 0) {
-                    // Se a sala atual foi deletada ou inválida, vai para a primeira
                     currentRoomId = state.rooms[0].id;
                 }
-                
                 renderRoomsNav();
-                renderBoard(); // Re-render para aplicar filtro de sala
+                renderBoard();
             });
 
-            // 2. Listen Lists (Todas, filtramos visualmente)
             unsubscribeLists = onSnapshot(query(listsCollectionRef, orderBy("order")), snapshot => {
                 state.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderBoard();
-                
-                // Reset card listeners
                 unsubscribeCards.forEach(unsub => unsub());
                 unsubscribeCards = [];
                 state.lists.forEach(list => setupCardListener(list.id));
@@ -253,32 +256,28 @@
         function renderRoomsNav() {
             const container = document.getElementById('rooms-container');
             container.innerHTML = '';
-
             state.rooms.forEach(room => {
                 const isActive = room.id === currentRoomId && !searchTerm;
                 const btn = document.createElement('button');
                 btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
                 
-                // Nome da Sala
                 const span = document.createElement('span');
                 span.textContent = room.title;
                 btn.appendChild(span);
 
-                // Botão Deletar Sala (pequeno X) - só mostra se ativo e não for único
                 if (isActive && state.rooms.length > 1) {
                     const closeIcon = document.createElement('span');
                     closeIcon.innerHTML = '&times;';
                     closeIcon.className = 'ml-2 text-blue-200 hover:text-white cursor-pointer';
                     closeIcon.onclick = (e) => {
                         e.stopPropagation();
-                        if(confirm(`Apagar a sala "${room.title}" e todo o seu conteúdo?`)) deleteRoom(room.id);
+                        if(confirm(`Apagar a sala "${room.title}"?`)) deleteRoom(room.id);
                     };
                     btn.appendChild(closeIcon);
                 }
 
                 btn.onclick = () => {
                     currentRoomId = room.id;
-                    // Limpa pesquisa ao mudar de sala para focar na sala
                     if (searchTerm) {
                         searchTerm = '';
                         document.getElementById('search-input').value = '';
@@ -289,7 +288,6 @@
                 container.appendChild(btn);
             });
 
-            // Botão Adicionar Sala
             const addBtn = document.createElement('button');
             addBtn.className = 'whitespace-nowrap px-3 py-2 rounded-full text-sm font-bold text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 transition-colors';
             addBtn.textContent = '+ Sala';
@@ -302,38 +300,29 @@
             const container = document.getElementById('board-container');
             container.innerHTML = '';
 
-            // Se estiver pesquisando, ignora filtro de sala. Se não, filtra pela sala atual.
             let listsToShow = [];
-            
             if (searchTerm) {
-                // Modo Pesquisa Global
                 listsToShow = state.lists.filter(list => {
                     const listMatches = list.title.toLowerCase().includes(searchTerm);
                     const cards = state.cards[list.id] || [];
                     const hasCardMatches = cards.some(c => c.title.toLowerCase().includes(searchTerm));
                     return listMatches || hasCardMatches;
                 });
-                
                 if (listsToShow.length === 0) {
                     container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10">Nenhum item encontrado para "${searchTerm}"</div>`;
                     return;
                 }
             } else {
-                // Modo Sala Específica
                 listsToShow = state.lists.filter(list => list.roomId === currentRoomId || (!list.roomId && currentRoomId === state.rooms[0]?.id));
             }
 
             listsToShow.forEach(list => {
                 const cards = (state.cards[list.id] || []);
-                
-                // Se pesquisa ativa, filtrar cartões também visualmente
                 const filteredCards = searchTerm 
                     ? cards.filter(c => c.title.toLowerCase().includes(searchTerm) || list.title.toLowerCase().includes(searchTerm))
                     : cards;
 
-                // Encontrar nome da sala desta lista (útil na pesquisa global)
                 const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
-
                 const listEl = document.createElement('div');
                 listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[80vh]';
                 listEl.dataset.listId = list.id;
@@ -351,11 +340,7 @@
                         </div>
                         ${roomBadge}
                     </div>
-                    
-                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50" data-list-id="${list.id}">
-                        <!-- Cartões -->
-                    </div>
-                    
+                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50" data-list-id="${list.id}"></div>
                     <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
                         <button class="add-card-btn w-full py-2 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center">
                             <span class="mr-1 text-lg leading-none">+</span> Adicionar item
@@ -364,13 +349,11 @@
                 `;
                 
                 const cardsCont = listEl.querySelector('.cards-container');
-                
                 filteredCards.forEach(card => {
                     const cardEl = document.createElement('div');
                     cardEl.draggable = true;
                     cardEl.dataset.cardId = card.id;
                     cardEl.dataset.cardTitle = card.title;
-
                     cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 transition-all group relative';
                     cardEl.innerHTML = `
                         <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed">${card.title}</p>
@@ -386,7 +369,7 @@
 
         function handleSearch(e) {
             searchTerm = e.target.value.toLowerCase().trim();
-            renderRoomsNav(); // Atualiza abas (remove destaque da sala atual se pesquisando)
+            renderRoomsNav();
             renderBoard();
         }
 
@@ -442,104 +425,59 @@
             modalInput.focus();
         }
 
-        // --- CRUD ACTIONS ---
-        async function addRoom(title) {
-            return addDoc(roomsCollectionRef, { title, createdAt: Date.now() });
-        }
-
+        // --- CRUD & HELPERS ---
+        async function addRoom(title) { return addDoc(roomsCollectionRef, { title, createdAt: Date.now() }); }
         async function deleteRoom(roomId) {
-            // Deletar sala, suas listas e cartões
             const batch = writeBatch(db);
             batch.delete(doc(db, roomsCollectionRef.path, roomId));
-            
-            // Buscar listas da sala
             const listsSnapshot = await getDocs(query(listsCollectionRef, where("roomId", "==", roomId)));
-            listsSnapshot.forEach(listDoc => {
-                batch.delete(listDoc.ref);
-                // Cartões infelizmente precisam ser buscados separadamente ou deixar órfãos (não ideal)
-                // Para simplificar aqui, deletamos a lista. 
-                // Numa app real, usaríamos Cloud Functions para limpeza em cascata.
-            });
-            // Otimização: Apenas deletamos referências diretas. Cartões ficarão órfãos mas invisíveis.
-            // Para limpeza completa, precisariamos buscar todos cartões de todas as listas desta sala.
-            
+            listsSnapshot.forEach(listDoc => batch.delete(listDoc.ref));
             await batch.commit();
-            // Resetar para outra sala se a atual for deletada (handled in snapshot listener)
         }
-
-        async function addList(title) {
-            return addDoc(listsCollectionRef, { 
-                title, 
-                order: state.lists.length,
-                roomId: currentRoomId 
-            });
-        }
-
+        async function addList(title) { return addDoc(listsCollectionRef, { title, order: state.lists.length, roomId: currentRoomId }); }
         async function addCard(listId, title) {
             const currentCards = state.cards[listId] || [];
-            return addDoc(cardsCollectionRef, { 
-                title, 
-                listId, 
-                order: currentCards.length
-            });
+            return addDoc(cardsCollectionRef, { title, listId, order: currentCards.length });
         }
 
-        // --- SETUP LISTENERS & DRAG DROP ---
         function setupUIListeners() {
-            // Configurar modal de lista
             document.getElementById('add-list-btn').onclick = () => {
                 if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
                 showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros, Caixa Ferramentas...', addList);
             };
-
             const searchInput = document.getElementById('search-input');
             searchInput.addEventListener('input', handleSearch);
-
             const container = document.getElementById('board-container');
             
-            // Delegação de cliques
             container.onclick = (e) => {
-                // Add Card
                 if (e.target.matches('.add-card-btn') || e.target.closest('.add-card-btn')) {
                     const btn = e.target.closest('.add-card-btn');
                     const listId = btn.closest('.list').dataset.listId;
                     showModal('Novo Item', 'Nome do item...', (t) => addCard(listId, t), { keepOpenOnEnter: true });
                 }
-                // Delete List
                 if (e.target.matches('.delete-list-btn') || e.target.closest('.delete-list-btn')) {
                     const btn = e.target.closest('.delete-list-btn');
                     const id = btn.closest('.list').dataset.listId;
                     if(confirm("Deletar esta prateleira?")) deleteDoc(doc(db, listsCollectionRef.path, id));
                 }
-                // Delete Card
                 if (e.target.matches('.delete-card-btn') || e.target.closest('.delete-card-btn')) {
                     const btn = e.target.closest('.delete-card-btn');
                     deleteDoc(doc(db, cardsCollectionRef.path, btn.closest('.card').dataset.cardId));
                 }
             };
 
-            // Edição Duplo Clique
             container.ondblclick = (e) => {
                 const target = e.target;
-                
-                // Editar Titulo Lista
                 if (target.classList.contains('list-title')) {
                     const listId = target.closest('.list').dataset.listId;
-                    editElement(target, async (newVal) => {
-                        await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal });
-                    });
+                    editElement(target, async (newVal) => await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal }));
                 }
-                
-                // Editar Titulo Card
                 if (target.classList.contains('card-title')) {
                     const cardId = target.closest('.card').dataset.cardId;
-                    editElement(target, async (newVal) => {
-                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: newVal });
-                    });
+                    editElement(target, async (newVal) => await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: newVal }));
                 }
             };
 
-            // Drag & Drop
             let draggedId = null;
             container.addEventListener('dragstart', e => { 
                 const card = e.target.closest('.card');
@@ -549,62 +487,38 @@
                 const card = e.target.closest('.card');
                 if(card) { card.classList.remove('dragging'); draggedId = null; } 
             });
-            container.addEventListener('dragover', e => { 
-                e.preventDefault(); 
-                const dropZone = e.target.closest('.cards-container');
-                if(dropZone) dropZone.classList.add('bg-blue-50'); 
-            });
-            container.addEventListener('dragleave', e => { 
-                const dropZone = e.target.closest('.cards-container');
-                if(dropZone) dropZone.classList.remove('bg-blue-50'); 
-            });
+            container.addEventListener('dragover', e => { e.preventDefault(); const zone = e.target.closest('.cards-container'); if(zone) zone.classList.add('bg-blue-50'); });
+            container.addEventListener('dragleave', e => { const zone = e.target.closest('.cards-container'); if(zone) zone.classList.remove('bg-blue-50'); });
             container.addEventListener('drop', async e => {
                 e.preventDefault();
-                const dropZone = e.target.closest('.cards-container');
-                if(dropZone) dropZone.classList.remove('bg-blue-50');
-                if(!dropZone || !draggedId) return;
-                
-                const targetListId = dropZone.dataset.listId;
-                
-                // Lógica simples de mover para o final da lista alvo
-                // Para ordenação precisa entre itens, seria necessário calcular o índice baseado na posição do mouse
+                const zone = e.target.closest('.cards-container');
+                if(zone) zone.classList.remove('bg-blue-50');
+                if(!zone || !draggedId) return;
+                const targetListId = zone.dataset.listId;
                 const batch = writeBatch(db);
-                const cardRef = doc(db, cardsCollectionRef.path, draggedId);
-                
-                // Pega a lista de destino para saber a nova ordem (final da fila)
-                const targetCards = state.cards[targetListId] || [];
-                const newOrder = targetCards.length;
-
-                batch.update(cardRef, { listId: targetListId, order: newOrder });
+                batch.update(doc(db, cardsCollectionRef.path, draggedId), { listId: targetListId, order: (state.cards[targetListId] || []).length });
                 await batch.commit();
             });
         }
 
-        // Helper edição inline
         function editElement(element, saveCallback) {
             const currentText = element.textContent;
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentText;
             input.className = 'w-full p-1 border rounded text-sm focus:outline-blue-500';
-            
             element.style.display = 'none';
             element.parentNode.insertBefore(input, element);
             input.focus();
             input.select();
-
             const finish = async () => {
                 const newVal = input.value.trim();
                 input.remove();
                 element.style.display = '';
                 if(newVal && newVal !== currentText) await saveCallback(newVal);
             };
-
             input.onblur = finish;
-            input.onkeydown = (e) => {
-                if(e.key === 'Enter') finish();
-                if(e.key === 'Escape') { input.remove(); element.style.display = ''; }
-            };
+            input.onkeydown = (e) => { if(e.key === 'Enter') finish(); if(e.key === 'Escape') { input.remove(); element.style.display = ''; } };
         }
 
         setupUIListeners();
