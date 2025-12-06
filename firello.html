@@ -21,7 +21,9 @@
         
         .card.dragging { opacity: 0.5; transform: rotate(3deg) scale(1.02); }
         .drag-over { background-color: rgba(59, 130, 246, 0.1); border: 2px dashed #60a5fa; }
-        .hidden { display: none !important; }
+        
+        /* REMOVIDO O !important DAQUI QUE CAUSAVA O ERRO NO DESKTOP */
+        /* .hidden { display: none !important; } */
         
         /* Utilitário para esconder scrollbar horizontal na navegação */
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -74,7 +76,7 @@
     <div id="app-view" class="hidden flex flex-col h-full w-full relative">
         <div class="flex-shrink-0 z-30 bg-white shadow-sm sticky top-0 w-full">
             
-            <!-- CABEÇALHO COM POSIÇÃO RELATIVA -->
+            <!-- CABEÇALHO -->
             <header class="p-3 border-b border-gray-100 relative">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
                     
@@ -85,7 +87,7 @@
                         </div>
                     </div>
 
-                    <!-- BOTÃO SAIR MOBILE (ABSOLUTO PARA GARANTIR VISIBILIDADE EM TELAS PEQUENAS) -->
+                    <!-- BOTÃO SAIR MOBILE -->
                     <button id="logout-btn" class="sm:hidden absolute top-3 right-3 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg shadow-sm transition z-50 flex items-center">
                         <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         SAIR
@@ -96,7 +98,7 @@
                         <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
 
-                    <!-- BOTÕES DESKTOP (Aparecem em SM+) -->
+                    <!-- BOTÕES DESKTOP -->
                     <div class="hidden sm:flex items-center space-x-3">
                         <span id="user-display" class="text-xs text-gray-500 font-medium truncate max-w-[150px]"></span>
                         
@@ -104,7 +106,6 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                         </button>
 
-                        <!-- BOTÃO SAIR DESKTOP (VERMELHO SÓLIDO) -->
                         <button id="logout-btn-desktop" class="flex items-center text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             SAIR
@@ -129,7 +130,7 @@
         </div>
     </div>
 
-    <!-- Modal Universal -->
+    <!-- Modal Universal (Atualizado com Quantidade) -->
     <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[60] p-4 transition-opacity">
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl modal-animate">
             <h2 id="modal-title" class="text-xl font-bold mb-1 text-gray-800">Novo Item</h2>
