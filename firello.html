@@ -30,20 +30,28 @@
         /* Animação suave para modal */
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+        .mic-listening::before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%; background-color: #ef4444; z-index: -1; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
     </style>
 </head>
-<!-- ALTERAÇÃO: h-screen para h-[100dvh] para melhor suporte mobile -->
 <body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden flex flex-col">
 
-    <!-- TELA DE LOGIN / CADASTRO -->
+    <!-- Overlay de Processamento de Voz -->
+    <div id="voice-overlay" class="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white p-8 rounded-full mb-6 shadow-2xl relative">
+            <div class="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <span class="text-4xl">🤖</span>
+        </div>
+        <h3 class="text-white text-xl font-bold mb-2">Processando comando...</h3>
+        <p id="voice-status-text" class="text-gray-300 text-sm text-center px-4">O Gemini está organizando seus itens.</p>
+    </div>
+
+    <!-- TELA DE LOGIN -->
     <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 px-4">
         <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-sm modal-animate">
-            <div class="flex justify-center mb-6">
-                <span class="text-5xl">📦</span>
-            </div>
+            <div class="flex justify-center mb-6"><span class="text-5xl">📦</span></div>
             <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Organiza Aí</h1>
             <p class="text-gray-500 text-center mb-6 text-sm">Organize suas coisas, em qualquer lugar.</p>
-            
             <form id="auth-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -57,74 +65,68 @@
                 <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">Entrar</button>
             </form>
             <div class="mt-6 text-center text-sm">
-                <p id="toggle-auth-text" class="text-gray-600">
-                    Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>
-                </p>
+                <p id="toggle-auth-text" class="text-gray-600">Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button></p>
             </div>
         </div>
     </div>
 
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="app-view" class="hidden flex flex-col h-full w-full relative">
-        
-        <!-- Wrapper Fixo do Topo (Header + Nav) -->
         <div class="flex-shrink-0 z-30 bg-white shadow-sm sticky top-0 w-full">
-            <!-- Cabeçalho -->
-            <header class="p-3 border-b border-gray-100">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
+            
+            <!-- CABEÇALHO COM POSIÇÃO RELATIVA -->
+            <header class="p-3 border-b border-gray-100 relative">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
                     
-                    <!-- Linha Superior Mobile: Logo + Sair -->
-                    <div class="flex items-center justify-between w-full md:w-auto">
+                    <div class="flex items-center justify-start w-full sm:w-auto">
                         <div class="flex items-center space-x-2">
                             <span class="text-2xl">📦</span>
                             <h1 class="text-lg font-bold text-gray-800">Organiza Aí</h1>
                         </div>
-                        
-                        <!-- Botão Sair Mobile -->
-                        <button id="logout-btn" class="md:hidden text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 rounded-lg transition">
-                            SAIR
-                        </button>
                     </div>
 
-                    <!-- Barra de Pesquisa -->
-                    <div class="relative w-full md:w-96">
+                    <!-- BOTÃO SAIR MOBILE (ABSOLUTO PARA GARANTIR VISIBILIDADE EM TELAS PEQUENAS) -->
+                    <button id="logout-btn" class="sm:hidden absolute top-3 right-3 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg shadow-sm transition z-50 flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        SAIR
+                    </button>
+
+                    <div class="relative w-full sm:w-96 mt-1 sm:mt-0">
                         <input type="text" id="search-input" placeholder="Buscar item..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
                         <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
 
-                    <!-- Botão Sair Desktop -->
-                    <div class="hidden md:flex items-center space-x-3">
+                    <!-- BOTÕES DESKTOP (Aparecem em SM+) -->
+                    <div class="hidden sm:flex items-center space-x-3">
                         <span id="user-display" class="text-xs text-gray-500 font-medium truncate max-w-[150px]"></span>
-                        <button id="logout-btn-desktop" class="flex items-center text-sm text-red-600 hover:text-red-800 font-semibold bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition">
+                        
+                        <button id="mic-btn-desktop" class="bg-blue-100 text-blue-600 hover:bg-blue-200 p-2 rounded-lg transition" title="Comando de Voz">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </button>
+
+                        <!-- BOTÃO SAIR DESKTOP (VERMELHO SÓLIDO) -->
+                        <button id="logout-btn-desktop" class="flex items-center text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition shadow-sm">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             SAIR
                         </button>
                     </div>
                 </div>
             </header>
-
-            <!-- Navegação de Cômodos -->
             <nav class="border-b border-gray-200 bg-white">
-                <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container">
-                    <!-- Abas renderizadas aqui -->
-                </div>
+                <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container"></div>
             </nav>
         </div>
 
-        <!-- Área Principal (Board) -->
-        <!-- ALTERAÇÃO: pb-32 para dar espaço extra para o botão fixo no final -->
-        <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6">
-            <!-- Prateleiras (Listas) -->
-        </main>
+        <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6"></main>
         
-        <!-- Botão Adicionar Prateleira (Corrigido para Mobile) -->
-        <!-- ALTERAÇÃO: fixed bottom-0 w-full no mobile para garantir visibilidade acima do navegador -->
-        <div class="p-4 flex-shrink-0 flex justify-center bg-white/90 backdrop-blur-sm border-t border-gray-200 z-40 fixed bottom-0 w-full sm:static sm:w-auto sm:bg-transparent sm:border-0">
-            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 w-full sm:w-auto transform active:scale-95">
+        <div class="p-4 flex-shrink-0 flex justify-center items-center bg-white/90 backdrop-blur-sm border-t border-gray-200 z-40 fixed bottom-0 w-full sm:static sm:w-auto sm:bg-transparent sm:border-0 gap-3">
+            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 flex-grow sm:flex-grow-0 max-w-md transform active:scale-95">
                 <span class="text-xl leading-none pb-1">+</span> <span>Nova Prateleira / Caixa</span>
             </button>
+            <button id="mic-btn-mobile" class="sm:hidden w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg flex items-center justify-center transition transform active:scale-95 flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </button>
         </div>
-
     </div>
 
     <!-- Modal Universal -->
@@ -132,9 +134,15 @@
         <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl modal-animate">
             <h2 id="modal-title" class="text-xl font-bold mb-1 text-gray-800">Novo Item</h2>
             <p class="text-xs text-gray-400 mb-4 uppercase tracking-wide font-semibold">Preencha os detalhes abaixo</p>
-            
-            <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
-            
+            <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
+            <div id="modal-quantity-wrapper" class="hidden mb-6">
+                <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Quantidade</label>
+                <div class="flex items-center border border-gray-300 bg-gray-50 rounded-xl overflow-hidden">
+                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepDown()">-</button>
+                    <input type="number" id="modal-quantity" class="w-full p-3 text-center bg-transparent focus:outline-none text-gray-800 font-semibold" value="1" min="1">
+                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepUp()">+</button>
+                </div>
+            </div>
             <div class="flex justify-end space-x-3">
                 <button id="modal-cancel-btn" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition">Cancelar</button>
                 <button id="modal-save-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-95">Salvar</button>
@@ -147,6 +155,28 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, where, writeBatch, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- GEMINI API ---
+        const apiKey = ""; 
+        
+        async function callGemini(prompt) {
+            if (!apiKey) { alert("Configure a API Key do Gemini no código."); return null; }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                let cleanText = text;
+                if (cleanText) {
+                    cleanText = cleanText.replace(/```json/g, '');
+                    cleanText = cleanText.replace(/```/g, '');
+                    cleanText = cleanText.trim();
+                    return JSON.parse(cleanText);
+                }
+                return null;
+            } catch (error) { console.error("Gemini Error:", error); throw error; }
+        }
 
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -170,17 +200,12 @@
 
         // --- AUTH ---
         let isLoginMode = true;
-        const authScreen = document.getElementById('auth-screen');
-        const appView = document.getElementById('app-view');
-        const authForm = document.getElementById('auth-form');
-        const authError = document.getElementById('auth-error');
-        const toggleAuthBtn = document.getElementById('toggle-auth-btn');
-
+        
         function toggleAuthMode(e) {
             e.preventDefault(); 
             isLoginMode = !isLoginMode; 
-            authError.classList.add('hidden'); 
-            authForm.reset();
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('auth-form').reset();
             
             document.getElementById('auth-title').textContent = isLoginMode ? "Entrar na sua conta" : "Criar nova conta";
             document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Entrar" : "Cadastrar";
@@ -191,19 +216,20 @@
             document.getElementById('toggle-auth-btn').addEventListener('click', toggleAuthMode);
         }
 
-        toggleAuthBtn.addEventListener('click', toggleAuthMode);
+        document.getElementById('toggle-auth-btn').addEventListener('click', toggleAuthMode);
 
-        authForm.addEventListener('submit', async (e) => {
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            authError.classList.add('hidden');
+            const err = document.getElementById('auth-error');
+            err.classList.add('hidden');
             try {
                 if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
                 else await createUserWithEmailAndPassword(auth, email, password);
             } catch (error) {
-                authError.classList.remove('hidden');
-                authError.textContent = "Erro: " + error.message;
+                err.classList.remove('hidden');
+                err.textContent = "Erro: " + error.message;
             }
         });
 
@@ -215,19 +241,21 @@
             if (user) {
                 userId = user.uid;
                 document.getElementById('user-display').textContent = user.email;
-                authScreen.classList.add('hidden'); appView.classList.remove('hidden');
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-view').classList.remove('hidden');
                 setupFirestoreListeners();
             } else {
                 userId = null;
-                authScreen.classList.remove('hidden'); appView.classList.add('hidden');
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-view').classList.add('hidden');
                 document.getElementById('board-container').innerHTML = '';
-                if (unsubscribeLists) unsubscribeLists();
-                if (unsubscribeRooms) unsubscribeRooms();
-                unsubscribeCards.forEach(unsub => unsub());
+                if(unsubscribeLists) unsubscribeLists();
+                if(unsubscribeRooms) unsubscribeRooms();
+                unsubscribeCards.forEach(u => u());
             }
         });
 
-        // --- FIRESTORE & STATE ---
+        // --- APP LOGIC ---
         let state = { rooms: [], lists: [], cards: {} };
         let currentRoomId = 'default';
         let searchTerm = '';
@@ -282,7 +310,7 @@
             state.rooms.forEach(room => {
                 const isActive = room.id === currentRoomId && !searchTerm;
                 const btn = document.createElement('button');
-                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white shadow-md transform scale-105' : 'bg-white text-gray-600 hover:bg-gray-50'}`;
                 
                 const span = document.createElement('span');
                 span.textContent = room.title;
@@ -384,12 +412,27 @@
                     cardEl.draggable = true;
                     cardEl.dataset.cardId = card.id;
                     cardEl.dataset.cardTitle = card.title;
+                    cardEl.dataset.cardQuantity = card.quantity || 1; // Guarda quantidade para edição
+
                     cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 hover:shadow-md transition-all group relative active:cursor-grabbing';
+                    
+                    const qtyBadge = (card.quantity && card.quantity > 1) 
+                        ? `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-blue-200 whitespace-nowrap">x${card.quantity}</span>` 
+                        : '';
+
                     cardEl.innerHTML = `
-                        <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed">${card.title}</p>
-                        <button class="delete-card-btn absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                        </button>
+                        <div class="flex items-center justify-between pr-12">
+                            <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${card.title} ${qtyBadge}</p>
+                        </div>
+                        
+                        <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="edit-card-btn text-gray-300 hover:text-blue-500 p-1 rounded hover:bg-blue-50" title="Editar">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button class="delete-card-btn text-gray-300 hover:text-red-500 p-1 rounded hover:bg-red-50" title="Excluir">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
                     `;
                     cardsCont.appendChild(cardEl);
                 });
@@ -404,59 +447,65 @@
         }
 
         // --- MODAL ---
-        function showModal(title, placeholder, onSave, options = { keepOpenOnEnter: false }) {
-            const modal = document.getElementById('modal');
-            const modalInput = document.getElementById('modal-input');
-            const modalSaveBtn = document.getElementById('modal-save-btn');
-            const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        function showModal(title, ph, onSave, options = { showQuantity: false, initialTitle: '', initialQuantity: 1 }) {
+            const m = document.getElementById('modal');
+            const i = document.getElementById('modal-input');
+            const b = document.getElementById('modal-save-btn');
+            const qWrapper = document.getElementById('modal-quantity-wrapper');
+            const qInput = document.getElementById('modal-quantity');
 
             document.getElementById('modal-title').textContent = title;
-            modalInput.placeholder = placeholder;
-            modalInput.value = '';
+            i.placeholder = ph;
+            i.value = options.initialTitle || '';
+            
+            // Toggle Quantity Field
+            if (options.showQuantity) {
+                qWrapper.classList.remove('hidden');
+                qInput.value = options.initialQuantity || 1;
+            } else {
+                qWrapper.classList.add('hidden');
+            }
             
             const close = () => {
-                modal.classList.add('hidden');
-                modalSaveBtn.onclick = null;
-                modalInput.onkeydown = null;
+                m.classList.add('hidden');
+                b.onclick = null;
+                i.onkeydown = null;
             };
 
             const triggerSave = async () => {
-                const value = modalInput.value.trim();
+                const value = i.value.trim();
                 if (!value) return;
                 
-                const originalText = modalSaveBtn.textContent;
-                modalSaveBtn.textContent = 'Salvando...';
-                modalSaveBtn.disabled = true;
+                const originalText = b.textContent;
+                b.textContent = 'Salvando...';
+                b.disabled = true;
 
                 try {
-                    await onSave(value);
-                    if (options.keepOpenOnEnter) {
-                        modalInput.value = '';
-                        modalInput.focus();
-                    } else {
-                        close();
-                    }
+                    const qty = options.showQuantity ? (parseInt(qInput.value) || 1) : 1;
+                    await onSave(value, qty);
+                    close();
                 } catch (e) {
                     alert("Erro ao salvar: " + e.message);
                 } finally {
-                    modalSaveBtn.textContent = originalText;
-                    modalSaveBtn.disabled = false;
+                    b.textContent = originalText;
+                    b.disabled = false;
                 }
             };
 
-            modalSaveBtn.onclick = () => triggerSave();
-            modalCancelBtn.onclick = close;
-            modalInput.onkeydown = (e) => {
+            b.onclick = () => triggerSave();
+            document.getElementById('modal-cancel-btn').onclick = close;
+            i.onkeydown = (e) => {
                 if (e.key === 'Enter') triggerSave();
                 if (e.key === 'Escape') close();
             };
 
-            modal.classList.remove('hidden');
-            setTimeout(() => modalInput.focus(), 100); 
+            m.classList.remove('hidden');
+            setTimeout(() => i.focus(), 100); 
         }
 
         // --- CRUD & HELPERS ---
         async function addRoom(title) { return addDoc(roomsCollectionRef, { title, createdAt: Date.now() }); }
+        
         async function deleteRoom(roomId) {
             const batch = writeBatch(db);
             batch.delete(doc(db, roomsCollectionRef.path, roomId));
@@ -464,10 +513,58 @@
             listsSnapshot.forEach(listDoc => batch.delete(listDoc.ref));
             await batch.commit();
         }
+        
         async function addList(title) { return addDoc(listsCollectionRef, { title, order: state.lists.length, roomId: currentRoomId }); }
-        async function addCard(listId, title) {
+        
+        async function addCard(listId, title, quantity) {
             const currentCards = state.cards[listId] || [];
-            return addDoc(cardsCollectionRef, { title, listId, order: currentCards.length });
+            return addDoc(cardsCollectionRef, { 
+                title, 
+                listId, 
+                quantity: quantity || 1,
+                order: currentCards.length 
+            });
+        }
+
+        // --- VOICE SETUP ---
+        function setupVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+            const recognition = new SpeechRecognition(); recognition.lang = 'pt-BR'; recognition.continuous = false;
+            
+            const micDesktop = document.getElementById('mic-btn-desktop');
+            const micMobile = document.getElementById('mic-btn-mobile');
+            const overlay = document.getElementById('voice-overlay');
+            const status = document.getElementById('voice-status-text');
+
+            const start = () => { recognition.start(); if(micDesktop) micDesktop.classList.add('mic-listening','bg-red-100'); if(micMobile) micMobile.classList.add('mic-listening','bg-red-600'); };
+            const stop = () => { if(micDesktop) micDesktop.classList.remove('mic-listening','bg-red-100'); if(micMobile) micMobile.classList.remove('mic-listening','bg-red-600'); };
+
+            if(micDesktop) micDesktop.onclick = start;
+            if(micMobile) micMobile.onclick = start;
+            recognition.onend = stop;
+
+            recognition.onresult = async (e) => {
+                const text = e.results[0][0].transcript;
+                overlay.classList.remove('hidden'); status.textContent = `Entendido: "${text}". Pensando...`;
+                const listNames = state.lists.filter(l => l.roomId === currentRoomId).map(l => l.title);
+                if(listNames.length===0) { alert("Crie caixas primeiro."); overlay.classList.add('hidden'); return; }
+                
+                try {
+                    const res = await callGemini(`Sou assistente. Identifique itens e a caixa destino (dentre: ${JSON.stringify(listNames)}) na frase: "${text}". Retorne JSON: {"targetListName": "NomeDaCaixa", "items": ["item1", "item2"]}`);
+                    if(res && res.targetListName) {
+                        const target = state.lists.find(l => l.roomId === currentRoomId && l.title.toLowerCase() === res.targetListName.toLowerCase());
+                        if(target) {
+                            const batch = writeBatch(db);
+                            const count = (state.cards[target.id]||[]).length;
+                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { title: t, listId: target.id, order: count+i, quantity: 1 }));
+                            await batch.commit();
+                            status.textContent = "Feito!";
+                        } else status.textContent = "Caixa não encontrada.";
+                    } else status.textContent = "Não entendi.";
+                } catch(err) { console.error(err); status.textContent = "Erro na IA."; }
+                setTimeout(() => overlay.classList.add('hidden'), 1500);
+            };
         }
 
         function setupUIListeners() {
@@ -480,31 +577,62 @@
             const container = document.getElementById('board-container');
             
             container.onclick = (e) => {
-                if (e.target.matches('.add-card-btn') || e.target.closest('.add-card-btn')) {
-                    const btn = e.target.closest('.add-card-btn');
+                const target = e.target;
+                
+                // Add Card Button
+                if (target.matches('.add-card-btn') || target.closest('.add-card-btn')) {
+                    const btn = target.closest('.add-card-btn');
                     const listId = btn.closest('.list').dataset.listId;
-                    showModal('Novo Item', 'Nome do item...', (t) => addCard(listId, t), { keepOpenOnEnter: true });
+                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q), { showQuantity: true });
                 }
-                if (e.target.matches('.delete-list-btn') || e.target.closest('.delete-list-btn')) {
-                    const btn = e.target.closest('.delete-list-btn');
+                
+                // Delete List
+                if (target.matches('.delete-list-btn') || target.closest('.delete-list-btn')) {
+                    const btn = target.closest('.delete-list-btn');
                     const id = btn.closest('.list').dataset.listId;
                     if(confirm("Deletar esta prateleira?")) deleteDoc(doc(db, listsCollectionRef.path, id));
                 }
-                if (e.target.matches('.delete-card-btn') || e.target.closest('.delete-card-btn')) {
-                    const btn = e.target.closest('.delete-card-btn');
+                
+                // Delete Card
+                if (target.matches('.delete-card-btn') || target.closest('.delete-card-btn')) {
+                    const btn = target.closest('.delete-card-btn');
                     deleteDoc(doc(db, cardsCollectionRef.path, btn.closest('.card').dataset.cardId));
+                }
+
+                // Edit Card Button (Pencil Icon)
+                if (target.matches('.edit-card-btn') || target.closest('.edit-card-btn')) {
+                    const btn = target.closest('.edit-card-btn');
+                    const card = btn.closest('.card');
+                    const cardId = card.dataset.cardId;
+                    const currentTitle = card.dataset.cardTitle;
+                    const currentQty = parseInt(card.dataset.cardQuantity) || 1;
+
+                    showModal('Editar Item', 'Nome do item...', async (t, q) => {
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: t, quantity: q });
+                    }, { showQuantity: true, initialTitle: currentTitle, initialQuantity: currentQty });
                 }
             };
 
+            // Double Click Handling
             container.ondblclick = (e) => {
                 const target = e.target;
+                
+                // Edit List Title (Inline)
                 if (target.classList.contains('list-title')) {
                     const listId = target.closest('.list').dataset.listId;
                     editElement(target, async (newVal) => await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal }));
                 }
-                if (target.classList.contains('card-title')) {
-                    const cardId = target.closest('.card').dataset.cardId;
-                    editElement(target, async (newVal) => await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: newVal }));
+                
+                // Edit Card (Via Modal) on title double click
+                if (target.classList.contains('card-title') || target.closest('.card-title')) {
+                    const card = target.closest('.card');
+                    const cardId = card.dataset.cardId;
+                    const currentTitle = card.dataset.cardTitle;
+                    const currentQty = parseInt(card.dataset.cardQuantity) || 1;
+
+                    showModal('Editar Item', 'Nome do item...', async (t, q) => {
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: t, quantity: q });
+                    }, { showQuantity: true, initialTitle: currentTitle, initialQuantity: currentQty });
                 }
             };
 
@@ -531,27 +659,47 @@
             });
         }
 
+        // Função editElement corrigida
         function editElement(element, saveCallback) {
-            const currentText = element.textContent;
+            const currentText = element.textContent.replace(/x\d+$/, '').trim(); 
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentText;
             input.className = 'w-full p-1 border rounded text-sm focus:outline-blue-500';
+            
             element.style.display = 'none';
             element.parentNode.insertBefore(input, element);
             input.focus();
             input.select();
-            const finish = async () => {
+
+            let isSaving = false; // Flag de controle
+
+            const finish = async (shouldSave) => {
+                if (isSaving) return; // Evita execução dupla
+                isSaving = true;
+
                 const newVal = input.value.trim();
-                input.remove();
+                
+                // Remove input de forma segura
+                if (input.parentNode) {
+                    input.remove();
+                }
                 element.style.display = '';
-                if(newVal && newVal !== currentText) await saveCallback(newVal);
+
+                if (shouldSave && newVal && newVal !== currentText) {
+                    await saveCallback(newVal);
+                }
             };
-            input.onblur = finish;
-            input.onkeydown = (e) => { if(e.key === 'Enter') finish(); if(e.key === 'Escape') { input.remove(); element.style.display = ''; } };
+
+            input.onblur = () => finish(true);
+            input.onkeydown = (e) => { 
+                if(e.key === 'Enter') finish(true); 
+                if(e.key === 'Escape') finish(false); 
+            };
         }
 
         setupUIListeners();
+        setupVoiceRecognition();
     </script>
 </body>
 </html>
