@@ -2,48 +2,59 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Organiza Aí - Gestão de Espaços</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 10px; }
+        
+        /* Scrollbar customizada suave */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .list { min-width: 280px; }
-        .card.dragging { opacity: 0.5; transform: rotate(3deg); }
-        .drag-over { background-color: rgba(30, 144, 255, 0.1); border: 2px dashed #60a5fa; }
+        
+        .list { 
+            scroll-margin-top: 140px; 
+        }
+        
+        .card.dragging { opacity: 0.5; transform: rotate(3deg) scale(1.02); }
+        .drag-over { background-color: rgba(59, 130, 246, 0.1); border: 2px dashed #60a5fa; }
         .hidden { display: none !important; }
         
-        /* Esconder scrollbar da nav mas permitir scroll */
+        /* Utilitário para esconder scrollbar horizontal na navegação */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animação suave para modal */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen w-screen overflow-hidden flex flex-col">
+<!-- ALTERAÇÃO: h-screen para h-[100dvh] para melhor suporte mobile -->
+<body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden flex flex-col">
 
     <!-- TELA DE LOGIN / CADASTRO -->
-    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100">
-        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm">
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 px-4">
+        <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-sm modal-animate">
             <div class="flex justify-center mb-6">
-                <span class="text-4xl">📦</span>
+                <span class="text-5xl">📦</span>
             </div>
             <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Organiza Aí</h1>
-            <p class="text-gray-500 text-center mb-6 text-sm">Gerencie suas prateleiras, caixas e itens.</p>
+            <p class="text-gray-500 text-center mb-6 text-sm">Organize suas coisas, em qualquer lugar.</p>
             
             <form id="auth-form" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="auth-email" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
+                    <input type="email" id="auth-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                    <input type="password" id="auth-password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                    <input type="password" id="auth-password" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
                 </div>
-                <div id="auth-error" class="text-red-500 text-sm text-center hidden"></div>
-                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200">Entrar</button>
+                <div id="auth-error" class="text-red-500 text-sm text-center hidden bg-red-50 p-2 rounded"></div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">Entrar</button>
             </form>
             <div class="mt-6 text-center text-sm">
                 <p id="toggle-auth-text" class="text-gray-600">
@@ -54,65 +65,79 @@
     </div>
 
     <!-- APLICAÇÃO PRINCIPAL -->
-    <div id="app-view" class="hidden flex flex-col h-screen w-screen">
+    <div id="app-view" class="hidden flex flex-col h-full w-full relative">
         
-        <!-- Cabeçalho Principal (Fixo) -->
-        <header class="bg-white shadow-sm p-3 z-30 sticky top-0 border-b border-gray-200">
-            <div class="flex justify-between items-center w-full gap-3">
-                
-                <!-- Esquerda: Logo -->
-                <div class="flex items-center space-x-2 flex-shrink-0">
-                    <span class="text-2xl">📦</span>
-                    <h1 class="text-xl font-bold text-gray-800 hidden sm:block">Organiza Aí</h1>
-                </div>
-
-                <!-- Centro: Barra de Pesquisa (Estica para preencher o espaço) -->
-                <div class="flex-grow max-w-2xl relative">
-                    <input type="text" id="search-input" placeholder="Pesquisar item..." class="border rounded-lg py-2 px-4 pl-10 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-400 bg-gray-50">
-                    <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                </div>
-
-                <!-- Direita: Usuário e Botão Sair -->
-                <div class="flex items-center space-x-3 flex-shrink-0">
-                    <span id="user-display" class="text-xs text-gray-500 hidden md:inline-block max-w-[100px] truncate"></span>
+        <!-- Wrapper Fixo do Topo (Header + Nav) -->
+        <div class="flex-shrink-0 z-30 bg-white shadow-sm sticky top-0 w-full">
+            <!-- Cabeçalho -->
+            <header class="p-3 border-b border-gray-100">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
                     
-                    <button id="logout-btn" class="flex items-center bg-red-600 hover:bg-red-700 text-white text-xs sm:text-sm font-bold py-2 px-3 sm:px-4 rounded-lg shadow-md transition">
-                        <svg class="w-4 h-4 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                        <span class="hidden sm:inline">SAIR</span>
-                    </button>
+                    <!-- Linha Superior Mobile: Logo + Sair -->
+                    <div class="flex items-center justify-between w-full md:w-auto">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-2xl">📦</span>
+                            <h1 class="text-lg font-bold text-gray-800">Organiza Aí</h1>
+                        </div>
+                        
+                        <!-- Botão Sair Mobile -->
+                        <button id="logout-btn" class="md:hidden text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 px-3 py-1.5 rounded-lg transition">
+                            SAIR
+                        </button>
+                    </div>
+
+                    <!-- Barra de Pesquisa -->
+                    <div class="relative w-full md:w-96">
+                        <input type="text" id="search-input" placeholder="Buscar item..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
+                        <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+
+                    <!-- Botão Sair Desktop -->
+                    <div class="hidden md:flex items-center space-x-3">
+                        <span id="user-display" class="text-xs text-gray-500 font-medium truncate max-w-[150px]"></span>
+                        <button id="logout-btn-desktop" class="flex items-center text-sm text-red-600 hover:text-red-800 font-semibold bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            SAIR
+                        </button>
+                    </div>
                 </div>
+            </header>
 
-            </div>
-        </header>
-
-        <!-- Navegação de Cômodos (Sticky logo abaixo do header) -->
-        <nav class="bg-white border-b border-gray-200 shadow-sm z-20 flex-shrink-0 sticky top-[64px]">
-            <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar" id="rooms-container">
-                <!-- Abas dos cômodos renderizadas via JS -->
-            </div>
-        </nav>
+            <!-- Navegação de Cômodos -->
+            <nav class="border-b border-gray-200 bg-white">
+                <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container">
+                    <!-- Abas renderizadas aqui -->
+                </div>
+            </nav>
+        </div>
 
         <!-- Área Principal (Board) -->
-        <main id="board-container" class="flex-grow grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 p-6 items-start content-start overflow-y-auto bg-gray-50">
+        <!-- ALTERAÇÃO: pb-32 para dar espaço extra para o botão fixo no final -->
+        <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6">
             <!-- Prateleiras (Listas) -->
         </main>
         
-        <!-- Botão Adicionar Prateleira -->
-        <div class="p-4 flex-shrink-0 flex justify-center bg-gray-50 border-t border-gray-200 z-20">
-            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition flex items-center space-x-2">
-                <span>+</span> <span>Nova Prateleira / Caixa</span>
+        <!-- Botão Adicionar Prateleira (Corrigido para Mobile) -->
+        <!-- ALTERAÇÃO: fixed bottom-0 w-full no mobile para garantir visibilidade acima do navegador -->
+        <div class="p-4 flex-shrink-0 flex justify-center bg-white/90 backdrop-blur-sm border-t border-gray-200 z-40 fixed bottom-0 w-full sm:static sm:w-auto sm:bg-transparent sm:border-0">
+            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 w-full sm:w-auto transform active:scale-95">
+                <span class="text-xl leading-none pb-1">+</span> <span>Nova Prateleira / Caixa</span>
             </button>
         </div>
+
     </div>
 
     <!-- Modal Universal -->
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl transform transition-all scale-100">
-            <h2 id="modal-title" class="text-xl font-bold mb-4 text-gray-800">Novo Item</h2>
-            <input type="text" id="modal-input" class="w-full border border-gray-300 p-3 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Digite o nome...">
+    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[60] p-4 transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl modal-animate">
+            <h2 id="modal-title" class="text-xl font-bold mb-1 text-gray-800">Novo Item</h2>
+            <p class="text-xs text-gray-400 mb-4 uppercase tracking-wide font-semibold">Preencha os detalhes abaixo</p>
+            
+            <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
+            
             <div class="flex justify-end space-x-3">
-                <button id="modal-cancel-btn" class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition">Cancelar</button>
-                <button id="modal-save-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition">Salvar</button>
+                <button id="modal-cancel-btn" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition">Cancelar</button>
+                <button id="modal-save-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-95">Salvar</button>
             </div>
         </div>
     </div>
@@ -139,12 +164,9 @@
         const db = getFirestore(app);
 
         let userId = null;
-        let listsCollectionRef = null;
-        let cardsCollectionRef = null;
-        let roomsCollectionRef = null;
-        let unsubscribeLists = null;
+        let listsCollectionRef, cardsCollectionRef, roomsCollectionRef;
+        let unsubscribeLists = null, unsubscribeRooms = null;
         let unsubscribeCards = [];
-        let unsubscribeRooms = null;
 
         // --- AUTH ---
         let isLoginMode = true;
@@ -181,12 +203,13 @@
                 else await createUserWithEmailAndPassword(auth, email, password);
             } catch (error) {
                 authError.classList.remove('hidden');
-                authError.textContent = error.message;
+                authError.textContent = "Erro: " + error.message;
             }
         });
 
-        // Configura botão de sair único
-        document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+        const logout = () => signOut(auth);
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('logout-btn-desktop').addEventListener('click', logout);
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -259,7 +282,7 @@
             state.rooms.forEach(room => {
                 const isActive = room.id === currentRoomId && !searchTerm;
                 const btn = document.createElement('button');
-                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white border-blue-600 shadow-md transform scale-105' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`;
                 
                 const span = document.createElement('span');
                 span.textContent = room.title;
@@ -268,7 +291,7 @@
                 if (isActive && state.rooms.length > 1) {
                     const closeIcon = document.createElement('span');
                     closeIcon.innerHTML = '&times;';
-                    closeIcon.className = 'ml-2 text-blue-200 hover:text-white cursor-pointer';
+                    closeIcon.className = 'ml-2 opacity-70 hover:opacity-100 cursor-pointer text-lg leading-none';
                     closeIcon.onclick = (e) => {
                         e.stopPropagation();
                         if(confirm(`Apagar a sala "${room.title}"?`)) deleteRoom(room.id);
@@ -289,8 +312,8 @@
             });
 
             const addBtn = document.createElement('button');
-            addBtn.className = 'whitespace-nowrap px-3 py-2 rounded-full text-sm font-bold text-gray-500 hover:bg-gray-100 border border-dashed border-gray-300 transition-colors';
-            addBtn.textContent = '+ Sala';
+            addBtn.className = 'whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold text-blue-500 bg-blue-50 hover:bg-blue-100 border border-dashed border-blue-200 transition-colors flex items-center';
+            addBtn.innerHTML = '<span class="mr-1 text-lg leading-none">+</span> Sala';
             addBtn.onclick = () => showModal('Nova Sala/Cômodo', 'Ex: Garagem, Quarto...', addRoom);
             container.appendChild(addBtn);
         }
@@ -309,11 +332,16 @@
                     return listMatches || hasCardMatches;
                 });
                 if (listsToShow.length === 0) {
-                    container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10">Nenhum item encontrado para "${searchTerm}"</div>`;
+                    container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20"><span class="text-4xl mb-2">🔍</span><p>Nenhum item encontrado para "${searchTerm}"</p></div>`;
                     return;
                 }
             } else {
                 listsToShow = state.lists.filter(list => list.roomId === currentRoomId || (!list.roomId && currentRoomId === state.rooms[0]?.id));
+            }
+
+            if (listsToShow.length === 0 && !searchTerm) {
+                container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20 opacity-50"><span class="text-6xl mb-4">📦</span><p class="text-lg font-medium">Esta sala está vazia</p><p class="text-sm">Toque em "+" abaixo para adicionar uma prateleira</p></div>`;
+                return;
             }
 
             listsToShow.forEach(list => {
@@ -324,26 +352,28 @@
 
                 const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
                 const listEl = document.createElement('div');
-                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[80vh]';
+                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[60vh] sm:max-h-[75vh]';
                 listEl.dataset.listId = list.id;
                 
                 const highlightClass = (searchTerm && list.title.toLowerCase().includes(searchTerm)) ? 'bg-yellow-50' : '';
-                const roomBadge = searchTerm ? `<span class="text-xs text-gray-400 font-normal ml-2 bg-gray-100 px-1 rounded">${roomName}</span>` : '';
+                const roomBadge = searchTerm ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2 border border-gray-200">${roomName}</span>` : '';
 
                 listEl.innerHTML = `
-                    <div class="p-3 border-b border-gray-100 ${highlightClass}">
-                        <div class="flex justify-between items-start mb-1">
-                            <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg break-words">${list.title}</h2>
-                            <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1" title="Excluir Prateleira">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
+                    <div class="p-3 border-b border-gray-100 ${highlightClass} flex justify-between items-start">
+                        <div class="flex-grow">
+                            <div class="flex items-center">
+                                <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg leading-tight break-words">${list.title}</h2>
+                                ${roomBadge}
+                            </div>
                         </div>
-                        ${roomBadge}
+                        <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1.5 -mr-1 rounded-full hover:bg-gray-50" title="Excluir Prateleira">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
                     </div>
-                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50" data-list-id="${list.id}"></div>
+                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50/50" data-list-id="${list.id}"></div>
                     <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
-                        <button class="add-card-btn w-full py-2 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center">
-                            <span class="mr-1 text-lg leading-none">+</span> Adicionar item
+                        <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium">
+                            <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item
                         </button>
                     </div>
                 `;
@@ -354,11 +384,11 @@
                     cardEl.draggable = true;
                     cardEl.dataset.cardId = card.id;
                     cardEl.dataset.cardTitle = card.title;
-                    cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 transition-all group relative';
+                    cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 hover:shadow-md transition-all group relative active:cursor-grabbing';
                     cardEl.innerHTML = `
                         <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed">${card.title}</p>
-                        <button class="delete-card-btn absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        <button class="delete-card-btn absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     `;
                     cardsCont.appendChild(cardEl);
@@ -422,7 +452,7 @@
             };
 
             modal.classList.remove('hidden');
-            modalInput.focus();
+            setTimeout(() => modalInput.focus(), 100); 
         }
 
         // --- CRUD & HELPERS ---
@@ -443,7 +473,7 @@
         function setupUIListeners() {
             document.getElementById('add-list-btn').onclick = () => {
                 if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
-                showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros, Caixa Ferramentas...', addList);
+                showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros...', addList);
             };
             const searchInput = document.getElementById('search-input');
             searchInput.addEventListener('input', handleSearch);
