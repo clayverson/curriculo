@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Salário Completa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .day {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .day.selected {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: bold;
+        }
+        @media print {
+            body {
+                background-color: #fff;
+            }
+            #controls, #printBtn, #calendarSection {
+                display: none;
+            }
+            #printableArea {
+                box-shadow: none;
+                border: none;
+                width: 100%;
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 min-h-screen flex items-center justify-center">
+
+    <div id="printableArea" class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+            Calculadora de Salário Completa
+        </h1>
+
+        <!-- Seção de Controles (Inputs) -->
+        <div id="controls">
+            <div class="space-y-4">
+                <!-- Salário e Horas -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <label for="salarioBruto" class="block text-sm font-medium text-gray-700">Salário Bruto (R$)</label>
+                        <input type="number" id="salarioBruto" placeholder="Ex: 3000" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    <div class="flex-1">
+                        <label for="horasMensais" class="block text-sm font-medium text-gray-700">Horas Mensais</label>
+                        <input type="number" id="horasMensais" placeholder="Ex: 220" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                </div>
+
+                <!-- Dependentes e Pensão -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                     <div class="flex-1">
+                        <label for="dependentes" class="block text-sm font-medium text-gray-700">Dependentes</label>
+                        <input type="number" id="dependentes" value="0" min="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    <div class="flex-1">
+                        <label for="pensao" class="block text-sm font-medium text-gray-700">Pensão (R$)</label>
+                        <input type="number" id="pensao" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                </div>
+                
+                <!-- Checkbox Periculosidade -->
+                <div class="flex items-center">
+                    <input id="periculosidade" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                    <label for="periculosidade" class="ml-2 block text-sm font-medium text-gray-700">Adicional de Periculosidade (30%)</label>
+                </div>
+
+                <!-- Horas Extras -->
+                <div class="space-y-2">
+                    <p class="text-sm font-medium text-gray-700">Horas Extras (ex: 10.5 para 10h e 30min)</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        <div class="flex-1">
+                            <label for="he50" class="block text-xs text-gray-500">50%</label>
+                            <input type="number" id="he50" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        </div>
+                        <div class="flex-1">
+                            <label for="he65" class="block text-xs text-gray-500">65%</label>
+                            <input type="number" id="he65" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        </div>
+                        <div class="flex-1">
+                            <label for="he100" class="block text-xs text-gray-500">100%</label>
+                            <input type="number" id="he100" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        </div>
+                        <div class="flex-1">
+                            <label for="he110" class="block text-xs text-gray-500">110%</label>
+                            <input type="number" id="he110" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        </div>
+                        <div class="flex-1">
+                            <label for="heNoturna50" class="block text-xs text-gray-500">HE Not 50%</label>
+                            <input type="number" id="heNoturna50" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Adicional Noturno -->
+                <div class="space-y-2">
+                    <label for="horasNoturnas" class="block text-sm font-medium text-gray-700">Horas Noturnas (ex: 1.75 para 1h e 45min)</label>
+                    <input type="number" id="horasNoturnas" placeholder="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                </div>
+
+                <!-- Outros Descontos Dinâmicos -->
+                 <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Outros Descontos</label>
+                    <div id="outrosDescontosContainer" class="space-y-2">
+                        <!-- Campos de desconto serão adicionados aqui -->
+                    </div>
+                    <button id="addDescontoBtn" class="mt-2 flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                        <i class="fas fa-plus-circle"></i> Adicionar Desconto
+                    </button>
+                 </div>
+            </div>
+            
+            <!-- Seção de Seleção de Período e Dias -->
+            <div id="calendarSection" class="mt-8">
+                <h2 class="text-lg font-semibold text-center text-gray-800 mb-4">
+                    Selecione os Dias de Descanso (para DSR)
+                </h2>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4 text-sm font-medium text-gray-700">
+                    <div class="flex-1">
+                        <label for="dataInicio" class="block text-xs text-gray-500">Data de Início</label>
+                        <input type="date" id="dataInicio" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                    <div class="flex-1">
+                        <label for="dataFim" class="block text-xs text-gray-500">Data de Fim</label>
+                        <input type="date" id="dataFim" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-7 gap-1 text-center font-semibold text-gray-500 mb-2 text-xs">
+                    <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                </div>
+                <div id="calendar" class="grid grid-cols-7 gap-1">
+                    <!-- Dias do calendário serão inseridos aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Seção de Resultados -->
+        <div class="mt-8 space-y-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800">Demonstrativo de Pagamento</h2>
+
+            <!-- Proventos -->
+            <div class="bg-gray-50 p-4 rounded-xl shadow-inner">
+                 <h3 class="font-semibold text-gray-700 mb-2 text-lg">Proventos</h3>
+                 <div class="space-y-1 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-600">Salário Base:</span><span id="resSalarioBase" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Adic. Periculosidade:</span><span id="resPericulosidade" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Horas Extras (50%):</span><span id="resHE50" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Horas Extras (65%):</span><span id="resHE65" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Horas Extras (100%):</span><span id="resHE100" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Horas Extras (110%):</span><span id="resHE110" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">HE Noturna (50%):</span><span id="resHEN50" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Adic. Noturno:</span><span id="resAdicionalNoturno" class="font-medium text-gray-800">R$ 0,00</span></div>
+                    
+                    <!-- DSR Detalhado -->
+                    <div class="border-t border-gray-200 pt-2 mt-2">
+                        <p class="font-semibold text-gray-700 text-base">DSR sobre Variáveis:</p>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ HE 50%:</span><span id="resDSR_HE50" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ HE 65%:</span><span id="resDSR_HE65" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ HE 100%:</span><span id="resDSR_HE100" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ HE 110%:</span><span id="resDSR_HE110" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ HE Noturna 50%:</span><span id="resDSR_HEN50" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between pl-4"><span class="text-gray-600">DSR s/ Adic. Noturno:</span><span id="resDSR_AN" class="font-medium text-gray-800">R$ 0,00</span></div>
+                        <div class="flex justify-between font-medium"><span class="text-gray-600">Total DSR:</span><span id="resDSR" class="text-gray-800 font-bold">R$ 0,00</span></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 pt-1">
+                        <span>(Dias úteis: <span id="resDiasUteis" class="font-semibold text-gray-700">0</span> / Dias não úteis: <span id="resDiasNaoUteis" class="font-semibold text-gray-700">0</span>)</span>
+                    </div>
+
+                    <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2"><span class="text-gray-800">Total de Proventos:</span><span id="resTotalProventos" class="text-gray-900">R$ 0,00</span></div>
+                 </div>
+            </div>
+            
+            <!-- Descontos -->
+            <div class="bg-red-50 p-4 rounded-xl shadow-inner">
+                 <h3 class="font-semibold text-red-700 mb-2 text-lg">Descontos</h3>
+                 <div class="space-y-1 text-sm">
+                    <div class="flex justify-between"><span class="text-gray-600">INSS:</span><span id="resINSS" class="font-medium text-red-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">IRRF:</span><span id="resIRRF" class="font-medium text-red-800">R$ 0,00</span></div>
+                    <div class="flex justify-between"><span class="text-gray-600">Pensão Alimentícia:</span><span id="resPensao" class="font-medium text-red-800">R$ 0,00</span></div>
+                    <div id="resOutrosDescontosContainer"></div> <!-- Container para lista de outros descontos -->
+                    <div class="flex justify-between text-base font-semibold border-t pt-2 mt-2"><span class="text-red-800">Total de Descontos:</span><span id="resTotalDescontos" class="text-red-900">R$ 0,00</span></div>
+                 </div>
+            </div>
+
+            <!-- Resumo Final -->
+            <div class="bg-indigo-600 p-4 rounded-xl shadow-lg mt-4 text-white">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-semibold">Salário Líquido:</span>
+                    <span id="totalLiquido" class="text-2xl font-extrabold">R$ 0,00</span>
+                </div>
+            </div>
+
+             <!-- FGTS -->
+            <div class="bg-gray-200 p-3 rounded-xl shadow-inner mt-4 text-center">
+                <span class="text-sm font-medium text-gray-700">Depósito FGTS do Mês: </span>
+                <span id="resFGTS" class="text-base font-bold text-gray-800">R$ 0,00</span>
+            </div>
+            
+            <!-- Botão de Impressão -->
+            <div class="mt-8 text-center">
+                <button id="printBtn" class="w-full sm:w-auto bg-gray-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-print"></i> Imprimir / Gerar PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- REFERÊNCIAS AOS ELEMENTOS DO DOM ---
+        const inputs = {
+            salarioBruto: document.getElementById('salarioBruto'),
+            horasMensais: document.getElementById('horasMensais'),
+            periculosidade: document.getElementById('periculosidade'),
+            he50: document.getElementById('he50'),
+            he65: document.getElementById('he65'),
+            he100: document.getElementById('he100'),
+            he110: document.getElementById('he110'),
+            heNoturna50: document.getElementById('heNoturna50'),
+            horasNoturnas: document.getElementById('horasNoturnas'),
+            dependentes: document.getElementById('dependentes'),
+            pensao: document.getElementById('pensao'),
+            dataInicio: document.getElementById('dataInicio'),
+            dataFim: document.getElementById('dataFim')
+        };
+
+        const outputs = {
+            resSalarioBase: document.getElementById('resSalarioBase'),
+            resPericulosidade: document.getElementById('resPericulosidade'),
+            resHE50: document.getElementById('resHE50'),
+            resHE65: document.getElementById('resHE65'),
+            resHE100: document.getElementById('resHE100'),
+            resHE110: document.getElementById('resHE110'),
+            resHEN50: document.getElementById('resHEN50'),
+            resAdicionalNoturno: document.getElementById('resAdicionalNoturno'),
+            resDSR: document.getElementById('resDSR'),
+            resDSR_HE50: document.getElementById('resDSR_HE50'),
+            resDSR_HE65: document.getElementById('resDSR_HE65'),
+            resDSR_HE100: document.getElementById('resDSR_HE100'),
+            resDSR_HE110: document.getElementById('resDSR_HE110'),
+            resDSR_HEN50: document.getElementById('resDSR_HEN50'),
+            resDSR_AN: document.getElementById('resDSR_AN'),
+            resDiasUteis: document.getElementById('resDiasUteis'),
+            resDiasNaoUteis: document.getElementById('resDiasNaoUteis'),
+            resTotalProventos: document.getElementById('resTotalProventos'),
+            resINSS: document.getElementById('resINSS'),
+            resIRRF: document.getElementById('resIRRF'),
+            resPensao: document.getElementById('resPensao'),
+            resOutrosDescontosContainer: document.getElementById('resOutrosDescontosContainer'),
+            resTotalDescontos: document.getElementById('resTotalDescontos'),
+            totalLiquido: document.getElementById('totalLiquido'),
+            resFGTS: document.getElementById('resFGTS')
+        };
+        
+        const calendarEl = document.getElementById('calendar');
+        const addDescontoBtn = document.getElementById('addDescontoBtn');
+        const outrosDescontosContainer = document.getElementById('outrosDescontosContainer');
+        const printBtn = document.getElementById('printBtn');
+        let selectedRestDays = new Set();
+        let descontoIdCounter = 0;
+
+        // --- EVENT LISTENERS ---
+        Object.values(inputs).forEach(element => {
+            const isDateField = element.type === 'date';
+            element.addEventListener(isDateField ? 'change' : 'input', isDateField ? renderizarCalendario : calcular);
+        });
+        
+        addDescontoBtn.addEventListener('click', adicionarCampoDesconto);
+        printBtn.addEventListener('click', () => window.print());
+
+        // --- FUNÇÕES DE CÁLCULO ---
+
+        /** Formata um número para moeda BRL */
+        function formatarMoeda(valor) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
+        }
+
+        /** Calcula o desconto do INSS de forma progressiva */
+        function calcularINSS(base) {
+            const faixas = [
+                { limite: 1412.00, aliquota: 0.075, deducao: 0 },
+                { limite: 2666.68, aliquota: 0.09, deducao: 21.18 },
+                { limite: 4000.03, aliquota: 0.12, deducao: 101.18 },
+                { limite: 7786.02, aliquota: 0.14, deducao: 181.18 }
+            ];
+            const teto = 908.85; // Teto de 2024
+            
+            if (base <= faixas[0].limite) return base * faixas[0].aliquota;
+            for(let i = 1; i < faixas.length; i++) {
+                if(base <= faixas[i].limite) {
+                    const valorCalculado = (base * faixas[i].aliquota) - faixas[i].deducao;
+                    return Math.min(valorCalculado, teto);
+                }
+            }
+            return teto;
+        }
+
+        /** Calcula o desconto do IRRF */
+        function calcularIRRF(base, inss, dependentes, pensao) {
+            const deducaoDependente = 189.59;
+            const baseIRRF = base - inss - (dependentes * deducaoDependente) - pensao;
+            const faixas = [
+                { limite: 2259.20, aliquota: 0, deducao: 0 },
+                { limite: 2826.65, aliquota: 0.075, deducao: 169.44 },
+                { limite: 3751.05, aliquota: 0.15, deducao: 381.44 },
+                { limite: 4664.68, aliquota: 0.225, deducao: 662.77 },
+                { limite: Infinity, aliquota: 0.275, deducao: 896.00 }
+            ];
+            for (const faixa of faixas) {
+                if (baseIRRF <= faixa.limite) {
+                    const irrfLiquido = (baseIRRF * faixa.aliquota) - faixa.deducao;
+                    return irrfLiquido > 0 ? irrfLiquido : 0;
+                }
+            }
+            return 0;
+        }
+
+        /** Função principal que orquestra todos os cálculos */
+        function calcular() {
+            // --- Leitura dos Inputs ---
+            const salarioBruto = parseFloat(inputs.salarioBruto.value) || 0;
+            const horasMensais = parseFloat(inputs.horasMensais.value) || 220;
+            const periculosidade = inputs.periculosidade.checked;
+            const he50 = parseFloat(inputs.he50.value) || 0;
+            const he65 = parseFloat(inputs.he65.value) || 0;
+            const he100 = parseFloat(inputs.he100.value) || 0;
+            const he110 = parseFloat(inputs.he110.value) || 0;
+            const heNoturna50 = parseFloat(inputs.heNoturna50.value) || 0;
+            const horasNoturnas = parseFloat(inputs.horasNoturnas.value) || 0;
+            const numDependentes = parseInt(inputs.dependentes.value) || 0;
+            const valorPensao = parseFloat(inputs.pensao.value) || 0;
+
+            // --- Cálculos de Proventos ---
+            const adicionalPericulosidade = periculosidade ? salarioBruto * 0.3 : 0;
+            // Base para HEs e Ad. Noturno (já com periculosidade)
+            const baseCalculoHora = Math.round(((salarioBruto + adicionalPericulosidade) / horasMensais) * 100) / 100;
+            
+            const totalHE50 = Math.round((baseCalculoHora * 1.5 * he50) * 100) / 100;
+            const totalHE65 = Math.round((baseCalculoHora * 1.65 * he65) * 100) / 100;
+            const totalHE100 = Math.round((baseCalculoHora * 2.0 * he100) * 100) / 100;
+            const totalHE110 = Math.round((baseCalculoHora * 2.1 * he110) * 100) / 100;
+            // Adicional para horas noturnas *normais*
+            const totalAdicionalNoturno = Math.round((baseCalculoHora * 0.35 * horasNoturnas) * 100) / 100;
+            // Cálculo da Hora Extra Noturna (HE + Ad. Noturno)
+            const totalHEN50 = Math.round(((baseCalculoHora * 1.35) * 1.5 * heNoturna50) * 100) / 100;
+
+
+            // --- DSR (Lógica Original Restaurada) ---
+            let diasUteis = 0;
+            let diasNaoUteis = 0;
+            const inicio = new Date(inputs.dataInicio.value + 'T12:00:00');
+            const fim = new Date(inputs.dataFim.value + 'T12:00:00');
+
+            if (!isNaN(inicio.getTime()) && !isNaN(fim.getTime()) && inicio <= fim) {
+                const dataContador = new Date(inicio);
+                while (dataContador <= fim) {
+                    const dayOfWeek = dataContador.getDay(); // 0=Dom, 1=Seg, ..., 6=Sáb
+                    const dateStr = dataContador.toISOString().split('T')[0];
+                    
+                    if (selectedRestDays.has(dateStr)) {
+                        diasNaoUteis++;
+                    } else if (dayOfWeek >= 1 && dayOfWeek <= 5) { // É um dia de semana (Seg-Sex)
+                        diasUteis++;
+                    }
+                    dataContador.setDate(dataContador.getDate() + 1);
+                }
+            }
+            
+            const dsr_he50 = (diasUteis > 0 && diasNaoUteis > 0) ? (totalHE50 / diasUteis) * diasNaoUteis : 0;
+            const dsr_he65 = (diasUteis > 0 && diasNaoUteis > 0) ? (totalHE65 / diasUteis) * diasNaoUteis : 0;
+            const dsr_he100 = (diasUteis > 0 && diasNaoUteis > 0) ? (totalHE100 / diasUteis) * diasNaoUteis : 0;
+            const dsr_he110 = (diasUteis > 0 && diasNaoUteis > 0) ? (totalHE110 / diasUteis) * diasNaoUteis : 0;
+            const dsr_hen50 = (diasUteis > 0 && diasNaoUteis > 0) ? (totalHEN50 / diasUteis) * diasNaoUteis : 0;
+            const dsr_an = (diasUteis > 0 && diasNaoUteis > 0) ? (totalAdicionalNoturno / diasUteis) * diasNaoUteis : 0;
+            const totalDSR = dsr_he50 + dsr_he65 + dsr_he100 + dsr_he110 + dsr_hen50 + dsr_an;
+            
+            const totalProventos = salarioBruto + adicionalPericulosidade + totalHE50 + totalHE65 + totalHE100 + totalHE110 + totalHEN50 + totalAdicionalNoturno + totalDSR;
+
+            // --- Cálculos de Descontos e Impostos ---
+            const { total: valorOutrosDescontos, html: outrosDescontosHTML } = getOutrosDescontos();
+            const descontoINSS = calcularINSS(totalProventos);
+            const descontoIRRF = calcularIRRF(totalProventos, descontoINSS, numDependentes, valorPensao);
+            const totalDescontos = descontoINSS + descontoIRRF + valorPensao + valorOutrosDescontos;
+            const salarioLiquido = totalProventos - totalDescontos;
+            const valorFGTS = totalProventos * 0.08;
+
+            // --- Atualização da Interface ---
+            outputs.resSalarioBase.textContent = formatarMoeda(salarioBruto);
+            outputs.resPericulosidade.textContent = formatarMoeda(adicionalPericulosidade);
+            outputs.resHE50.textContent = formatarMoeda(totalHE50);
+            outputs.resHE65.textContent = formatarMoeda(totalHE65);
+            outputs.resHE100.textContent = formatarMoeda(totalHE100);
+            outputs.resHE110.textContent = formatarMoeda(totalHE110);
+            outputs.resHEN50.textContent = formatarMoeda(totalHEN50);
+            outputs.resAdicionalNoturno.textContent = formatarMoeda(totalAdicionalNoturno);
+            outputs.resTotalProventos.textContent = formatarMoeda(totalProventos);
+            outputs.resDSR_HE50.textContent = formatarMoeda(dsr_he50);
+            outputs.resDSR_HE65.textContent = formatarMoeda(dsr_he65);
+            outputs.resDSR_HE100.textContent = formatarMoeda(dsr_he100);
+            outputs.resDSR_HE110.textContent = formatarMoeda(dsr_he110);
+            outputs.resDSR_HEN50.textContent = formatarMoeda(dsr_hen50);
+            outputs.resDSR_AN.textContent = formatarMoeda(dsr_an);
+            outputs.resDSR.textContent = formatarMoeda(totalDSR);
+            outputs.resDiasUteis.textContent = diasUteis;
+            outputs.resDiasNaoUteis.textContent = diasNaoUteis;
+            outputs.resINSS.textContent = formatarMoeda(descontoINSS);
+            outputs.resIRRF.textContent = formatarMoeda(descontoIRRF);
+            outputs.resPensao.textContent = formatarMoeda(valorPensao);
+            outputs.resOutrosDescontosContainer.innerHTML = outrosDescontosHTML;
+            outputs.resTotalDescontos.textContent = formatarMoeda(totalDescontos);
+            outputs.totalLiquido.textContent = formatarMoeda(salarioLiquido);
+            outputs.resFGTS.textContent = formatarMoeda(valorFGTS);
+        }
+
+        // --- FUNÇÕES AUXILIARES ---
+        function adicionarCampoDesconto() {
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 desconto-item';
+            div.innerHTML = `
+                <input type="text" placeholder="Descrição" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border desconto-descricao">
+                <input type="number" placeholder="Valor (R$)" class="w-28 block rounded-md border-gray-300 shadow-sm p-2 border desconto-valor">
+                <button type="button" class="text-red-500 hover:text-red-700 no-print"><i class="fas fa-trash-alt"></i></button>
+            `;
+            outrosDescontosContainer.appendChild(div);
+            div.querySelectorAll('input').forEach(i => i.addEventListener('input', calcular));
+            div.querySelector('button').addEventListener('click', () => {
+                div.remove();
+                calcular();
+            });
+        }
+
+        function getOutrosDescontos() {
+            let total = 0;
+            let html = '';
+            outrosDescontosContainer.querySelectorAll('.desconto-item').forEach(item => {
+                const descricao = item.querySelector('.desconto-descricao').value || 'Outro Desconto';
+                const valor = parseFloat(item.querySelector('.desconto-valor').value) || 0;
+                if(valor > 0) {
+                    total += valor;
+                    html += `<div class="flex justify-between"><span class="text-gray-600">${descricao}:</span><span class="font-medium text-red-800">${formatarMoeda(valor)}</span></div>`;
+                }
+            });
+            return { total, html };
+        }
+
+        // --- FUNÇÕES DO CALENDÁRIO ---
+        function renderizarCalendario() {
+            const inicio = new Date(inputs.dataInicio.value + 'T12:00:00');
+            const fim = new Date(inputs.dataFim.value + 'T12:00:00');
+            calendarEl.innerHTML = '';
+            if (isNaN(inicio.getTime()) || isNaN(fim.getTime()) || inicio > fim) {
+                calendarEl.innerHTML = '<p class="col-span-7 text-center text-sm text-gray-500">Selecione um período válido.</p>';
+                selectedRestDays.clear();
+                calcular();
+                return;
+            }
+            selectedRestDays.clear();
+            const primeiroDiaDaSemana = inicio.getDay();
+            for (let i = 0; i < primeiroDiaDaSemana; i++) {
+                calendarEl.appendChild(document.createElement('div'));
+            }
+            const dataAtual = new Date(inicio);
+            while (dataAtual <= fim) {
+                const dayDiv = document.createElement('div');
+                const dateStr = dataAtual.toISOString().split('T')[0];
+                dayDiv.className = `day text-gray-800 text-sm`;
+                dayDiv.textContent = dataAtual.getDate();
+                dayDiv.dataset.date = dateStr;
+                if (dataAtual.getDay() === 0) { // Pré-seleciona Domingos
+                     dayDiv.classList.add('selected');
+                     selectedRestDays.add(dateStr);
+                }
+                dayDiv.addEventListener('click', () => {
+                    if (selectedRestDays.has(dateStr)) {
+                        selectedRestDays.delete(dateStr);
+                        dayDiv.classList.remove('selected');
+                    } else {
+                        selectedRestDays.add(dateStr);
+                        dayDiv.classList.add('selected');
+                    }
+                    calcular();
+                });
+                calendarEl.appendChild(dayDiv);
+                dataAtual.setDate(dataAtual.getDate() + 1);
+            }
+             calcular();
+        }
+
+        // --- INICIALIZAÇÃO ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const hoje = new Date();
+            const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+            const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+            inputs.dataInicio.valueAsDate = inicio;
+            inputs.dataFim.valueAsDate = fim;
+            renderizarCalendario();
+        });
+    </script>
+</body>
+</html>
+
+
+

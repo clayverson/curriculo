@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Relatório Corporativo</title>
+    
+    <!-- 1. TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. Biblioteca jsPDF (essencial para gerar o PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- 3. Ícones (Lucide) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- 4. Configuração do Tailwind (para a cor corporativa) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'corporate-blue': '#003366',
+                        'corporate-blue-dark': '#002244',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Estilo para a fonte principal da página */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Estilização moderna para os botões de upload de arquivo */
+        input[type="file"]::file-selector-button {
+            @apply inline-flex items-center justify-center rounded-lg border border-transparent bg-corporate-blue bg-opacity-10 px-4 py-2 text-sm font-semibold text-corporate-blue shadow-sm hover:bg-opacity-20 focus:outline-none focus:ring-2 focus:ring-corporate-blue focus:ring-offset-2 cursor-pointer transition-all;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        
+        <!-- Cabeçalho da Aplicação -->
+        <header class="mb-8 text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-corporate-blue">Gerador de Relatórios Corporativos</h1>
+            <p class="text-lg text-gray-600 mt-2">Preencha os campos abaixo para exportar seu PDF profissional.</p>
+        </header>
+
+        <!-- Formulário Principal -->
+        <main class="bg-white p-6 md:p-8 rounded-xl shadow-lg space-y-6">
+
+            <!-- Seção: Logos (Grid 2 colunas) -->
+            <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+                <legend class="text-lg font-semibold text-corporate-blue mb-2">1. Logos das Empresas</legend>
+                <div>
+                    <label for="logo-contratante" class="block text-sm font-medium text-gray-700 mb-1">Logo (Contratante)</label>
+                    <input type="file" id="logo-contratante" accept="image/png, image/jpeg" class="block w-full text-sm text-gray-500 file:mr-4">
+                </div>
+                <div>
+                    <label for="logo-contratada" class="block text-sm font-medium text-gray-700 mb-1">Logo (Sua Empresa / Contratada)</label>
+                    <input type="file" id="logo-contratada" accept="image/png, image/jpeg" class="block w-full text-sm text-gray-500 file:mr-4">
+                </div>
+            </fieldset>
+
+            <!-- Seção: Detalhes do Relatório (Grid 2 colunas) -->
+            <fieldset class="grid grid-cols-1 md:grid-cols-2 gap-6 border-b pb-6">
+                <legend class="text-lg font-semibold text-corporate-blue mb-2">2. Detalhes do Relatório</legend>
+                <div>
+                    <label for="nome-projeto" class="block text-sm font-medium text-gray-700 mb-1">Nome da Atividade / Cliente</label>
+                    <input type="text" id="nome-projeto" placeholder="Ex: Cliente S.A. - Manutenção Mensal" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-corporate-blue focus:ring-corporate-blue">
+                </div>
+                <div>
+                    <label for="data-relatorio" class="block text-sm font-medium text-gray-700 mb-1">Data do Relatório</label>
+                    <input type="date" id="data-relatorio" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-corporate-blue focus:ring-corporate-blue">
+                </div>
+            </fieldset>
+            
+            <!-- Seção: Conteúdo do Relatório -->
+            <fieldset class="space-y-6">
+                <legend class="text-lg font-semibold text-corporate-blue mb-2">3. Conteúdo</legend>
+                
+                <!-- Descrição -->
+                <div>
+                    <label for="descricao-atividades" class="block text-sm font-medium text-gray-700 mb-1">Descrição Detalhada das Atividades</label>
+                    <textarea id="descricao-atividades" rows="12" placeholder="Descreva aqui as atividades realizadas, problemas encontrados e soluções aplicadas..." class="block w-full rounded-md border-gray-300 shadow-sm focus:border-corporate-blue focus:ring-corporate-blue"></textarea>
+                </div>
+
+                <!-- Imagens -->
+                <div>
+                    <label for="imagens-servico" class="block text-sm font-medium text-gray-700 mb-1">Imagens do Serviço (Múltiplas)</label>
+                    <input type="file" id="imagens-servico" multiple accept="image/png, image/jpeg" class="block w-full text-sm text-gray-500 file:mr-4">
+                </div>
+            </fieldset>
+
+            <!-- NOVA SEÇÃO: EQUIPE ENVOLVIDA -->
+            <fieldset class="border-b pb-6">
+                <legend class="text-lg font-semibold text-corporate-blue mb-2">3. Equipe Envolvida</legend>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Campo para o Encarregado -->
+                    <div>
+                        <label for="encarregado" class="block text-sm font-medium text-gray-700 mb-1">Encarregado / Responsável</label>
+                        <input type="text" id="encarregado" placeholder="Nome do líder da equipe" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-corporate-blue focus:ring-corporate-blue">
+                    </div>
+                    <!-- Campos dinâmicos para Técnicos -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Técnicos Adicionais</label>
+                        <div id="tecnicos-container" class="space-y-2">
+                            <!-- Inputs dinâmicos serão inseridos aqui -->
+                        </div>
+                        <button type="button" id="add-tecnico-btn" class="mt-2 inline-flex items-center rounded-lg border border-transparent bg-green-100 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all">
+                            <i data-lucide="plus" class="h-4 w-4 mr-1"></i>
+                            Adicionar Técnico
+                        </button>
+                    </div>
+                </div>
+            </fieldset>
+            <!-- FIM DA NOVA SEÇÃO -->
+            
+            <!-- Seção: Conteúdo do Relatório -->
+            <fieldset class="space-y-6">
+                <legend class="text-lg font-semibold text-corporate-blue mb-2">4. Conteúdo</legend>
+                
+                <!-- Descrição -->
+
+            <!-- Seção: Botão Gerar PDF -->
+            <div class="pt-6 text-center border-t">
+                <button id="gerar-pdf" class="w-full md:w-auto inline-flex items-center justify-center rounded-lg border border-transparent bg-corporate-blue px-10 py-3 text-base font-medium text-white shadow-md hover:bg-corporate-blue-dark focus:outline-none focus:ring-2 focus:ring-corporate-blue focus:ring-offset-2 transition-all disabled:bg-gray-400">
+                    <i data-lucide="file-down" class="mr-2 h-5 w-5"></i>
+                    Gerar PDF
+                </button>
+            </div>
+
+        </main>
+        
+        <footer class="text-center mt-8 text-sm text-gray-500">
+            <p>Aplicação de Geração de Relatórios v1.0</p>
+        </footer>
+    </div>
+
+
+    <script type="module">
+        // Ativa os ícones do Lucide
+        lucide.createIcons();
+
+        // Fix de compatibilidade para o jsPDF
+        window.jsPDF = window.jspdf.jsPDF;
+
+        // --- REFERÊNCIAS DO DOM ---
+        const btnGerar = document.getElementById('gerar-pdf');
+        const dataRelatorioInput = document.getElementById('data-relatorio');
+
+        // --- DEFINE A DATA DE HOJE COMO PADRÃO ---
+        const hoje = new Date().toISOString().split('T')[0];
+        dataRelatorioInput.value = hoje;
+
+        // --- LÓGICA PARA ADICIONAR TÉCNICOS DINAMICAMENTE ---
+        const addTecnicoBtn = document.getElementById('add-tecnico-btn');
+        const tecnicosContainer = document.getElementById('tecnicos-container');
+
+        addTecnicoBtn.addEventListener('click', () => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex items-center gap-2';
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = 'Nome do Técnico';
+            // Adiciona uma classe para fácil seleção posterior
+            input.className = 'tecnico-input block w-full rounded-md border-gray-300 shadow-sm focus:border-corporate-blue focus:ring-corporate-blue';
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'inline-flex items-center justify-center p-1 rounded-full text-red-500 hover:bg-red-100 transition-colors';
+            removeBtn.innerHTML = '<i data-lucide="x" class="h-4 w-4"></i>';
+            
+            // Adiciona evento para remover o campo
+            removeBtn.addEventListener('click', () => {
+                wrapper.remove();
+            });
+            
+            wrapper.appendChild(input);
+            wrapper.appendChild(removeBtn);
+            tecnicosContainer.appendChild(wrapper);
+            
+            lucide.createIcons(); // Renderiza o novo ícone 'x'
+        });
+        // --- FIM DA LÓGICA DE ADICIONAR TÉCNICOS ---
+
+        // --- CONSTANTES DE LAYOUT DO PDF (em Milímetros) ---
+        const PAGE_WIDTH = 210;
+        const PAGE_HEIGHT = 297;
+        const MARGIN = 25; // 2.5cm
+        const HEADER_HEIGHT = 20; // 2cm
+        const FOOTER_HEIGHT = 20;
+        
+        // Área de conteúdo útil
+        const CONTENT_X_START = MARGIN;
+        const CONTENT_Y_START = HEADER_HEIGHT + 10; // 10mm abaixo do header
+        const CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN; // 210 - 50 = 160mm
+        const CONTENT_Y_END = PAGE_HEIGHT - FOOTER_HEIGHT; // 297 - 20 = 277mm
+
+        // --- FUNÇÃO HELPER: LER ARQUIVO COMO DATA URL (Base64) ---
+        function readFileAsDataURL(file) {
+            // Placeholder se nenhum arquivo for fornecido
+            if (!file) {
+                return Promise.resolve("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAAA8CAYAAABaElSNAAACHUlEQVR42u3PMQEAAAgDINc/9JzgEdw4lE6rB7iC+QkELAERYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGABEAIRYCGCQATMEiBAAsQCAQEWBCEQAWYJECABYgGxwAIgBELALEGABEiAWGBt/AGsOaD+p0M1KAAAAABJRU5ErkJggg==");
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // --- FUNÇÃO HELPER: FORMATAR DATA (DD/MM/AAAA) ---
+        function formatarData(isoDate) {
+            if (!isoDate) return 'DD/MM/AAAA';
+            const [ano, mes, dia] = isoDate.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        // --- NOVA FUNÇÃO HELPER: Processar e Redimensionar Imagem ---
+        // Esta função carrega uma imagem, a redimensiona/corta para as
+        // dimensões alvo (targetWidth, targetHeight) e a retorna como 
+        // DataURL (Base64) comprimida em JPEG.
+        function processAndResizeImage(file, targetWidth, targetHeight) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = targetWidth;
+                        canvas.height = targetHeight;
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Lógica para "object-fit: cover" (cropar centralizado)
+                        const imgRatio = img.width / img.height;
+                        const targetRatio = targetWidth / targetHeight;
+                        
+                        let sWidth = img.width;
+                        let sHeight = img.height;
+                        let sx = 0;
+                        let sy = 0;
+
+                        if (imgRatio > targetRatio) {
+                            // Imagem é mais larga que o alvo (corta lados)
+                            sWidth = img.height * targetRatio;
+                            sx = (img.width - sWidth) / 2;
+                        } else if (imgRatio < targetRatio) {
+                            // Imagem é mais alta que o alvo (corta topo/base)
+                            sHeight = img.width / targetRatio;
+                            sy = (img.height - sHeight) / 2;
+                        }
+                        
+                        // Desenha a imagem cortada e redimensionada no canvas
+                        ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
+                        
+                        // Converte para JPEG com compressão média (0.7)
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(dataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = event.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        // --- FIM DA NOVA FUNÇÃO ---
+
+
+        // --- FUNÇÕES DE DESENHO DO PDF ---
+
+        // Desenha o Cabeçalho (chamado em cada nova página)
+        async function addHeader(pdf, pageData) {
+            const { logoContratanteData, logoContratadaData, dataRelatorioFormatada } = pageData;
+            
+            // Fundo azul
+            pdf.setFillColor('#003366'); // corporate-blue
+            pdf.rect(0, 0, PAGE_WIDTH, HEADER_HEIGHT, 'F'); // x, y, w, h, style
+            
+            // Data centralizada
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(12);
+            pdf.setTextColor('#FFFFFF');
+            pdf.text(dataRelatorioFormatada, PAGE_WIDTH / 2, (HEADER_HEIGHT / 2) + 4, { align: 'center' });
+
+            // Logo Contratante (Esquerda)
+            try {
+                const props = pdf.getImageProperties(logoContratanteData);
+                const maxLogoW = 45;
+                const maxLogoH = HEADER_HEIGHT - 8; // 4mm de padding em cima/baixo
+                const ratio = props.width / props.height;
+                let w = maxLogoW;
+                let h = w / ratio;
+                if (h > maxLogoH) {
+                    h = maxLogoH;
+                    w = h * ratio;
+                }
+                const yPos = (HEADER_HEIGHT - h) / 2; // Centraliza verticalmente
+                // MODIFICADO: Força JPEG e adiciona compressão 'MEDIUM'
+                pdf.addImage(logoContratanteData, 'JPEG', MARGIN, yPos, w, h, undefined, 'MEDIUM');
+            } catch (e) {
+                console.warn("Não foi possível carregar o logo da contratante.", e);
+                pdf.text("Logo Contratante", MARGIN, (HEADER_HEIGHT / 2) + 4);
+            }
+            
+            // Logo Contratada (Direita)
+            try {
+                const props = pdf.getImageProperties(logoContratadaData);
+                const maxLogoW = 45;
+                const maxLogoH = HEADER_HEIGHT - 8;
+                const ratio = props.width / props.height;
+                let w = maxLogoW;
+                let h = w / ratio;
+                if (h > maxLogoH) {
+                    h = maxLogoH;
+                    w = h * ratio;
+                }
+                const xPos = PAGE_WIDTH - MARGIN - w; // Alinha à direita
+                const yPos = (HEADER_HEIGHT - h) / 2; // Centraliza verticalmente
+                // MODIFICADO: Força JPEG e adiciona compressão 'MEDIUM'
+                pdf.addImage(logoContratadaData, 'JPEG', xPos, yPos, w, h, undefined, 'MEDIUM');
+            } catch (e) {
+                console.warn("Não foi possível carregar o logo da contratada.", e);
+                pdf.text("Logo Contratada", PAGE_WIDTH - MARGIN - 30, (HEADER_HEIGHT / 2) + 4);
+            }
+        }
+        
+        // Desenha o Rodapé (chamado em cada nova página)
+        function addFooter(pdf, pageNum, nomeResponsavel) {
+            const footerY = PAGE_HEIGHT - (FOOTER_HEIGHT / 2);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(9);
+            pdf.setTextColor('#555555');
+            
+            // Linha superior
+            pdf.setDrawColor('#CCCCCC');
+            pdf.line(MARGIN, PAGE_HEIGHT - FOOTER_HEIGHT, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - FOOTER_HEIGHT);
+            
+            // Nome da empresa (Ex: "Relatório por: Nome da Empresa")
+            const nomeFooter = nomeResponsavel ? `Responsável: ${nomeResponsavel}` : 'Relatório Corporativo';
+            pdf.text(nomeFooter, MARGIN, footerY);
+            
+            // Número da página
+            pdf.text(`Página ${pageNum}`, PAGE_WIDTH - MARGIN, footerY, { align: 'right' });
+        }
+        
+        // Desenha a Borda do Conteúdo (chamada em cada nova página)
+        function addContentBorder(pdf) {
+            pdf.setDrawColor('#CCCCCC');
+            const y = CONTENT_Y_START - 5; // Começa 5mm acima do conteúdo
+            const h = (CONTENT_Y_END + 5) - y; // Termina 5mm abaixo
+            pdf.rect(MARGIN, y, CONTENT_WIDTH, h, 'S'); // x, y, w, h, style
+        }
+
+
+        // --- FUNÇÃO PRINCIPAL: GERAR O PDF ---
+        async function gerarPDF() {
+            console.log('Iniciando geração do PDF...');
+            btnGerar.disabled = true;
+            btnGerar.innerHTML = '<i data-lucide="loader-2" class="mr-2 h-5 w-5 animate-spin"></i> Gerando...';
+            lucide.createIcons();
+
+            try {
+                // 1. Inicializar o jsPDF
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                pdf.setFont('helvetica', 'normal');
+                
+                // 2. Coletar dados do formulário
+                const projeto = document.getElementById('nome-projeto').value || 'Não especificado';
+                const dataISO = document.getElementById('data-relatorio').value;
+                const dataFormatada = formatarData(dataISO);
+                const descricao = document.getElementById('descricao-atividades').value || 'Nenhuma descrição fornecida.';
+                
+                // Coleta os nomes da equipe
+                const encarregado = document.getElementById('encarregado').value || 'Não especificado';
+                const tecnicoInputs = document.querySelectorAll('.tecnico-input');
+                const nomesTecnicos = Array.from(tecnicoInputs).map(input => input.value).filter(Boolean); // Filtra nomes vazios
+
+
+                // 3. Processar imagens (Logos)
+                const logoContratanteFile = document.getElementById('logo-contratante').files[0];
+                const logoContratadaFile = document.getElementById('logo-contratada').files[0];
+                
+                const pageData = {
+                    logoContratanteData: await readFileAsDataURL(logoContratanteFile),
+                    logoContratadaData: await readFileAsDataURL(logoContratadaFile),
+                    dataRelatorioFormatada: dataFormatada,
+                };
+                
+                // 4. Processar imagens (Serviço)
+                const imagensServicoFiles = document.getElementById('imagens-servico').files;
+                // MODIFICADO: Mapeia os arquivos pela nova função de processamento
+                const imagensServicoData = await Promise.all(
+                    Array.from(imagensServicoFiles).map(file => processAndResizeImage(file, 640, 480))
+                );
+
+                // --- INÍCIO DO DESENHO DO PDF ---
+                
+                let pageNum = 1;
+                let currentY = CONTENT_Y_START; // Posição Y atual do "cursor"
+
+                // Função helper interna para checar e adicionar nova página
+                function checkAddPage(requiredHeight) {
+                    if (currentY + requiredHeight > CONTENT_Y_END) {
+                        addFooter(pdf, pageNum, encarregado); // Adiciona rodapé na página atual
+                        pdf.addPage();
+                        pageNum++;
+                        addHeader(pdf, pageData); // Adiciona cabeçalho na nova página
+                        // REMOVIDO: Linha da borda
+                        // addContentBorder(pdf); // Adiciona borda na nova página
+                        currentY = CONTENT_Y_START + 10; // Reseta o Y para o topo
+                        return true;
+                    }
+                    return false;
+                }
+
+                // Desenha os elementos da Primeira Página
+                await addHeader(pdf, pageData);
+                // REMOVIDO: Linha da borda
+                // addContentBorder(pdf);
+                currentY += 10; // Espaçamento inicial
+
+                // Título Principal
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(18);
+                pdf.setTextColor('#003366');
+                pdf.text("RELATÓRIO DE ATIVIDADES", PAGE_WIDTH / 2, currentY, { align: 'center' });
+                currentY += 10;
+
+                // Subtítulo (Cliente/Projeto)
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(12);
+                pdf.setTextColor('#333333');
+                pdf.text(`Projeto / Cliente: ${projeto}`, CONTENT_X_START, currentY);
+                currentY += 7; // Espaço
+                
+                // Adiciona o Encarregado
+                pdf.text(`Encarregado: ${encarregado}`, CONTENT_X_START, currentY);
+                currentY += 7;
+
+                // Adiciona a lista de Técnicos
+                if (nomesTecnicos.length > 0) {
+                    checkAddPage(7); // Checa espaço para o título da seção
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.text("Equipe Técnica:", CONTENT_X_START, currentY);
+                    currentY += 7;
+
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(11);
+                    const lineHeightTecnico = pdf.getLineHeight() * 0.352777 * 1.1; // Espaçamento 1.1
+
+                    for (const nome of nomesTecnicos) {
+                        checkAddPage(lineHeightTecnico);
+                        pdf.text(`- ${nome}`, CONTENT_X_START + 5, currentY); // Indenta com hífen
+                        currentY += lineHeightTecnico;
+                    }
+                }
+
+                currentY += 8; // Espaço antes da descrição
+                
+                // --- Corpo do Texto (Descrição) ---
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor('#000000');
+                const lineHeight = pdf.getLineHeight() * 0.352777 * 1.2; // 1.2x espaçamento
+                
+                // Quebra o texto em linhas que cabem na largura do conteúdo
+                const lines = pdf.splitTextToSize(descricao, CONTENT_WIDTH);
+                
+                for (const line of lines) {
+                    checkAddPage(lineHeight); // Checa se precisa de nova página
+                    pdf.text(line, CONTENT_X_START, currentY, { align: 'justify' });
+                    currentY += lineHeight;
+                }
+                
+                currentY += 10; // Espaço antes das imagens
+
+                // --- Imagens do Serviço ---
+                if (imagensServicoData.length > 0) {
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(14);
+                    pdf.setTextColor('#003366');
+                    checkAddPage(15); // Espaço para o título
+                    pdf.text("Registros Fotográficos", CONTENT_X_START, currentY);
+                    currentY += 10;
+                    
+                    const imgGap = 4; // 4mm de espaço entre imagens
+                    const imgWidth = (CONTENT_WIDTH - imgGap) / 2; // Duas por linha
+
+                    for (let i = 0; i < imagensServicoData.length; i += 2) {
+                        const img1Data = imagensServicoData[i];
+                        const img2Data = (i + 1 < imagensServicoData.length) ? imagensServicoData[i + 1] : null;
+
+                        let h1 = 0, h2 = 0;
+                        // O cálculo da altura agora será uniforme, pois todas as 
+                        // imagens têm proporção 640/480 (ou 4:3)
+                        if (img1Data) {
+                            const props1 = pdf.getImageProperties(img1Data);
+                            h1 = (props1.height * imgWidth) / props1.width; // Altura proporcional (será imgWidth * 0.75)
+                        }
+                        if (img2Data) {
+                            const props2 = pdf.getImageProperties(img2Data);
+                            h2 = (props2.height * imgWidth) / props2.width; // Altura proporcional (será imgWidth * 0.75)
+                        }
+                        
+                        const rowHeight = Math.max(h1, h2);
+                        
+                        // Checa se a LINHA INTEIRA cabe, para não quebrar a dupla de imagens
+                        checkAddPage(rowHeight + imgGap); 
+                        
+                        if (img1Data) {
+                            // MODIFICADO: Adiciona compressão 'MEDIUM' (compressão JPEG já foi feita no canvas, mas jsPDF re-comprime)
+                            pdf.addImage(img1Data, 'JPEG', CONTENT_X_START, currentY, imgWidth, h1, undefined, 'MEDIUM');
+                        }
+                        if (img2Data) {
+                            // MODIFICADO: Adiciona compressão 'MEDIUM'
+                            pdf.addImage(img2Data, 'JPEG', CONTENT_X_START + imgWidth + imgGap, currentY, imgWidth, h2, undefined, 'MEDIUM');
+                        }
+                        
+                        currentY += rowHeight + imgGap; // Move o cursor para baixo
+                    }
+                }
+                
+                // Adiciona o rodapé da última página
+                addFooter(pdf, pageNum, encarregado);
+                
+                // 5. Salvar o PDF
+                const nomeArquivo = `Relatorio_${projeto.replace(/[^a-zA-Z0-9]/g, '_')}_${dataISO}.pdf`;
+                pdf.save(nomeArquivo);
+
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Ocorreu um erro ao gerar o PDF. Verifique o console para mais detalhes.');
+            } finally {
+                // 6. Resetar o botão
+                btnGerar.disabled = false;
+                btnGerar.innerHTML = '<i data-lucide="file-down" class="mr-2 h-5 w-5"></i> Gerar PDF';
+                lucide.createIcons();
+            }
+        }
+
+        // --- ADICIONA O EVENT LISTENER AO BOTÃO ---
+        btnGerar.addEventListener('click', gerarPDF);
+
+    </script>
+</body>
+</html>
+
+
+
