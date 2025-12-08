@@ -15,25 +15,32 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        .list { 
-            scroll-margin-top: 140px; 
-        }
+        .list { scroll-margin-top: 140px; }
         
         .card.dragging { opacity: 0.5; transform: rotate(3deg) scale(1.02); }
         .drag-over { background-color: rgba(59, 130, 246, 0.1); border: 2px dashed #60a5fa; }
         
-        /* REMOVIDO O !important DAQUI QUE CAUSAVA O ERRO NO DESKTOP */
-        /* .hidden { display: none !important; } */
-        
-        /* Utilitário para esconder scrollbar horizontal na navegação */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Animação suave para modal */
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
         @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
         .mic-listening::before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%; background-color: #ef4444; z-index: -1; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+
+        /* Estilo para seleção de tipo */
+        .type-btn.selected-type { background-color: #eff6ff; border-color: #3b82f6; color: #1d4ed8; ring: 2px; }
+
+        /* Estilos para Auditoria (Timeline) */
+        .timeline-item { position: relative; padding-left: 1.5rem; padding-bottom: 1.5rem; border-left: 2px solid #e5e7eb; }
+        .timeline-item:last-child { border-left: 2px solid transparent; }
+        .timeline-dot { position: absolute; left: -0.4rem; top: 0.25rem; width: 0.75rem; height: 0.75rem; border-radius: 50%; background-color: #d1d5db; border: 2px solid #fff; }
+        .timeline-dot.active { background-color: #3b82f6; }
+
+        /* Estilos para Sub-divisões */
+        .subdivision-header { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-top: 0.5rem; margin-bottom: 0.25rem; padding-left: 0.25rem; display: flex; justify-content: space-between; align-items: center; }
+        .subdivision-zone { min-height: 20px; padding-bottom: 8px; border-radius: 4px; transition: background-color 0.2s; }
+        .subdivision-zone.drag-over { background-color: #eff6ff; }
     </style>
 </head>
 <body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden flex flex-col">
@@ -77,8 +84,8 @@
         <div class="flex-shrink-0 z-30 bg-white shadow-sm sticky top-0 w-full">
             
             <!-- CABEÇALHO -->
-            <header class="p-3 border-b border-gray-100 relative">
-                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
+            <header class="p-3 border-b border-gray-100 relative bg-white z-40">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl mx-auto mb-2">
                     
                     <div class="flex items-center justify-start w-full sm:w-auto">
                         <div class="flex items-center space-x-2">
@@ -94,35 +101,60 @@
                     </button>
 
                     <div class="relative w-full sm:w-96 mt-1 sm:mt-0">
-                        <input type="text" id="search-input" placeholder="Buscar item..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
+                        <input type="text" id="search-input" placeholder="Buscar..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
                         <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
 
                     <!-- BOTÕES DESKTOP -->
                     <div class="hidden sm:flex items-center space-x-3">
                         <span id="user-display" class="text-xs text-gray-500 font-medium truncate max-w-[150px]"></span>
-                        
-                        <button id="mic-btn-desktop" class="bg-blue-100 text-blue-600 hover:bg-blue-200 p-2 rounded-lg transition" title="Comando de Voz">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
-                        </button>
-
                         <button id="logout-btn-desktop" class="flex items-center text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition shadow-sm">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             SAIR
                         </button>
                     </div>
                 </div>
+
+                <!-- TABS NAVEGAÇÃO -->
+                <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg max-w-md mx-auto sm:mx-0">
+                    <button id="tab-spaces" class="flex-1 py-1.5 px-3 rounded-md text-sm font-semibold transition-all shadow-sm bg-white text-blue-600" onclick="switchTab('spaces')">
+                        🏠 Espaços
+                    </button>
+                    <button id="tab-requests" class="flex-1 py-1.5 px-3 rounded-md text-sm font-semibold text-gray-500 hover:text-gray-700 transition-all" onclick="switchTab('requests')">
+                        📋 Solicitações
+                    </button>
+                </div>
             </header>
-            <nav class="border-b border-gray-200 bg-white">
+
+            <!-- NAV SALAS (Só aparece na aba Espaços) -->
+            <nav id="rooms-nav-wrapper" class="border-b border-gray-200 bg-white">
                 <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container"></div>
             </nav>
         </div>
 
-        <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6"></main>
+        <!-- VIEW ESPAÇOS -->
+        <main id="view-spaces" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6" id="board-container">
+            <!-- Conteúdo do Board injetado via JS -->
+        </main>
+
+        <!-- VIEW SOLICITAÇÕES -->
+        <main id="view-requests" class="hidden flex-grow flex flex-col p-4 sm:p-6 overflow-y-auto bg-gray-50 pb-32 sm:pb-6">
+            <div class="max-w-4xl mx-auto w-full">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">Minhas Solicitações</h2>
+                    <div class="text-xs text-gray-500 bg-white px-3 py-1 rounded-full shadow-sm border">
+                        <span id="requests-count">0</span> itens
+                    </div>
+                </div>
+                <div id="requests-list" class="space-y-3">
+                    <!-- Lista de solicitações injetada via JS -->
+                </div>
+            </div>
+        </main>
         
+        <!-- BARRA DE AÇÃO INFERIOR -->
         <div class="p-4 flex-shrink-0 flex justify-center items-center bg-white/90 backdrop-blur-sm border-t border-gray-200 z-40 fixed bottom-0 w-full sm:static sm:w-auto sm:bg-transparent sm:border-0 gap-3">
-            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 flex-grow sm:flex-grow-0 max-w-md transform active:scale-95">
-                <span class="text-xl leading-none pb-1">+</span> <span>Nova Prateleira / Caixa</span>
+            <button id="main-action-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 flex-grow sm:flex-grow-0 max-w-md transform active:scale-95">
+                <span class="text-xl leading-none pb-1">+</span> <span id="main-action-text">Novo Armário / Caixa</span>
             </button>
             <button id="mic-btn-mobile" class="sm:hidden w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg flex items-center justify-center transition transform active:scale-95 flex-shrink-0">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
@@ -130,21 +162,86 @@
         </div>
     </div>
 
-    <!-- Modal Universal (Atualizado com Quantidade) -->
+    <!-- Modal Universal -->
     <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[60] p-4 transition-opacity">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl modal-animate">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl modal-animate flex flex-col max-h-[90vh]">
             <h2 id="modal-title" class="text-xl font-bold mb-1 text-gray-800">Novo Item</h2>
-            <p class="text-xs text-gray-400 mb-4 uppercase tracking-wide font-semibold">Preencha os detalhes abaixo</p>
-            <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
-            <div id="modal-quantity-wrapper" class="hidden mb-6">
-                <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Quantidade</label>
-                <div class="flex items-center border border-gray-300 bg-gray-50 rounded-xl overflow-hidden">
-                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepDown()">-</button>
-                    <input type="number" id="modal-quantity" class="w-full p-3 text-center bg-transparent focus:outline-none text-gray-800 font-semibold" value="1" min="1">
-                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepUp()">+</button>
+            <p id="modal-subtitle" class="text-xs text-gray-400 mb-4 uppercase tracking-wide font-semibold">Preencha os detalhes abaixo</p>
+            
+            <div class="overflow-y-auto pr-1 flex-grow">
+                <!-- Seletor de Tipo de Armazenamento -->
+                <div id="modal-type-wrapper" class="hidden mb-4">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Tipo de Armazenamento</label>
+                    <div class="grid grid-cols-4 gap-2 mt-1">
+                        <button type="button" class="type-btn p-2 border border-gray-200 rounded-lg hover:bg-blue-50 focus:outline-none transition-all selected-type" data-type="box" onclick="window.selectType(this)">
+                            <span class="text-2xl block text-center mb-1">📦</span>
+                            <span class="text-[9px] font-bold block text-center uppercase text-gray-600">Caixa</span>
+                        </button>
+                        <button type="button" class="type-btn p-2 border border-gray-200 rounded-lg hover:bg-blue-50 focus:outline-none transition-all" data-type="cabinet" onclick="window.selectType(this)">
+                            <span class="text-2xl block text-center mb-1">🗄️</span>
+                            <span class="text-[9px] font-bold block text-center uppercase text-gray-600">Armário</span>
+                        </button>
+                        <button type="button" class="type-btn p-2 border border-gray-200 rounded-lg hover:bg-blue-50 focus:outline-none transition-all" data-type="shelf" onclick="window.selectType(this)">
+                            <span class="text-2xl block text-center mb-1">🪵</span>
+                            <span class="text-[9px] font-bold block text-center uppercase text-gray-600">Prat.</span>
+                        </button>
+                        <button type="button" class="type-btn p-2 border border-gray-200 rounded-lg hover:bg-blue-50 focus:outline-none transition-all" data-type="drawer" onclick="window.selectType(this)">
+                            <span class="text-2xl block text-center mb-1">🗃️</span>
+                            <span class="text-[9px] font-bold block text-center uppercase text-gray-600">Gaveta</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="modal-type-value" value="box">
+                </div>
+
+                <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
+                
+                <!-- Wrapper para Movimentação -->
+                <div id="modal-move-wrapper" class="hidden mb-6">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Mover para</label>
+                    <select id="modal-move-select" class="w-full p-3 border border-gray-300 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 font-medium">
+                        <!-- Options via JS -->
+                    </select>
+                </div>
+
+                <!-- Quantidade -->
+                <div id="modal-quantity-wrapper" class="hidden mb-6">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Quantidade</label>
+                    <div class="flex items-center border border-gray-300 bg-gray-50 rounded-xl overflow-hidden w-full">
+                        <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepDown()">-</button>
+                        <input type="number" id="modal-quantity" class="w-full p-3 text-center bg-transparent focus:outline-none text-gray-800 font-semibold" value="1" min="1">
+                        <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepUp()">+</button>
+                    </div>
+                </div>
+
+                <!-- Solicitante (Novo) -->
+                <div id="modal-requester-wrapper" class="hidden mb-4">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Solicitante</label>
+                    <input type="text" id="modal-requester" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Quem pediu?">
+                </div>
+
+                <!-- Seletor de Status (Exclusivo Solicitações) -->
+                <div id="modal-status-wrapper" class="hidden mb-6">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Status Atual</label>
+                    <select id="modal-status" class="w-full p-3 border border-gray-300 bg-gray-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 font-medium">
+                        <option value="requested">📝 Solicitado</option>
+                        <option value="in_progress">⚙️ Em andamento</option>
+                        <option value="purchasing">🛒 Enviado para compra</option>
+                        <option value="purchased">✅ Comprado</option>
+                        <option value="waiting">🚚 Aguardando chegada</option>
+                        <option value="completed">🏁 Finalizado</option>
+                    </select>
+                </div>
+
+                <!-- Auditoria (Exclusivo Solicitações) -->
+                <div id="modal-audit-wrapper" class="hidden mb-4 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-3">Auditoria / Histórico</label>
+                    <div id="audit-list" class="text-sm space-y-0 pl-2 max-h-40 overflow-y-auto">
+                        <!-- Itens da timeline via JS -->
+                    </div>
                 </div>
             </div>
-            <div class="flex justify-end space-x-3">
+            
+            <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100 mt-2">
                 <button id="modal-cancel-btn" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition">Cancelar</button>
                 <button id="modal-save-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-95">Salvar</button>
             </div>
@@ -155,7 +252,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, where, writeBatch, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, where, writeBatch, getDocs, setDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- GEMINI API ---
         const apiKey = ""; 
@@ -195,8 +292,8 @@
         const db = getFirestore(app);
 
         let userId = null;
-        let listsCollectionRef, cardsCollectionRef, roomsCollectionRef;
-        let unsubscribeLists = null, unsubscribeRooms = null;
+        let listsCollectionRef, cardsCollectionRef, roomsCollectionRef, requestsCollectionRef;
+        let unsubscribeLists = null, unsubscribeRooms = null, unsubscribeRequests = null;
         let unsubscribeCards = [];
 
         // --- AUTH ---
@@ -208,7 +305,6 @@
             document.getElementById('auth-error').classList.add('hidden');
             document.getElementById('auth-form').reset();
             
-            document.getElementById('auth-title').textContent = isLoginMode ? "Entrar na sua conta" : "Criar nova conta";
             document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Entrar" : "Cadastrar";
             document.getElementById('toggle-auth-text').innerHTML = isLoginMode 
                 ? `Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>` 
@@ -249,17 +345,20 @@
                 userId = null;
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('app-view').classList.add('hidden');
-                document.getElementById('board-container').innerHTML = '';
+                document.getElementById('view-spaces').innerHTML = '';
                 if(unsubscribeLists) unsubscribeLists();
                 if(unsubscribeRooms) unsubscribeRooms();
+                if(unsubscribeRequests) unsubscribeRequests();
                 unsubscribeCards.forEach(u => u());
             }
         });
 
         // --- APP LOGIC ---
-        let state = { rooms: [], lists: [], cards: {} };
+        let state = { rooms: [], lists: [], cards: {}, requests: [] };
+        let collapsedLists = new Set(); // Estado local para listas recolhidas
         let currentRoomId = 'default';
         let searchTerm = '';
+        let currentTab = 'spaces'; // 'spaces' or 'requests'
 
         function setupFirestoreListeners() {
             if (!userId) return;
@@ -267,6 +366,7 @@
             roomsCollectionRef = collection(db, `${basePath}/rooms`);
             listsCollectionRef = collection(db, `${basePath}/lists`);
             cardsCollectionRef = collection(db, `${basePath}/cards`);
+            requestsCollectionRef = collection(db, `${basePath}/requests`);
             
             unsubscribeRooms = onSnapshot(query(roomsCollectionRef, orderBy("createdAt")), snapshot => {
                 state.rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -280,11 +380,16 @@
             });
 
             unsubscribeLists = onSnapshot(query(listsCollectionRef, orderBy("order")), snapshot => {
-                state.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                state.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), subdivisions: doc.data().subdivisions || [] }));
                 renderBoard();
                 unsubscribeCards.forEach(unsub => unsub());
                 unsubscribeCards = [];
                 state.lists.forEach(list => setupCardListener(list.id));
+            });
+
+            unsubscribeRequests = onSnapshot(query(requestsCollectionRef, orderBy("createdAt", "desc")), snapshot => {
+                state.requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderRequests();
             });
         }
 
@@ -302,6 +407,54 @@
                 renderBoard();
             });
             unsubscribeCards.push(unsub);
+        }
+
+        // --- HELPERS ---
+        function getIconForType(type) {
+            switch(type) {
+                case 'cabinet': return '🗄️';
+                case 'box': return '📦';
+                case 'drawer': return '🗃️';
+                case 'shelf': return '🪵';
+                default: return '📦';
+            }
+        }
+        
+        window.selectType = function(btn) {
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected-type'));
+            btn.classList.add('selected-type');
+            document.getElementById('modal-type-value').value = btn.dataset.type;
+        }
+
+        window.switchTab = function(tab) {
+            currentTab = tab;
+            const spacesView = document.getElementById('view-spaces');
+            const requestsView = document.getElementById('view-requests');
+            const tabSpaces = document.getElementById('tab-spaces');
+            const tabRequests = document.getElementById('tab-requests');
+            const roomsNav = document.getElementById('rooms-nav-wrapper');
+            const btnText = document.getElementById('main-action-text');
+
+            if (tab === 'spaces') {
+                spacesView.classList.remove('hidden');
+                requestsView.classList.add('hidden');
+                tabSpaces.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                tabSpaces.classList.remove('text-gray-500');
+                tabRequests.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                tabRequests.classList.add('text-gray-500');
+                roomsNav.classList.remove('hidden');
+                btnText.textContent = "Novo Armário / Caixa";
+            } else {
+                spacesView.classList.add('hidden');
+                requestsView.classList.remove('hidden');
+                tabRequests.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+                tabRequests.classList.remove('text-gray-500');
+                tabSpaces.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                tabSpaces.classList.add('text-gray-500');
+                roomsNav.classList.add('hidden');
+                btnText.textContent = "Nova Solicitação";
+                renderRequests();
+            }
         }
 
         // --- RENDER NAV (ROOMS) ---
@@ -349,7 +502,7 @@
 
         // --- RENDER BOARD ---
         function renderBoard() {
-            const container = document.getElementById('board-container');
+            const container = document.getElementById('view-spaces');
             container.innerHTML = '';
 
             let listsToShow = [];
@@ -360,7 +513,7 @@
                     const hasCardMatches = cards.some(c => c.title.toLowerCase().includes(searchTerm));
                     return listMatches || hasCardMatches;
                 });
-                if (listsToShow.length === 0) {
+                if (listsToShow.length === 0 && currentTab === 'spaces') {
                     container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20"><span class="text-4xl mb-2">🔍</span><p>Nenhum item encontrado para "${searchTerm}"</p></div>`;
                     return;
                 }
@@ -369,102 +522,405 @@
             }
 
             if (listsToShow.length === 0 && !searchTerm) {
-                container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20 opacity-50"><span class="text-6xl mb-4">📦</span><p class="text-lg font-medium">Esta sala está vazia</p><p class="text-sm">Toque em "+" abaixo para adicionar uma prateleira</p></div>`;
+                container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20 opacity-50"><span class="text-6xl mb-4">📦</span><p class="text-lg font-medium">Esta sala está vazia</p><p class="text-sm">Toque em "+" abaixo para criar um armário ou caixa</p></div>`;
                 return;
             }
 
             listsToShow.forEach(list => {
-                const cards = (state.cards[list.id] || []);
-                const filteredCards = searchTerm 
-                    ? cards.filter(c => c.title.toLowerCase().includes(searchTerm) || list.title.toLowerCase().includes(searchTerm))
-                    : cards;
-
+                const allCards = (state.cards[list.id] || []);
+                const subdivisions = list.subdivisions || [];
+                const isCollapsed = collapsedLists.has(list.id);
+                
                 const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
                 const listEl = document.createElement('div');
-                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[60vh] sm:max-h-[75vh]';
+                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col ' + (isCollapsed ? 'h-auto' : 'max-h-[60vh] sm:max-h-[75vh]');
                 listEl.dataset.listId = list.id;
                 
                 const highlightClass = (searchTerm && list.title.toLowerCase().includes(searchTerm)) ? 'bg-yellow-50' : '';
                 const roomBadge = searchTerm ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2 border border-gray-200">${roomName}</span>` : '';
+                const typeIcon = getIconForType(list.type);
 
-                listEl.innerHTML = `
+                // --- HEADER ---
+                let html = `
                     <div class="p-3 border-b border-gray-100 ${highlightClass} flex justify-between items-start">
                         <div class="flex-grow">
                             <div class="flex items-center">
+                                <span class="text-xl mr-2">${typeIcon}</span>
                                 <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg leading-tight break-words">${list.title}</h2>
                                 ${roomBadge}
                             </div>
                         </div>
-                        <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1.5 -mr-1 rounded-full hover:bg-gray-50" title="Excluir Prateleira">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                        </button>
+                        <div class="flex space-x-1">
+                             <button class="toggle-list-btn text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50" title="${isCollapsed ? 'Expandir' : 'Recolher'}">
+                                <svg class="w-4 h-4 transform transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            </button>
+                             <button class="add-subdivision-btn text-gray-300 hover:text-green-500 transition-colors p-1.5 rounded-full hover:bg-green-50" title="Adicionar Divisão/Gaveta">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                            </button>
+                             <button class="move-list-btn text-gray-300 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50" title="Mover para outra sala">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                            </button>
+                            <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1.5 -mr-1 rounded-full hover:bg-gray-50" title="Excluir Armário/Caixa">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50/50" data-list-id="${list.id}"></div>
-                    <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
-                        <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium">
-                            <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item
+                    
+                    <div class="${isCollapsed ? 'hidden' : 'block'} flex flex-col flex-grow overflow-hidden">
+                        <div class="flex-grow overflow-y-auto p-2 bg-gray-50/50">
+                `;
+
+                // --- MAIN CARDS (No subdivision) ---
+                const mainCards = allCards.filter(c => !c.subdivision && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
+                
+                html += `<div class="cards-container subdivision-zone min-h-[40px]" data-list-id="${list.id}" data-subdivision="">`;
+                html += `</div>`; 
+
+                // --- SUBDIVISIONS ---
+                subdivisions.forEach(sub => {
+                   const subCards = allCards.filter(c => c.subdivision === sub && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
+                   html += `
+                        <div class="subdivision-wrapper mt-3">
+                            <div class="subdivision-header group">
+                                <span>${sub}</span>
+                                <div class="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button class="add-card-btn text-blue-400 hover:text-blue-600 p-0.5" data-sub="${sub}" title="Adicionar item aqui"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+                                    <button class="delete-sub-btn text-red-300 hover:text-red-500 p-0.5" data-sub="${sub}" title="Remover divisão"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                                </div>
+                            </div>
+                            <div class="cards-container subdivision-zone bg-gray-100/50 border border-gray-200/50" data-list-id="${list.id}" data-subdivision="${sub}">
+                            </div>
+                        </div>
+                   `;
+                });
+
+                html += `</div>`; // Close scrolling container
+
+                // --- FOOTER (Add Main Item) ---
+                html += `
+                        <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
+                            <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium" data-sub="">
+                                <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item geral
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                listEl.innerHTML = html;
+
+                // --- INJECT CARDS DOM ELEMENTS ---
+                // Only if NOT collapsed (performance)
+                if (!isCollapsed) {
+                    const createCardDOM = (card) => {
+                        const cardEl = document.createElement('div');
+                        cardEl.draggable = true;
+                        cardEl.dataset.cardId = card.id;
+                        cardEl.dataset.cardTitle = card.title;
+                        cardEl.dataset.cardQuantity = card.quantity || 1; 
+
+                        cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 hover:shadow-md transition-all group relative active:cursor-grabbing mb-2';
+                        
+                        const qtyBadge = (card.quantity && card.quantity > 1) 
+                            ? `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-blue-200 whitespace-nowrap">x${card.quantity}</span>` 
+                            : '';
+
+                        cardEl.innerHTML = `
+                            <div class="flex items-center justify-between pr-12">
+                                <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${card.title} ${qtyBadge}</p>
+                            </div>
+                            
+                            <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                 <button class="move-card-btn text-gray-300 hover:text-green-500 p-1 rounded hover:bg-green-50" title="Mover">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                </button>
+                                <button class="edit-card-btn text-gray-300 hover:text-blue-500 p-1 rounded hover:bg-blue-50" title="Editar">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                </button>
+                                <button class="delete-card-btn text-gray-300 hover:text-red-500 p-1 rounded hover:bg-red-50" title="Excluir">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                        return cardEl;
+                    };
+
+                    const mainContainer = listEl.querySelector(`.cards-container[data-subdivision=""]`);
+                    mainCards.forEach(c => mainContainer.appendChild(createCardDOM(c)));
+
+                    subdivisions.forEach(sub => {
+                        const subContainer = listEl.querySelector(`.cards-container[data-subdivision="${sub}"]`);
+                        const cards = allCards.filter(c => c.subdivision === sub && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
+                        cards.forEach(c => subContainer.appendChild(createCardDOM(c)));
+                    });
+                }
+
+                container.appendChild(listEl);
+            });
+        }
+
+        // --- RENDER REQUESTS ---
+        function renderRequests() {
+            const container = document.getElementById('requests-list');
+            const countEl = document.getElementById('requests-count');
+            container.innerHTML = '';
+            
+            const filteredRequests = searchTerm 
+                ? state.requests.filter(r => r.title.toLowerCase().includes(searchTerm))
+                : state.requests;
+
+            countEl.textContent = filteredRequests.length;
+
+            if (filteredRequests.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center text-gray-400 py-12"><span class="text-4xl mb-2">📋</span><p>Nenhuma solicitação encontrada</p></div>`;
+                return;
+            }
+
+            const statusColors = {
+                'requested': 'bg-gray-100 text-gray-800 border-gray-200',
+                'in_progress': 'bg-blue-50 text-blue-700 border-blue-200',
+                'purchasing': 'bg-orange-50 text-orange-700 border-orange-200',
+                'purchased': 'bg-purple-50 text-purple-700 border-purple-200',
+                'waiting': 'bg-cyan-50 text-cyan-700 border-cyan-200',
+                'completed': 'bg-green-50 text-green-700 border-green-200'
+            };
+
+            const statusLabels = {
+                'requested': 'Solicitado',
+                'in_progress': 'Em andamento',
+                'purchasing': 'Env. p/ Compra',
+                'purchased': 'Comprado',
+                'waiting': 'Aguard. Chegada',
+                'completed': 'Finalizado'
+            };
+
+            filteredRequests.forEach(req => {
+                const el = document.createElement('div');
+                el.className = 'bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:shadow-md cursor-pointer';
+                el.onclick = (e) => {
+                    if(!e.target.closest('button')) openRequestModal(req);
+                }
+
+                const statusClass = statusColors[req.status] || statusColors['requested'];
+                const statusLabel = statusLabels[req.status] || 'Desconhecido';
+                const dateStr = new Date(req.createdAt).toLocaleDateString('pt-BR');
+                const requesterName = req.requester || 'N/A';
+
+                el.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-gray-100 p-2 rounded-full text-lg">📝</div>
+                        <div>
+                            <h3 class="font-bold text-gray-800">${req.title} <span class="text-gray-500 text-sm font-normal">(${req.quantity} un)</span></h3>
+                            <p class="text-xs text-gray-500">Pedido por: <span class="font-medium">${requesterName}</span> • ${dateStr}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}">
+                            ${statusLabel}
+                        </span>
+                        <button class="delete-request-btn text-gray-300 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition" onclick="event.stopPropagation(); deleteRequest('${req.id}')">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                         </button>
                     </div>
                 `;
-                
-                const cardsCont = listEl.querySelector('.cards-container');
-                filteredCards.forEach(card => {
-                    const cardEl = document.createElement('div');
-                    cardEl.draggable = true;
-                    cardEl.dataset.cardId = card.id;
-                    cardEl.dataset.cardTitle = card.title;
-                    cardEl.dataset.cardQuantity = card.quantity || 1; // Guarda quantidade para edição
-
-                    cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 hover:shadow-md transition-all group relative active:cursor-grabbing';
-                    
-                    const qtyBadge = (card.quantity && card.quantity > 1) 
-                        ? `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-blue-200 whitespace-nowrap">x${card.quantity}</span>` 
-                        : '';
-
-                    cardEl.innerHTML = `
-                        <div class="flex items-center justify-between pr-12">
-                            <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${card.title} ${qtyBadge}</p>
-                        </div>
-                        
-                        <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button class="edit-card-btn text-gray-300 hover:text-blue-500 p-1 rounded hover:bg-blue-50" title="Editar">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                            </button>
-                            <button class="delete-card-btn text-gray-300 hover:text-red-500 p-1 rounded hover:bg-red-50" title="Excluir">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                            </button>
-                        </div>
-                    `;
-                    cardsCont.appendChild(cardEl);
-                });
-                container.appendChild(listEl);
+                container.appendChild(el);
             });
+        }
+
+        function openRequestModal(req) {
+            const statusLabels = {
+                'requested': 'Solicitado',
+                'in_progress': 'Em andamento',
+                'purchasing': 'Enviado para compra',
+                'purchased': 'Comprado',
+                'waiting': 'Aguardando chegada',
+                'completed': 'Finalizado'
+            };
+
+            showModal('Editar Solicitação', '', async (title, qty, type, status, requester) => {
+                // Update Logic
+                if(status !== req.status) {
+                    const newHistory = [...(req.history || [])];
+                    newHistory.push({
+                        from: req.status,
+                        to: status,
+                        date: Date.now()
+                    });
+                    await updateDoc(doc(db, requestsCollectionRef.path, req.id), { 
+                        title, 
+                        quantity: qty, 
+                        requester,
+                        status, 
+                        history: newHistory 
+                    });
+                } else {
+                    await updateDoc(doc(db, requestsCollectionRef.path, req.id), { title, quantity: qty, requester });
+                }
+            }, {
+                showQuantity: true,
+                initialTitle: req.title,
+                initialQuantity: req.quantity,
+                showRequester: true,
+                initialRequester: req.requester,
+                showStatus: true,
+                initialStatus: req.status,
+                showAudit: true,
+                auditHistory: req.history || []
+            });
+        }
+
+        window.deleteRequest = async function(id) {
+            if(confirm('Excluir esta solicitação?')) {
+                await deleteDoc(doc(db, requestsCollectionRef.path, id));
+            }
         }
 
         function handleSearch(e) {
             searchTerm = e.target.value.toLowerCase().trim();
             renderRoomsNav();
             renderBoard();
+            renderRequests();
         }
 
         // --- MODAL ---
-        function showModal(title, ph, onSave, options = { showQuantity: false, initialTitle: '', initialQuantity: 1 }) {
+        function showModal(title, ph, onSave, options = {}) {
             const m = document.getElementById('modal');
             const i = document.getElementById('modal-input');
             const b = document.getElementById('modal-save-btn');
+            
+            // Wrappers
             const qWrapper = document.getElementById('modal-quantity-wrapper');
+            const tWrapper = document.getElementById('modal-type-wrapper');
+            const rWrapper = document.getElementById('modal-requester-wrapper'); // Novo Wrapper Solicitante
+            const sWrapper = document.getElementById('modal-status-wrapper');
+            const aWrapper = document.getElementById('modal-audit-wrapper');
+            const moveWrapper = document.getElementById('modal-move-wrapper');
+            
+            // Inputs
             const qInput = document.getElementById('modal-quantity');
+            const tInput = document.getElementById('modal-type-value');
+            const rInput = document.getElementById('modal-requester'); // Novo Input Solicitante
+            const sInput = document.getElementById('modal-status');
+            const moveSelect = document.getElementById('modal-move-select');
+            const aList = document.getElementById('audit-list');
 
             document.getElementById('modal-title').textContent = title;
             i.placeholder = ph;
             i.value = options.initialTitle || '';
             
-            // Toggle Quantity Field
+            // Quantity
             if (options.showQuantity) {
                 qWrapper.classList.remove('hidden');
                 qInput.value = options.initialQuantity || 1;
             } else {
                 qWrapper.classList.add('hidden');
+            }
+
+            // Type
+            if (options.showType) {
+                tWrapper.classList.remove('hidden');
+                selectType(document.querySelector('[data-type="box"]')); 
+            } else {
+                tWrapper.classList.add('hidden');
+            }
+
+            // Requester (Novo)
+            if (options.showRequester) {
+                rWrapper.classList.remove('hidden');
+                rInput.value = options.initialRequester || '';
+            } else {
+                rWrapper.classList.add('hidden');
+            }
+
+            // Status
+            if (options.showStatus) {
+                sWrapper.classList.remove('hidden');
+                sInput.value = options.initialStatus || 'requested';
+            } else {
+                sWrapper.classList.add('hidden');
+            }
+
+            // Move Options (Rooms or Lists)
+            if (options.moveType) {
+                moveWrapper.classList.remove('hidden');
+                i.classList.add('hidden'); // Esconde input de texto ao mover
+                moveSelect.innerHTML = '';
+                
+                if (options.moveType === 'room') {
+                    // Mover Lista para Sala
+                    state.rooms.forEach(r => {
+                        if (r.id !== currentRoomId) { // Não mostrar sala atual
+                            const opt = document.createElement('option');
+                            opt.value = r.id;
+                            opt.textContent = r.title;
+                            moveSelect.appendChild(opt);
+                        }
+                    });
+                    if (moveSelect.children.length === 0) {
+                        const opt = document.createElement('option');
+                        opt.textContent = "Nenhuma outra sala disponível";
+                        moveSelect.appendChild(opt);
+                        moveSelect.disabled = true;
+                    } else moveSelect.disabled = false;
+
+                } else if (options.moveType === 'list') {
+                    // Mover Item para Lista (mostra: Sala - Lista)
+                    const currentListId = options.currentListId;
+                    state.lists.forEach(l => {
+                        if (l.id !== currentListId) {
+                            const rName = state.rooms.find(r => r.id === l.roomId)?.title || 'Geral';
+                            const opt = document.createElement('option');
+                            opt.value = l.id;
+                            opt.textContent = `${rName} > ${l.title}`;
+                            moveSelect.appendChild(opt);
+                        }
+                    });
+                     if (moveSelect.children.length === 0) {
+                        const opt = document.createElement('option');
+                        opt.textContent = "Nenhum outro local disponível";
+                        moveSelect.appendChild(opt);
+                        moveSelect.disabled = true;
+                    } else moveSelect.disabled = false;
+                }
+            } else {
+                moveWrapper.classList.add('hidden');
+                i.classList.remove('hidden'); // Mostra input normal
+            }
+
+            // Audit
+            if (options.showAudit && options.auditHistory) {
+                aWrapper.classList.remove('hidden');
+                aList.innerHTML = '';
+                
+                const statusLabels = {
+                    'requested': 'Solicitado',
+                    'in_progress': 'Em andamento',
+                    'purchasing': 'Em compra',
+                    'purchased': 'Comprado',
+                    'waiting': 'Aguardando',
+                    'completed': 'Finalizado'
+                };
+
+                let html = `
+                    <div class="timeline-item">
+                        <div class="timeline-dot bg-gray-300"></div>
+                        <p class="text-gray-800 font-medium">Criado</p>
+                        <p class="text-xs text-gray-400">Início do processo</p>
+                    </div>
+                `;
+
+                options.auditHistory.forEach(h => {
+                    const date = new Date(h.date).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    html += `
+                        <div class="timeline-item">
+                            <div class="timeline-dot active"></div>
+                            <p class="text-gray-800 font-medium">${statusLabels[h.from]} <span class="text-gray-400">➔</span> ${statusLabels[h.to]}</p>
+                            <p class="text-xs text-gray-400">${date}</p>
+                        </div>
+                    `;
+                });
+                aList.innerHTML = html;
+            } else {
+                aWrapper.classList.add('hidden');
             }
             
             const close = () => {
@@ -474,6 +930,12 @@
             };
 
             const triggerSave = async () => {
+                if (options.moveType) {
+                   if (!moveSelect.disabled) await onSave(moveSelect.value);
+                   close();
+                   return;
+                }
+
                 const value = i.value.trim();
                 if (!value) return;
                 
@@ -483,7 +945,15 @@
 
                 try {
                     const qty = options.showQuantity ? (parseInt(qInput.value) || 1) : 1;
-                    await onSave(value, qty);
+                    const type = options.showType ? tInput.value : null;
+                    const status = options.showStatus ? sInput.value : null;
+                    const requester = options.showRequester ? rInput.value.trim() : null;
+                    
+                    if (options.showStatus) await onSave(value, qty, type, status, requester);
+                    else if (options.showType) await onSave(value, type);
+                    else if (options.showRequester) await onSave(value, qty, null, null, requester); // Quick fix for new request
+                    else await onSave(value, qty);
+                    
                     close();
                 } catch (e) {
                     alert("Erro ao salvar: " + e.message);
@@ -501,7 +971,7 @@
             };
 
             m.classList.remove('hidden');
-            setTimeout(() => i.focus(), 100); 
+            if (!options.moveType) setTimeout(() => i.focus(), 100); 
         }
 
         // --- CRUD & HELPERS ---
@@ -515,15 +985,35 @@
             await batch.commit();
         }
         
-        async function addList(title) { return addDoc(listsCollectionRef, { title, order: state.lists.length, roomId: currentRoomId }); }
+        async function addList(title, type) { 
+            return addDoc(listsCollectionRef, { 
+                title, 
+                type: type || 'box', 
+                order: state.lists.length, 
+                roomId: currentRoomId,
+                subdivisions: [] // Nova estrutura para subdivisões
+            }); 
+        }
         
-        async function addCard(listId, title, quantity) {
+        async function addCard(listId, title, quantity, subdivision = "") {
             const currentCards = state.cards[listId] || [];
             return addDoc(cardsCollectionRef, { 
                 title, 
                 listId, 
                 quantity: quantity || 1,
-                order: currentCards.length 
+                order: currentCards.length,
+                subdivision // Campo para armazenar onde o card está (vazio = principal)
+            });
+        }
+
+        async function addRequest(title, quantity, requester) {
+            return addDoc(requestsCollectionRef, {
+                title,
+                quantity: quantity || 1,
+                requester: requester || 'Eu',
+                status: 'requested',
+                createdAt: Date.now(),
+                history: []
             });
         }
 
@@ -549,7 +1039,20 @@
                 const text = e.results[0][0].transcript;
                 overlay.classList.remove('hidden'); status.textContent = `Entendido: "${text}". Pensando...`;
                 const listNames = state.lists.filter(l => l.roomId === currentRoomId).map(l => l.title);
-                if(listNames.length===0) { alert("Crie caixas primeiro."); overlay.classList.add('hidden'); return; }
+                
+                if (currentTab === 'requests') {
+                    try {
+                        const res = await callGemini(`Extraia item e quantidade de: "${text}". Retorne JSON: {"item": "nome", "quantity": numero}`);
+                        if(res && res.item) {
+                            await addRequest(res.item, res.quantity || 1, 'Voz');
+                            status.textContent = "Solicitação criada!";
+                        } else status.textContent = "Não entendi.";
+                    } catch(err) { console.error(err); status.textContent = "Erro na IA."; }
+                    setTimeout(() => overlay.classList.add('hidden'), 1500);
+                    return;
+                }
+
+                if(listNames.length===0) { alert("Crie caixas/armários primeiro."); overlay.classList.add('hidden'); return; }
                 
                 try {
                     const res = await callGemini(`Sou assistente. Identifique itens e a caixa destino (dentre: ${JSON.stringify(listNames)}) na frase: "${text}". Retorne JSON: {"targetListName": "NomeDaCaixa", "items": ["item1", "item2"]}`);
@@ -558,10 +1061,10 @@
                         if(target) {
                             const batch = writeBatch(db);
                             const count = (state.cards[target.id]||[]).length;
-                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { title: t, listId: target.id, order: count+i, quantity: 1 }));
+                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { title: t, listId: target.id, order: count+i, quantity: 1, subdivision: "" }));
                             await batch.commit();
                             status.textContent = "Feito!";
-                        } else status.textContent = "Caixa não encontrada.";
+                        } else status.textContent = "Caixa/Armário não encontrado.";
                     } else status.textContent = "Não entendi.";
                 } catch(err) { console.error(err); status.textContent = "Erro na IA."; }
                 setTimeout(() => overlay.classList.add('hidden'), 1500);
@@ -569,38 +1072,119 @@
         }
 
         function setupUIListeners() {
-            document.getElementById('add-list-btn').onclick = () => {
-                if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
-                showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros...', addList);
+            document.getElementById('main-action-btn').onclick = () => {
+                if (currentTab === 'requests') {
+                    showModal('Nova Solicitação', 'Ex: Caneta azul...', (t, q, type, status, req) => addRequest(t, q, req), { showQuantity: true, showRequester: true });
+                } else {
+                    if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
+                    showModal('Novo Espaço', 'Nome (ex: Estante, Caixa Azul)...', addList, { showType: true });
+                }
             };
             const searchInput = document.getElementById('search-input');
             searchInput.addEventListener('input', handleSearch);
-            const container = document.getElementById('board-container');
+            const container = document.getElementById('view-spaces');
             
-            container.onclick = (e) => {
+            container.onclick = async (e) => {
                 const target = e.target;
                 
                 // Add Card Button
                 if (target.matches('.add-card-btn') || target.closest('.add-card-btn')) {
                     const btn = target.closest('.add-card-btn');
                     const listId = btn.closest('.list').dataset.listId;
-                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q), { showQuantity: true });
+                    const subdivision = btn.dataset.sub || ""; // Pega a subdivisão do botão clicado
+                    
+                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q, subdivision), { showQuantity: true });
                 }
                 
-                // Delete List
                 if (target.matches('.delete-list-btn') || target.closest('.delete-list-btn')) {
                     const btn = target.closest('.delete-list-btn');
                     const id = btn.closest('.list').dataset.listId;
-                    if(confirm("Deletar esta prateleira?")) deleteDoc(doc(db, listsCollectionRef.path, id));
+                    if(confirm("Deletar este armário/caixa?")) deleteDoc(doc(db, listsCollectionRef.path, id));
+                }
+
+                // NEW: Add Subdivision
+                if (target.matches('.add-subdivision-btn') || target.closest('.add-subdivision-btn')) {
+                    const btn = target.closest('.add-subdivision-btn');
+                    const listId = btn.closest('.list').dataset.listId;
+                    showModal('Nova Divisão', 'Nome (ex: Gaveta 1)...', async (name) => {
+                        await updateDoc(doc(db, listsCollectionRef.path, listId), {
+                            subdivisions: arrayUnion(name)
+                        });
+                    });
+                }
+
+                // NEW: Delete Subdivision
+                if (target.matches('.delete-sub-btn') || target.closest('.delete-sub-btn')) {
+                    const btn = target.closest('.delete-sub-btn');
+                    const listId = btn.closest('.list').dataset.listId;
+                    const subName = btn.dataset.sub;
+                    if(confirm(`Remover a divisão "${subName}"? Itens voltarão para a área principal.`)) {
+                         // 1. Remove subdivision from list
+                        await updateDoc(doc(db, listsCollectionRef.path, listId), {
+                            subdivisions: arrayRemove(subName)
+                        });
+                        // 2. Move cards in that subdivision to main area
+                        // This logic is ideally transactional or done via batch, implementing simpler version here:
+                        // Cards will simply appear in "Main" because they still have listId but their subdivision will no longer match a render section.
+                        // However, to be clean, let's update them to empty string.
+                        // For large datasets, use a Cloud Function. Here we do client-side batch.
+                        const batch = writeBatch(db);
+                        const cardsInSub = state.cards[listId].filter(c => c.subdivision === subName);
+                        cardsInSub.forEach(c => {
+                             batch.update(doc(db, cardsCollectionRef.path, c.id), { subdivision: "" });
+                        });
+                        await batch.commit();
+                    }
+                }
+
+                // Mover Lista (Armário)
+                if (target.matches('.move-list-btn') || target.closest('.move-list-btn')) {
+                    const btn = target.closest('.move-list-btn');
+                    const listEl = btn.closest('.list');
+                    const listId = listEl.dataset.listId;
+                    const listName = listEl.querySelector('.list-title').textContent;
+
+                    showModal(`Mover "${listName}"`, '', async (newRoomId) => {
+                        await updateDoc(doc(db, listsCollectionRef.path, listId), { roomId: newRoomId });
+                    }, { moveType: 'room' });
+                }
+
+                // Toggle Collapse/Expand
+                if (target.matches('.toggle-list-btn') || target.closest('.toggle-list-btn')) {
+                    const btn = target.closest('.toggle-list-btn');
+                    const listId = btn.closest('.list').dataset.listId;
+                    
+                    if (collapsedLists.has(listId)) {
+                        collapsedLists.delete(listId);
+                    } else {
+                        collapsedLists.add(listId);
+                    }
+                    renderBoard(); // Re-render to update UI
                 }
                 
-                // Delete Card
                 if (target.matches('.delete-card-btn') || target.closest('.delete-card-btn')) {
                     const btn = target.closest('.delete-card-btn');
                     deleteDoc(doc(db, cardsCollectionRef.path, btn.closest('.card').dataset.cardId));
                 }
 
-                // Edit Card Button (Pencil Icon)
+                // Mover Item (Card)
+                if (target.matches('.move-card-btn') || target.closest('.move-card-btn')) {
+                    const btn = target.closest('.move-card-btn');
+                    const card = btn.closest('.card');
+                    const cardId = card.dataset.cardId;
+                    const cardName = card.dataset.cardTitle;
+                    const currentListId = card.closest('.list').dataset.listId;
+
+                    showModal(`Mover "${cardName}"`, '', async (newListId) => {
+                        const targetList = state.cards[newListId] || [];
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { 
+                            listId: newListId,
+                            order: targetList.length,
+                            subdivision: "" // Reset subdivision when moving to new list
+                        });
+                    }, { moveType: 'list', currentListId: currentListId });
+                }
+
                 if (target.matches('.edit-card-btn') || target.closest('.edit-card-btn')) {
                     const btn = target.closest('.edit-card-btn');
                     const card = btn.closest('.card');
@@ -617,20 +1201,15 @@
             // Double Click Handling
             container.ondblclick = (e) => {
                 const target = e.target;
-                
-                // Edit List Title (Inline)
                 if (target.classList.contains('list-title')) {
                     const listId = target.closest('.list').dataset.listId;
                     editElement(target, async (newVal) => await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal }));
                 }
-                
-                // Edit Card (Via Modal) on title double click
                 if (target.classList.contains('card-title') || target.closest('.card-title')) {
                     const card = target.closest('.card');
                     const cardId = card.dataset.cardId;
                     const currentTitle = card.dataset.cardTitle;
                     const currentQty = parseInt(card.dataset.cardQuantity) || 1;
-
                     showModal('Editar Item', 'Nome do item...', async (t, q) => {
                         await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: t, quantity: q });
                     }, { showQuantity: true, initialTitle: currentTitle, initialQuantity: currentQty });
@@ -646,57 +1225,57 @@
                 const card = e.target.closest('.card');
                 if(card) { card.classList.remove('dragging'); draggedId = null; } 
             });
-            container.addEventListener('dragover', e => { e.preventDefault(); const zone = e.target.closest('.cards-container'); if(zone) zone.classList.add('bg-blue-50'); });
-            container.addEventListener('dragleave', e => { const zone = e.target.closest('.cards-container'); if(zone) zone.classList.remove('bg-blue-50'); });
+            container.addEventListener('dragover', e => { 
+                e.preventDefault(); 
+                const zone = e.target.closest('.subdivision-zone'); // Updated selector
+                if(zone) zone.classList.add('drag-over'); 
+            });
+            container.addEventListener('dragleave', e => { 
+                const zone = e.target.closest('.subdivision-zone'); 
+                if(zone) zone.classList.remove('drag-over'); 
+            });
             container.addEventListener('drop', async e => {
                 e.preventDefault();
-                const zone = e.target.closest('.cards-container');
-                if(zone) zone.classList.remove('bg-blue-50');
+                const zone = e.target.closest('.subdivision-zone');
+                if(zone) zone.classList.remove('drag-over');
                 if(!zone || !draggedId) return;
+                
                 const targetListId = zone.dataset.listId;
+                const targetSub = zone.dataset.subdivision; // Capture target subdivision
+                
                 const batch = writeBatch(db);
-                batch.update(doc(db, cardsCollectionRef.path, draggedId), { listId: targetListId, order: (state.cards[targetListId] || []).length });
+                // We don't have exact order logic inside subdivisions yet, simply appending
+                // Could be improved by counting items in that subdivision
+                batch.update(doc(db, cardsCollectionRef.path, draggedId), { 
+                    listId: targetListId, 
+                    subdivision: targetSub,
+                    order: Date.now() // Simple way to push to end for now
+                });
                 await batch.commit();
             });
         }
 
-        // Função editElement corrigida
         function editElement(element, saveCallback) {
             const currentText = element.textContent.replace(/x\d+$/, '').trim(); 
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentText;
             input.className = 'w-full p-1 border rounded text-sm focus:outline-blue-500';
-            
             element.style.display = 'none';
             element.parentNode.insertBefore(input, element);
             input.focus();
             input.select();
-
-            let isSaving = false; // Flag de controle
-
+            let isSaving = false; 
             const finish = async (shouldSave) => {
-                if (isSaving) return; // Evita execução dupla
+                if (isSaving) return; 
                 isSaving = true;
-
                 const newVal = input.value.trim();
-                
-                // Remove input de forma segura
-                if (input.parentNode) {
-                    input.remove();
-                }
+                if (input.parentNode) input.remove();
                 element.style.display = '';
-
-                if (shouldSave && newVal && newVal !== currentText) {
-                    await saveCallback(newVal);
-                }
+                if (shouldSave && newVal && newVal !== currentText) await saveCallback(newVal);
             };
-
             input.onblur = () => finish(true);
-            input.onkeydown = (e) => { 
-                if(e.key === 'Enter') finish(true); 
-                if(e.key === 'Escape') finish(false); 
-            };
+            input.onkeydown = (e) => { if(e.key === 'Enter') finish(true); if(e.key === 'Escape') finish(false); };
         }
 
         setupUIListeners();
