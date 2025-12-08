@@ -1,0 +1,708 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Organiza Aí - Gestão de Espaços</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Scrollbar customizada suave */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .list { 
+            scroll-margin-top: 140px; 
+        }
+        
+        .card.dragging { opacity: 0.5; transform: rotate(3deg) scale(1.02); }
+        .drag-over { background-color: rgba(59, 130, 246, 0.1); border: 2px dashed #60a5fa; }
+        
+        /* REMOVIDO O !important DAQUI QUE CAUSAVA O ERRO NO DESKTOP */
+        /* .hidden { display: none !important; } */
+        
+        /* Utilitário para esconder scrollbar horizontal na navegação */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Animação suave para modal */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+        .mic-listening::before { content: ''; position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-radius: 50%; background-color: #ef4444; z-index: -1; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; }
+    </style>
+</head>
+<body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden flex flex-col">
+
+    <!-- Overlay de Processamento de Voz -->
+    <div id="voice-overlay" class="fixed inset-0 z-[70] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-opacity">
+        <div class="bg-white p-8 rounded-full mb-6 shadow-2xl relative">
+            <div class="absolute inset-0 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+            <span class="text-4xl">🤖</span>
+        </div>
+        <h3 class="text-white text-xl font-bold mb-2">Processando comando...</h3>
+        <p id="voice-status-text" class="text-gray-300 text-sm text-center px-4">O Gemini está organizando seus itens.</p>
+    </div>
+
+    <!-- TELA DE LOGIN -->
+    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 px-4">
+        <div class="bg-white p-8 rounded-xl shadow-xl w-full max-w-sm modal-animate">
+            <div class="flex justify-center mb-6"><span class="text-5xl">📦</span></div>
+            <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Organiza Aí</h1>
+            <p class="text-gray-500 text-center mb-6 text-sm">Organize suas coisas, em qualquer lugar.</p>
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="auth-email" required class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                    <input type="password" id="auth-password" required minlength="6" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••••">
+                </div>
+                <div id="auth-error" class="text-red-500 text-sm text-center hidden bg-red-50 p-2 rounded"></div>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition duration-200 shadow-md">Entrar</button>
+            </form>
+            <div class="mt-6 text-center text-sm">
+                <p id="toggle-auth-text" class="text-gray-600">Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="app-view" class="hidden flex flex-col h-full w-full relative">
+        <div class="flex-shrink-0 z-30 bg-white shadow-sm sticky top-0 w-full">
+            
+            <!-- CABEÇALHO -->
+            <header class="p-3 border-b border-gray-100 relative">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
+                    
+                    <div class="flex items-center justify-start w-full sm:w-auto">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-2xl">📦</span>
+                            <h1 class="text-lg font-bold text-gray-800">Organiza Aí</h1>
+                        </div>
+                    </div>
+
+                    <!-- BOTÃO SAIR MOBILE -->
+                    <button id="logout-btn" class="sm:hidden absolute top-3 right-3 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-2 rounded-lg shadow-sm transition z-50 flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                        SAIR
+                    </button>
+
+                    <div class="relative w-full sm:w-96 mt-1 sm:mt-0">
+                        <input type="text" id="search-input" placeholder="Buscar item..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
+                        <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+
+                    <!-- BOTÕES DESKTOP -->
+                    <div class="hidden sm:flex items-center space-x-3">
+                        <span id="user-display" class="text-xs text-gray-500 font-medium truncate max-w-[150px]"></span>
+                        
+                        <button id="mic-btn-desktop" class="bg-blue-100 text-blue-600 hover:bg-blue-200 p-2 rounded-lg transition" title="Comando de Voz">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        </button>
+
+                        <button id="logout-btn-desktop" class="flex items-center text-sm font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition shadow-sm">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            SAIR
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <nav class="border-b border-gray-200 bg-white">
+                <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container"></div>
+            </nav>
+        </div>
+
+        <main id="board-container" class="flex-grow grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 p-3 sm:p-6 items-start content-start overflow-y-auto bg-gray-50 pb-32 sm:pb-6"></main>
+        
+        <div class="p-4 flex-shrink-0 flex justify-center items-center bg-white/90 backdrop-blur-sm border-t border-gray-200 z-40 fixed bottom-0 w-full sm:static sm:w-auto sm:bg-transparent sm:border-0 gap-3">
+            <button id="add-list-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition flex items-center justify-center space-x-2 flex-grow sm:flex-grow-0 max-w-md transform active:scale-95">
+                <span class="text-xl leading-none pb-1">+</span> <span>Nova Prateleira / Caixa</span>
+            </button>
+            <button id="mic-btn-mobile" class="sm:hidden w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg flex items-center justify-center transition transform active:scale-95 flex-shrink-0">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal Universal (Atualizado com Quantidade) -->
+    <div id="modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center hidden z-[60] p-4 transition-opacity">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl modal-animate">
+            <h2 id="modal-title" class="text-xl font-bold mb-1 text-gray-800">Novo Item</h2>
+            <p class="text-xs text-gray-400 mb-4 uppercase tracking-wide font-semibold">Preencha os detalhes abaixo</p>
+            <input type="text" id="modal-input" class="w-full border border-gray-300 bg-gray-50 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all text-gray-800 placeholder-gray-400" placeholder="Digite o nome..." autocomplete="off">
+            <div id="modal-quantity-wrapper" class="hidden mb-6">
+                <label class="block text-xs text-gray-500 font-bold uppercase tracking-wide mb-1 ml-1">Quantidade</label>
+                <div class="flex items-center border border-gray-300 bg-gray-50 rounded-xl overflow-hidden">
+                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepDown()">-</button>
+                    <input type="number" id="modal-quantity" class="w-full p-3 text-center bg-transparent focus:outline-none text-gray-800 font-semibold" value="1" min="1">
+                    <button type="button" class="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition" onclick="document.getElementById('modal-quantity').stepUp()">+</button>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-3">
+                <button id="modal-cancel-btn" class="px-5 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-xl transition">Cancelar</button>
+                <button id="modal-save-btn" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-lg shadow-blue-200 transition transform active:scale-95">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, doc, onSnapshot, addDoc, deleteDoc, updateDoc, query, orderBy, where, writeBatch, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- GEMINI API ---
+        const apiKey = ""; 
+        
+        async function callGemini(prompt) {
+            if (!apiKey) { alert("Configure a API Key do Gemini no código."); return null; }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                let cleanText = text;
+                if (cleanText) {
+                    cleanText = cleanText.replace(/```json/g, '');
+                    cleanText = cleanText.replace(/```/g, '');
+                    cleanText = cleanText.trim();
+                    return JSON.parse(cleanText);
+                }
+                return null;
+            } catch (error) { console.error("Gemini Error:", error); throw error; }
+        }
+
+        // --- FIREBASE CONFIG ---
+		// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+		const firebaseConfig = {
+		  apiKey: "AIzaSyAg4LbvXOoiYC0lZcKATYIK_kCCLQdXtrw",
+		  authDomain: "firello-leadec.firebaseapp.com",
+		  projectId: "firello-leadec",
+		  storageBucket: "firello-leadec.firebasestorage.app",
+		  messagingSenderId: "495667870886",
+		  appId: "1:495667870886:web:b458feb63022de0d81c867",
+		  measurementId: "G-ZZK6ZGQJ22"
+		};
+        const appId = 'firello-72b82';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let userId = null;
+        let listsCollectionRef, cardsCollectionRef, roomsCollectionRef;
+        let unsubscribeLists = null, unsubscribeRooms = null;
+        let unsubscribeCards = [];
+
+        // --- AUTH ---
+        let isLoginMode = true;
+        
+        function toggleAuthMode(e) {
+            e.preventDefault(); 
+            isLoginMode = !isLoginMode; 
+            document.getElementById('auth-error').classList.add('hidden');
+            document.getElementById('auth-form').reset();
+            
+            document.getElementById('auth-title').textContent = isLoginMode ? "Entrar na sua conta" : "Criar nova conta";
+            document.getElementById('auth-submit-btn').textContent = isLoginMode ? "Entrar" : "Cadastrar";
+            document.getElementById('toggle-auth-text').innerHTML = isLoginMode 
+                ? `Não tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Cadastre-se</button>` 
+                : `Já tem uma conta? <button id="toggle-auth-btn" class="text-blue-600 hover:underline font-semibold">Entrar</button>`;
+            
+            document.getElementById('toggle-auth-btn').addEventListener('click', toggleAuthMode);
+        }
+
+        document.getElementById('toggle-auth-btn').addEventListener('click', toggleAuthMode);
+
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const err = document.getElementById('auth-error');
+            err.classList.add('hidden');
+            try {
+                if (isLoginMode) await signInWithEmailAndPassword(auth, email, password);
+                else await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                err.classList.remove('hidden');
+                err.textContent = "Erro: " + error.message;
+            }
+        });
+
+        const logout = () => signOut(auth);
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('logout-btn-desktop').addEventListener('click', logout);
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                userId = user.uid;
+                document.getElementById('user-display').textContent = user.email;
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('app-view').classList.remove('hidden');
+                setupFirestoreListeners();
+            } else {
+                userId = null;
+                document.getElementById('auth-screen').classList.remove('hidden');
+                document.getElementById('app-view').classList.add('hidden');
+                document.getElementById('board-container').innerHTML = '';
+                if(unsubscribeLists) unsubscribeLists();
+                if(unsubscribeRooms) unsubscribeRooms();
+                unsubscribeCards.forEach(u => u());
+            }
+        });
+
+        // --- APP LOGIC ---
+        let state = { rooms: [], lists: [], cards: {} };
+        let currentRoomId = 'default';
+        let searchTerm = '';
+
+        function setupFirestoreListeners() {
+            if (!userId) return;
+            const basePath = `artifacts/${appId}/users/${userId}`;
+            roomsCollectionRef = collection(db, `${basePath}/rooms`);
+            listsCollectionRef = collection(db, `${basePath}/lists`);
+            cardsCollectionRef = collection(db, `${basePath}/cards`);
+            
+            unsubscribeRooms = onSnapshot(query(roomsCollectionRef, orderBy("createdAt")), snapshot => {
+                state.rooms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (state.rooms.length === 0 && !snapshot.metadata.hasPendingWrites) {
+                    createDefaultRoom();
+                } else if (!state.rooms.find(r => r.id === currentRoomId) && state.rooms.length > 0) {
+                    currentRoomId = state.rooms[0].id;
+                }
+                renderRoomsNav();
+                renderBoard();
+            });
+
+            unsubscribeLists = onSnapshot(query(listsCollectionRef, orderBy("order")), snapshot => {
+                state.lists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderBoard();
+                unsubscribeCards.forEach(unsub => unsub());
+                unsubscribeCards = [];
+                state.lists.forEach(list => setupCardListener(list.id));
+            });
+        }
+
+        async function createDefaultRoom() {
+            const defaultRoom = { title: "Geral", createdAt: Date.now() };
+            const docRef = await addDoc(roomsCollectionRef, defaultRoom);
+            currentRoomId = docRef.id;
+        }
+
+        function setupCardListener(listId) {
+            const unsub = onSnapshot(query(cardsCollectionRef, where("listId", "==", listId)), snapshot => {
+                const cards = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                cards.sort((a, b) => a.order - b.order);
+                state.cards[listId] = cards;
+                renderBoard();
+            });
+            unsubscribeCards.push(unsub);
+        }
+
+        // --- RENDER NAV (ROOMS) ---
+        function renderRoomsNav() {
+            const container = document.getElementById('rooms-container');
+            container.innerHTML = '';
+            state.rooms.forEach(room => {
+                const isActive = room.id === currentRoomId && !searchTerm;
+                const btn = document.createElement('button');
+                btn.className = `whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all border flex items-center space-x-2 ${isActive ? 'bg-blue-600 text-white shadow-md transform scale-105' : 'bg-white text-gray-600 hover:bg-gray-50'}`;
+                
+                const span = document.createElement('span');
+                span.textContent = room.title;
+                btn.appendChild(span);
+
+                if (isActive && state.rooms.length > 1) {
+                    const closeIcon = document.createElement('span');
+                    closeIcon.innerHTML = '&times;';
+                    closeIcon.className = 'ml-2 opacity-70 hover:opacity-100 cursor-pointer text-lg leading-none';
+                    closeIcon.onclick = (e) => {
+                        e.stopPropagation();
+                        if(confirm(`Apagar a sala "${room.title}"?`)) deleteRoom(room.id);
+                    };
+                    btn.appendChild(closeIcon);
+                }
+
+                btn.onclick = () => {
+                    currentRoomId = room.id;
+                    if (searchTerm) {
+                        searchTerm = '';
+                        document.getElementById('search-input').value = '';
+                    }
+                    renderRoomsNav();
+                    renderBoard();
+                };
+                container.appendChild(btn);
+            });
+
+            const addBtn = document.createElement('button');
+            addBtn.className = 'whitespace-nowrap px-4 py-2 rounded-full text-sm font-bold text-blue-500 bg-blue-50 hover:bg-blue-100 border border-dashed border-blue-200 transition-colors flex items-center';
+            addBtn.innerHTML = '<span class="mr-1 text-lg leading-none">+</span> Sala';
+            addBtn.onclick = () => showModal('Nova Sala/Cômodo', 'Ex: Garagem, Quarto...', addRoom);
+            container.appendChild(addBtn);
+        }
+
+        // --- RENDER BOARD ---
+        function renderBoard() {
+            const container = document.getElementById('board-container');
+            container.innerHTML = '';
+
+            let listsToShow = [];
+            if (searchTerm) {
+                listsToShow = state.lists.filter(list => {
+                    const listMatches = list.title.toLowerCase().includes(searchTerm);
+                    const cards = state.cards[list.id] || [];
+                    const hasCardMatches = cards.some(c => c.title.toLowerCase().includes(searchTerm));
+                    return listMatches || hasCardMatches;
+                });
+                if (listsToShow.length === 0) {
+                    container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20"><span class="text-4xl mb-2">🔍</span><p>Nenhum item encontrado para "${searchTerm}"</p></div>`;
+                    return;
+                }
+            } else {
+                listsToShow = state.lists.filter(list => list.roomId === currentRoomId || (!list.roomId && currentRoomId === state.rooms[0]?.id));
+            }
+
+            if (listsToShow.length === 0 && !searchTerm) {
+                container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center text-gray-400 py-20 opacity-50"><span class="text-6xl mb-4">📦</span><p class="text-lg font-medium">Esta sala está vazia</p><p class="text-sm">Toque em "+" abaixo para adicionar uma prateleira</p></div>`;
+                return;
+            }
+
+            listsToShow.forEach(list => {
+                const cards = (state.cards[list.id] || []);
+                const filteredCards = searchTerm 
+                    ? cards.filter(c => c.title.toLowerCase().includes(searchTerm) || list.title.toLowerCase().includes(searchTerm))
+                    : cards;
+
+                const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
+                const listEl = document.createElement('div');
+                listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col max-h-[60vh] sm:max-h-[75vh]';
+                listEl.dataset.listId = list.id;
+                
+                const highlightClass = (searchTerm && list.title.toLowerCase().includes(searchTerm)) ? 'bg-yellow-50' : '';
+                const roomBadge = searchTerm ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2 border border-gray-200">${roomName}</span>` : '';
+
+                listEl.innerHTML = `
+                    <div class="p-3 border-b border-gray-100 ${highlightClass} flex justify-between items-start">
+                        <div class="flex-grow">
+                            <div class="flex items-center">
+                                <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg leading-tight break-words">${list.title}</h2>
+                                ${roomBadge}
+                            </div>
+                        </div>
+                        <button class="delete-list-btn text-gray-300 hover:text-red-500 transition-colors p-1.5 -mr-1 rounded-full hover:bg-gray-50" title="Excluir Prateleira">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </div>
+                    <div class="cards-container flex-grow overflow-y-auto p-2 space-y-2 min-h-[50px] bg-gray-50/50" data-list-id="${list.id}"></div>
+                    <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
+                        <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium">
+                            <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item
+                        </button>
+                    </div>
+                `;
+                
+                const cardsCont = listEl.querySelector('.cards-container');
+                filteredCards.forEach(card => {
+                    const cardEl = document.createElement('div');
+                    cardEl.draggable = true;
+                    cardEl.dataset.cardId = card.id;
+                    cardEl.dataset.cardTitle = card.title;
+                    cardEl.dataset.cardQuantity = card.quantity || 1; // Guarda quantidade para edição
+
+                    cardEl.className = 'card bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab hover:border-blue-300 hover:shadow-md transition-all group relative active:cursor-grabbing';
+                    
+                    const qtyBadge = (card.quantity && card.quantity > 1) 
+                        ? `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-blue-200 whitespace-nowrap">x${card.quantity}</span>` 
+                        : '';
+
+                    cardEl.innerHTML = `
+                        <div class="flex items-center justify-between pr-12">
+                            <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${card.title} ${qtyBadge}</p>
+                        </div>
+                        
+                        <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="edit-card-btn text-gray-300 hover:text-blue-500 p-1 rounded hover:bg-blue-50" title="Editar">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button class="delete-card-btn text-gray-300 hover:text-red-500 p-1 rounded hover:bg-red-50" title="Excluir">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                    `;
+                    cardsCont.appendChild(cardEl);
+                });
+                container.appendChild(listEl);
+            });
+        }
+
+        function handleSearch(e) {
+            searchTerm = e.target.value.toLowerCase().trim();
+            renderRoomsNav();
+            renderBoard();
+        }
+
+        // --- MODAL ---
+        function showModal(title, ph, onSave, options = { showQuantity: false, initialTitle: '', initialQuantity: 1 }) {
+            const m = document.getElementById('modal');
+            const i = document.getElementById('modal-input');
+            const b = document.getElementById('modal-save-btn');
+            const qWrapper = document.getElementById('modal-quantity-wrapper');
+            const qInput = document.getElementById('modal-quantity');
+
+            document.getElementById('modal-title').textContent = title;
+            i.placeholder = ph;
+            i.value = options.initialTitle || '';
+            
+            // Toggle Quantity Field
+            if (options.showQuantity) {
+                qWrapper.classList.remove('hidden');
+                qInput.value = options.initialQuantity || 1;
+            } else {
+                qWrapper.classList.add('hidden');
+            }
+            
+            const close = () => {
+                m.classList.add('hidden');
+                b.onclick = null;
+                i.onkeydown = null;
+            };
+
+            const triggerSave = async () => {
+                const value = i.value.trim();
+                if (!value) return;
+                
+                const originalText = b.textContent;
+                b.textContent = 'Salvando...';
+                b.disabled = true;
+
+                try {
+                    const qty = options.showQuantity ? (parseInt(qInput.value) || 1) : 1;
+                    await onSave(value, qty);
+                    close();
+                } catch (e) {
+                    alert("Erro ao salvar: " + e.message);
+                } finally {
+                    b.textContent = originalText;
+                    b.disabled = false;
+                }
+            };
+
+            b.onclick = () => triggerSave();
+            document.getElementById('modal-cancel-btn').onclick = close;
+            i.onkeydown = (e) => {
+                if (e.key === 'Enter') triggerSave();
+                if (e.key === 'Escape') close();
+            };
+
+            m.classList.remove('hidden');
+            setTimeout(() => i.focus(), 100); 
+        }
+
+        // --- CRUD & HELPERS ---
+        async function addRoom(title) { return addDoc(roomsCollectionRef, { title, createdAt: Date.now() }); }
+        
+        async function deleteRoom(roomId) {
+            const batch = writeBatch(db);
+            batch.delete(doc(db, roomsCollectionRef.path, roomId));
+            const listsSnapshot = await getDocs(query(listsCollectionRef, where("roomId", "==", roomId)));
+            listsSnapshot.forEach(listDoc => batch.delete(listDoc.ref));
+            await batch.commit();
+        }
+        
+        async function addList(title) { return addDoc(listsCollectionRef, { title, order: state.lists.length, roomId: currentRoomId }); }
+        
+        async function addCard(listId, title, quantity) {
+            const currentCards = state.cards[listId] || [];
+            return addDoc(cardsCollectionRef, { 
+                title, 
+                listId, 
+                quantity: quantity || 1,
+                order: currentCards.length 
+            });
+        }
+
+        // --- VOICE SETUP ---
+        function setupVoiceRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) return;
+            const recognition = new SpeechRecognition(); recognition.lang = 'pt-BR'; recognition.continuous = false;
+            
+            const micDesktop = document.getElementById('mic-btn-desktop');
+            const micMobile = document.getElementById('mic-btn-mobile');
+            const overlay = document.getElementById('voice-overlay');
+            const status = document.getElementById('voice-status-text');
+
+            const start = () => { recognition.start(); if(micDesktop) micDesktop.classList.add('mic-listening','bg-red-100'); if(micMobile) micMobile.classList.add('mic-listening','bg-red-600'); };
+            const stop = () => { if(micDesktop) micDesktop.classList.remove('mic-listening','bg-red-100'); if(micMobile) micMobile.classList.remove('mic-listening','bg-red-600'); };
+
+            if(micDesktop) micDesktop.onclick = start;
+            if(micMobile) micMobile.onclick = start;
+            recognition.onend = stop;
+
+            recognition.onresult = async (e) => {
+                const text = e.results[0][0].transcript;
+                overlay.classList.remove('hidden'); status.textContent = `Entendido: "${text}". Pensando...`;
+                const listNames = state.lists.filter(l => l.roomId === currentRoomId).map(l => l.title);
+                if(listNames.length===0) { alert("Crie caixas primeiro."); overlay.classList.add('hidden'); return; }
+                
+                try {
+                    const res = await callGemini(`Sou assistente. Identifique itens e a caixa destino (dentre: ${JSON.stringify(listNames)}) na frase: "${text}". Retorne JSON: {"targetListName": "NomeDaCaixa", "items": ["item1", "item2"]}`);
+                    if(res && res.targetListName) {
+                        const target = state.lists.find(l => l.roomId === currentRoomId && l.title.toLowerCase() === res.targetListName.toLowerCase());
+                        if(target) {
+                            const batch = writeBatch(db);
+                            const count = (state.cards[target.id]||[]).length;
+                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { title: t, listId: target.id, order: count+i, quantity: 1 }));
+                            await batch.commit();
+                            status.textContent = "Feito!";
+                        } else status.textContent = "Caixa não encontrada.";
+                    } else status.textContent = "Não entendi.";
+                } catch(err) { console.error(err); status.textContent = "Erro na IA."; }
+                setTimeout(() => overlay.classList.add('hidden'), 1500);
+            };
+        }
+
+        function setupUIListeners() {
+            document.getElementById('add-list-btn').onclick = () => {
+                if (!currentRoomId) return alert("Crie ou selecione uma sala primeiro.");
+                showModal('Nova Prateleira / Caixa', 'Ex: Estante Livros...', addList);
+            };
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', handleSearch);
+            const container = document.getElementById('board-container');
+            
+            container.onclick = (e) => {
+                const target = e.target;
+                
+                // Add Card Button
+                if (target.matches('.add-card-btn') || target.closest('.add-card-btn')) {
+                    const btn = target.closest('.add-card-btn');
+                    const listId = btn.closest('.list').dataset.listId;
+                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q), { showQuantity: true });
+                }
+                
+                // Delete List
+                if (target.matches('.delete-list-btn') || target.closest('.delete-list-btn')) {
+                    const btn = target.closest('.delete-list-btn');
+                    const id = btn.closest('.list').dataset.listId;
+                    if(confirm("Deletar esta prateleira?")) deleteDoc(doc(db, listsCollectionRef.path, id));
+                }
+                
+                // Delete Card
+                if (target.matches('.delete-card-btn') || target.closest('.delete-card-btn')) {
+                    const btn = target.closest('.delete-card-btn');
+                    deleteDoc(doc(db, cardsCollectionRef.path, btn.closest('.card').dataset.cardId));
+                }
+
+                // Edit Card Button (Pencil Icon)
+                if (target.matches('.edit-card-btn') || target.closest('.edit-card-btn')) {
+                    const btn = target.closest('.edit-card-btn');
+                    const card = btn.closest('.card');
+                    const cardId = card.dataset.cardId;
+                    const currentTitle = card.dataset.cardTitle;
+                    const currentQty = parseInt(card.dataset.cardQuantity) || 1;
+
+                    showModal('Editar Item', 'Nome do item...', async (t, q) => {
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: t, quantity: q });
+                    }, { showQuantity: true, initialTitle: currentTitle, initialQuantity: currentQty });
+                }
+            };
+
+            // Double Click Handling
+            container.ondblclick = (e) => {
+                const target = e.target;
+                
+                // Edit List Title (Inline)
+                if (target.classList.contains('list-title')) {
+                    const listId = target.closest('.list').dataset.listId;
+                    editElement(target, async (newVal) => await updateDoc(doc(db, listsCollectionRef.path, listId), { title: newVal }));
+                }
+                
+                // Edit Card (Via Modal) on title double click
+                if (target.classList.contains('card-title') || target.closest('.card-title')) {
+                    const card = target.closest('.card');
+                    const cardId = card.dataset.cardId;
+                    const currentTitle = card.dataset.cardTitle;
+                    const currentQty = parseInt(card.dataset.cardQuantity) || 1;
+
+                    showModal('Editar Item', 'Nome do item...', async (t, q) => {
+                        await updateDoc(doc(db, cardsCollectionRef.path, cardId), { title: t, quantity: q });
+                    }, { showQuantity: true, initialTitle: currentTitle, initialQuantity: currentQty });
+                }
+            };
+
+            let draggedId = null;
+            container.addEventListener('dragstart', e => { 
+                const card = e.target.closest('.card');
+                if(card) { draggedId = card.dataset.cardId; card.classList.add('dragging'); } 
+            });
+            container.addEventListener('dragend', e => { 
+                const card = e.target.closest('.card');
+                if(card) { card.classList.remove('dragging'); draggedId = null; } 
+            });
+            container.addEventListener('dragover', e => { e.preventDefault(); const zone = e.target.closest('.cards-container'); if(zone) zone.classList.add('bg-blue-50'); });
+            container.addEventListener('dragleave', e => { const zone = e.target.closest('.cards-container'); if(zone) zone.classList.remove('bg-blue-50'); });
+            container.addEventListener('drop', async e => {
+                e.preventDefault();
+                const zone = e.target.closest('.cards-container');
+                if(zone) zone.classList.remove('bg-blue-50');
+                if(!zone || !draggedId) return;
+                const targetListId = zone.dataset.listId;
+                const batch = writeBatch(db);
+                batch.update(doc(db, cardsCollectionRef.path, draggedId), { listId: targetListId, order: (state.cards[targetListId] || []).length });
+                await batch.commit();
+            });
+        }
+
+        // Função editElement corrigida
+        function editElement(element, saveCallback) {
+            const currentText = element.textContent.replace(/x\d+$/, '').trim(); 
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.className = 'w-full p-1 border rounded text-sm focus:outline-blue-500';
+            
+            element.style.display = 'none';
+            element.parentNode.insertBefore(input, element);
+            input.focus();
+            input.select();
+
+            let isSaving = false; // Flag de controle
+
+            const finish = async (shouldSave) => {
+                if (isSaving) return; // Evita execução dupla
+                isSaving = true;
+
+                const newVal = input.value.trim();
+                
+                // Remove input de forma segura
+                if (input.parentNode) {
+                    input.remove();
+                }
+                element.style.display = '';
+
+                if (shouldSave && newVal && newVal !== currentText) {
+                    await saveCallback(newVal);
+                }
+            };
+
+            input.onblur = () => finish(true);
+            input.onkeydown = (e) => { 
+                if(e.key === 'Enter') finish(true); 
+                if(e.key === 'Escape') finish(false); 
+            };
+        }
+
+        setupUIListeners();
+        setupVoiceRecognition();
+    </script>
+</body>
+</html>
