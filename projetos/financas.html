@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Financeiro</title>
+    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome CDN (CSS) --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Google Font 'Inter' --><style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Estilo para abas ativas */
+        .active-tab-orcamento, .active-tab-ferramentas, .active-tab-cotacoes {
+            border-bottom: 2px solid #facc15; /* text-yellow-400 */
+            color: #facc15; /* text-yellow-400 */
+        }
+
+        /* --- Estilos Customizados para Sliders --- */
+        input[type="range"].slider-progress {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;   
+            outline: none;
+            /* Cor de fundo é um gradiente que mostra o progresso */
+            --progress-color: #facc15; /* cor padrão */
+            --progress-percent: 50%;   /* percentual padrão */
+            background: linear-gradient(to right, 
+                var(--progress-color) 0%, 
+                var(--progress-color) var(--progress-percent), 
+                #4b5563 var(--progress-percent), 
+                #4b5563 100%
+            );
+        }
+
+        /* Thumb (círculo) do slider para WebKit (Chrome, Safari) */
+        input[type="range"].slider-progress::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%; 
+            background: #E5E7EB; /* gray-200 */
+            cursor: pointer;
+            margin-top: -6px; /* Centraliza o thumb verticalmente */
+        }
+        
+        /* Thumb (círculo) do slider para Firefox */
+        input[type="range"].slider-progress::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #E5E7EB; /* gray-200 */
+            cursor: pointer;
+            border: none;
+        }
+        
+        /* Garante que ícones dentro de botões não capturem cliques */
+        .pointer-events-none {
+            pointer-events: none;
+        }
+
+        /* (NOVO) Esconde a scrollbar no container de cotações */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-300">
+
+    <!-- ============================================= -->
+    <!-- (NOVO) PÁGINA DE LOGIN                        -->
+    <!-- ============================================= -->
+    <div id="login-page" class="flex items-center justify-center min-h-screen">
+        <div class="bg-gray-900 p-8 rounded-lg shadow-lg text-center max-w-sm w-full">
+            <!-- Logo -->
+            <div class="flex items-center justify-center gap-3 mb-8">
+                <div class="bg-yellow-400 p-2 rounded-lg">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4Z" fill="black"/>
+                        <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6Z" fill="black"/>
+                        <path d="M12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6ZM12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" fill="black"/>
+                        <path d="M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8ZM12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path d="M12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="black"/>
+                    </svg>
+                </div>
+                <span class="text-white text-3xl font-bold">ZERO12</span>
+            </div>
+            <h1 class="text-2xl font-semibold text-white mb-6">Acesse sua conta</h1>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <input type="email" id="login-email" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="E-mail" required>
+                </div>
+                <div>
+                    <input type="password" id="login-password" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Senha" required>
+                </div>
+                
+                <p id="login-error-message" class="text-red-400 text-sm h-4"></p>
+
+                <button type="button" id="btn-login" class="w-full bg-yellow-400 text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-300 transition-colors">
+                    Entrar
+                </button>
+                <button type="button" id="btn-create-account" class="w-full bg-gray-700 text-white font-semibold py-3 rounded-lg hover:bg-gray-600 transition-colors">
+                    Criar Conta
+                </button>
+                
+                <div class="relative my-4">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-700"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="bg-gray-900 px-2 text-gray-500">OU</span>
+                    </div>
+                </div>
+
+                <button type="button" id="btn-google-login" class="w-full bg-white text-gray-900 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C39.712 36.348 44 30.771 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                    Entrar com Google
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ============================================= -->
+    <!-- PÁGINA DO DASHBOARD (Oculta por padrão)       -->
+    <!-- ============================================= -->
+    <div id="dashboard-page" class="flex hidden">
+        <!-- Barra Lateral Fixa --><aside class="w-64 h-screen fixed top-0 left-0 bg-gray-900 p-6 flex flex-col z-10">
+            <!-- Logo --><div class="flex items-center gap-3 mb-10">
+                <div class="bg-yellow-400 p-2 rounded-lg">
+                    <!-- Novo logo SVG --><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4Z" fill="black"/>
+                        <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6Z" fill="black"/>
+                        <path d="M12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6ZM12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8Z" fill="black"/>
+                        <path d="M12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8ZM12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path d="M12 10C10.8954 10 10 10.8954 10 12C10 13.1046 10.8954 14 12 14C13.1046 14 14 13.1046 14 12C14 10.8954 13.1046 10 12 10Z" fill="black"/>
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="black"/>
+                    </svg>
+                </div>
+                <span class="text-white text-2xl font-bold">ZERO12</span>
+            </div>
+
+            <!-- Navegação --><nav class="flex flex-col gap-3">
+                <a href="#" class="nav-link active-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="home">
+                    <i class="fa-solid fa-user-circle w-5 h-5"></i> <!-- (MODIFICADO) -->
+                    <span>Meu Perfil</span> <!-- (MODIFICADO) -->
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="carteira">
+                    <i class="fa-solid fa-chart-pie w-5 h-5"></i>
+                    <span>Carteira</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="orcamento">
+                    <i class="fa-solid fa-piggy-bank w-5 h-5"></i>
+                    <span>Orçamento Doméstico</span>
+                </a>
+                <!-- (NOVOS LINKS) -->
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="acoes-br">
+                    <i class="fa-solid fa-arrow-trend-up w-5 h-5"></i>
+                    <span>Ações BR</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="fiis">
+                    <i class="fa-solid fa-building-columns w-5 h-5"></i>
+                    <span>FIIs</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="etfs">
+                    <i class="fa-solid fa-globe w-5 h-5"></i>
+                    <span>ETFs</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="cripto">
+                    <i class="fa-brands fa-bitcoin w-5 h-5"></i>
+                    <span>Cotações Cripto</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="renda-fixa">
+                    <i class="fa-solid fa-money-bill-transfer w-5 h-5"></i>
+                    <span>Renda Fixa</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="ferramentas">
+                    <i class="fa-solid fa-wrench w-5 h-5"></i>
+                    <span>Ferramentas</span>
+                </a>
+            </nav>
+
+            <!-- Navegação Inferior --><nav class="flex flex-col gap-3 mt-auto">
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="faq">
+                    <i class="fa-solid fa-circle-question w-5 h-5"></i>
+                    <span>FAQ</span>
+                </a>
+                <a href="#" class="nav-link flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800" data-page="admin">
+                    <i class="fa-solid fa-shield-halved w-5 h-5"></i>
+                    <span>Admin</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal --><main class="ml-64 w-full p-8">
+            <!-- Header (MODIFICADO) --><header class="flex justify-end items-center mb-8">
+                <div class="flex items-center gap-3">
+                    <span id="header-user-name" class="text-white">Olá, Carregando...</span> <!-- (MODIFICADO) -->
+                    <img id="header-user-avatar" src="https://placehold.co/40x40/EAB308/1F2937?text=CF" alt="Avatar do usuário" class="w-10 h-10 rounded-full border-2 border-yellow-400"> <!-- (MODIFICADO) -->
+                    <!-- Botão de Salvar -->
+                    <button id="btn-save" class="ml-4 text-gray-400 hover:text-white" title="Salvar Orçamento">
+                        <i class="fa-solid fa-floppy-disk w-5 h-5"></i>
+                    </button>
+                    <!-- Botão de Logout -->
+                    <button id="btn-logout" class="ml-4 text-gray-400 hover:text-white" title="Sair">
+                        <i class="fa-solid fa-right-from-bracket w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: HOME / PERFIL (MODIFICADO)        -->
+            <!-- ============================================= -->
+            <div id="page-home" class="page-content">
+                <h1 class="text-3xl font-semibold text-white mb-6">Meu Perfil</h1>
+                <div class="bg-gray-900 p-8 rounded-lg shadow-lg max-w-lg">
+                    <form id="perfil-form" class="space-y-4">
+                        <div>
+                            <label for="perfil-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome</label>
+                            <input type="text" id="perfil-nome" class="w-full p-3 bg-gray-800 text-white rounded-lg border border-gray-700" placeholder="Seu nome" required>
+                        </div>
+                        <div>
+                            <label for="perfil-email" class="block text-sm font-medium text-gray-400 mb-1">E-mail</label>
+                            <input type="email" id="perfil-email" class="w-full p-3 bg-gray-700 text-gray-400 rounded-lg border border-gray-700" placeholder="seuemail@provedor.com" readonly disabled>
+                            <p class="text-xs text-gray-500 mt-1">O e-mail não pode ser alterado.</p>
+                        </div>
+                        
+                        <p id="perfil-message" class="text-green-400 text-sm h-4"></p>
+                        
+                        <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-3 rounded-lg hover:bg-yellow-300 transition-colors">
+                            Salvar Alterações
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ============================================= --><!-- PÁGINA: CARTEIRA                          --><!-- ============================================= --><div id="page-carteira" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Carteira</h1>
+                <!-- Grid de Gráficos -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    
+                    <!-- Card: Gráfico de Portfólio (Donut) --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                        <h2 class="text-xl font-semibold text-white mb-4">Portfólio Total</h2>
+                        
+                        <!-- Container do Gráfico e Total --><div class="relative h-64 w-full mb-6">
+                            <!-- Gráfico --><canvas id="portfolioChart"></canvas>
+                            <!-- Texto Central (dinâmico) --><div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-gray-400 text-sm">Total</span>
+                                <span id="portfolio-total-valor" class="text-white text-3xl font-bold">R$ 0,00</span>
+                            </div>
+                        </div>
+
+                        <!-- Legenda Customizada (dinâmica) --><div id="portfolio-legend-container" class="space-y-3">
+                            <!-- Legenda será preenchida por JS -->
+                        </div>
+                    </div>
+
+                    <!-- Card: Histórico de Orçamento (Barras) --><div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                        <h2 class="text-xl font-semibold text-white mb-4">Histórico de orçamento doméstico</h2>
+                        <div class="h-96">
+                            <canvas id="budgetHistoryChart"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- ============================================= -->
+                <!-- Seção de Gerenciamento de Ativos              -->
+                <!-- ============================================= -->
+                <div class="mt-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-semibold text-white">Meus Ativos</h2>
+                        <button id="btn-open-add-ativo-modal" class="bg-yellow-400 text-gray-900 font-semibold py-2 px-4 rounded-lg hover:bg-yellow-300 transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i>
+                            Adicionar Ativo
+                        </button>
+                    </div>
+
+                    <!-- Lista de Ativos -->
+                    <div id="ativos-list-container" class="space-y-6">
+                        <!-- Placeholder -->
+                        <div id="ativos-placeholder" class="text-center text-gray-400 py-12 bg-gray-900 rounded-lg">
+                            <i class="fa-solid fa-box-open w-12 h-12 mx-auto mb-4"></i>
+                            <p>Nenhum ativo adicionado.</p>
+                            <p class="text-sm">Clique em "Adicionar Ativo" para começar.</p>
+                        </div>
+                        <!-- Ativos serão injetados aqui por JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================= --><!-- PÁGINA: ORÇAMENTO (Oculta)                 --><!-- ============================================= --><div id="page-orcamento" class="page-content hidden">
+                
+                <!-- NAVEGAÇÃO POR ABAS --><div class="flex border-b border-gray-700 mb-6">
+                    <button class="tab-link-orcamento active-tab-orcamento py-3 px-6 text-white font-semibold" data-tab="orcamento-content">ORÇAMENTO DOMÉSTICO</button>
+                    <button class="tab-link-orcamento py-3 px-6 text-gray-400 hover:text-white" data-tab="metas-content">MINHAS METAS</button>
+                </div>
+
+                <!-- ABA: ORÇAMENTO DOMÉSTICO --><div id="orcamento-content" class="tab-content-orcamento">
+                    <!-- Header da Página de Orçamento --><div class="flex justify-between items-center mb-6">
+                        <div>
+                            <h1 class="text-3xl font-semibold text-white">Orçamento Doméstico</h1>
+                            <p class="text-gray-400">Controle seu orçamento com base em suas próprias metas e rendimentos.</p>
+                        </div>
+                        <!-- Renda Mensal Editável --><div class="bg-gray-900 p-4 rounded-lg shadow-inner">
+                            <label for="renda-mensal-input" class="text-sm text-gray-400 block mb-1">Renda do mês</label>
+                            <div class="flex items-center">
+                                <span class="text-2xl font-bold text-white mr-2">R$</span>
+                                <input type="number" id="renda-mensal-input" value="6000.00" min="0" step="0.01" class="text-2xl font-bold text-white bg-gray-800 p-1 rounded-md w-40 outline-none focus:border-yellow-400 border-2 border-transparent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grid Superior (Resumo e Metas) --><div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- Card: Resumo --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Resumo</h2>
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700 text-gray-400">
+                                        <th class="py-2">Budget</th>
+                                        <th class="py-2 text-right">Valor Gasto</th>
+                                        <th class="py-2 text-right">Devo gastar</th>
+                                        <th class="py-2 text-right">Utilizado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resumo-table-body" class="text-white">
+                                    <!-- Linhas serão preenchidas por JS -->
+                                </tbody>
+                                <tfoot class="text-white">
+                                    <tr class="font-bold">
+                                        <td class="pt-4">Total</td>
+                                        <td id="resumo-total-gasto" class="pt-4 text-right">R$ 0,00</td>
+                                        <td id="resumo-total-devo-gastar" class="pt-4 text-right">R$ 6.000,00</td>
+                                        <td id="resumo-total-utilizado" class="pt-4 text-right text-green-400">0%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        <!-- Card: Metas --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Metas</h2>
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-700 text-gray-400">
+                                        <th class="py-2">Categoria</th>
+                                        <th class="py-2 text-right">% Meta</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="metas-table-body" class="text-white">
+                                   <!-- Linhas serão preenchidas por JS -->
+                                </tbody>
+                            </table>
+                            <button id="btn-editar-metas" class="mt-6 w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                Editar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Grid Inferior (Gastos) --><div class="grid grid-cols-1 gap-6">
+                        <!-- Card: Gastos --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Gastos</h2>
+                            
+                            <!-- Lista de Gastos --><div id="gastos-list-container" class="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
+                                <!-- As categorias de gastos serão injetadas aqui pelo JS -->
+                                <div id="gastos-placeholder" class="text-center text-gray-400 py-8">
+                                    <i class="fa-solid fa-circle-info w-10 h-10 mx-auto mb-3"></i>
+                                    <p>Adicione um gasto abaixo para começar.</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Formulário de Adicionar Custo --><h3 class="font-semibold text-white mt-6 mb-3 border-t border-gray-700 pt-4">Adicionar custo</h3>
+                            <form id="add-gasto-form">
+                                <div class="mb-3">
+                                    <label for="gasto-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome do gasto</label>
+                                    <input type="text" id="gasto-nome" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Ex: Luz, Água, Supermercado" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="gasto-valor" class="block text-sm font-medium text-gray-400 mb-1">Valor</label>
+                                    <input type="number" id="gasto-valor" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="0.00" step="0.01" min="0" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="gasto-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                                    <select id="gasto-categoria" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" required>
+                                        <!-- Opções serão preenchidas por JS -->
+                                    </select>
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors flex items-center justify-center">
+                                    <i class="fa-solid fa-plus w-5 h-5 mr-2"></i>
+                                    Adicionar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA: MINHAS METAS --><div id="metas-content" class="tab-content-orcamento hidden">
+                    <h1 class="text-3xl font-semibold text-white">Metas</h1>
+                    <p class="text-gray-400 mb-6">Edite os itens abaixo para ajustar suas metas.</p>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        
+                        <!-- Card Esquerdo: Gráfico de Metas --><div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4" id="goals-total">Total: 100%</h2>
+                            
+                            <!-- Container do Gráfico --><div class="relative h-64 w-full mb-6">
+                                <canvas id="goalsChart"></canvas>
+                            </div>
+
+                            <!-- Legenda Customizada --><div id="goals-legend-container" class="space-y-3">
+                                <!-- Legenda será preenchida por JS -->
+                            </div>
+                        </div>
+
+                        <!-- Card Direito: Sliders de Metas --><div id="goals-sliders-container" class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg space-y-6">
+                            <!-- Sliders serão preenchidos por JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: AÇÕES BR (NOVO)                   -->
+            <!-- ============================================= -->
+            <div id="page-acoes-br" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Ações Brasileiras</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-acoes" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: PETR4, Petrobras)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-acoes-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-acoes" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de Ações...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-acoes" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-acoes" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: FIIs (NOVO)                       -->
+            <!-- ============================================= -->
+            <div id="page-fiis" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Fundos Imobiliários (FIIs)</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-fiis" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: MXRF11, Maxi Renda)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-fiis-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-fiis" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de FIIs...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-fiis" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-fiis" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- ============================================= -->
+            <!-- PÁGINA: ETFs (NOVO)                       -->
+            <!-- ============================================= -->
+            <div id="page-etfs" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: ETFs</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-etfs" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar ticker ou nome (ex: BOVA11)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div id="brapi-etfs-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading -->
+                    <div id="loading-etfs" class="text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações de ETFs...</p>
+                    </div>
+                    <!-- Tabela -->
+                    <table id="table-etfs" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Ticker</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-etfs" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: RENDA FIXA (NOVO)                 -->
+            <!-- ============================================= -->
+            <div id="page-renda-fixa" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Cotações: Renda Fixa (Exemplos)</h1>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-renda-fixa" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar nome ou tipo (ex: Tesouro Selic)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <!-- Container da Tabela -->
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <div class="text-center text-gray-400 py-4 mb-4 border-b border-gray-700">
+                        <i class="fa-solid fa-circle-info w-5 h-5 mx-auto mb-2"></i>
+                        <p>APIs para Renda Fixa são complexas. Esta é uma lista de exemplos estáticos.</p>
+                    </div>
+                    <table id="table-renda-fixa" class="min-w-full w-full table-auto text-left">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4">Tipo</th>
+                                <th class="py-3 px-4 text-right">Rentabilidade</th>
+                                <th class="py-3 px-4 text-right">Vencimento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-renda-fixa" class="text-white">
+                            <!-- Dados Estáticos de Exemplo -->
+                            <tr>
+                                <td class="py-3 px-4 font-medium">Tesouro Selic 2027</td>
+                                <td class="py-3 px-4">Tesouro Direto</td>
+                                <td class="py-3 px-4 text-right">Selic + 0,10%</td>
+                                <td class="py-3 px-4 text-right">01/03/2027</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">Tesouro IPCA+ 2035</td>
+                                <td class="py-3 px-4">Tesouro Direto</td>
+                                <td class="py-3 px-4 text-right">IPCA + 5,50%</td>
+                                <td class="py-3 px-4 text-right">15/05/2035</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">CDB Banco X</td>
+                                <td class="py-3 px-4">CDB Pós</td>
+                                <td class="py-3 px-4 text-right">110% do CDI</td>
+                                <td class="py-3 px-4 text-right">10/10/2028</td>
+                            </tr>
+                            <tr>
+                                <td class="py-3 px-4 font-medium">LCI Banco Y</td>
+                                <td class="py-3 px-4">LCI Pré</td>
+                                <td class="py-3 px-4 text-right">10,5% a.a.</td>
+                                <td class="py-3 px-4 text-right">20/11/2026</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ============================================= -->
+            <!-- PÁGINA: FERRAMENTAS                     -->
+            <!-- ============================================= -->
+            <div id="page-ferramentas" class="page-content hidden">
+                <h1 class="text-3xl font-semibold text-white mb-6">Ferramentas</h1>
+
+                <!-- NAVEGAÇÃO POR ABAS (FERRAMENTAS) -->
+                <div class="flex border-b border-gray-700 mb-6">
+                    <button class="tab-link-ferramentas active-tab-ferramentas py-3 px-6 text-white font-semibold" data-tab="juros-compostos-content">JUROS COMPOSTOS</button>
+                    <button class="tab-link-ferramentas py-3 px-6 text-gray-400 hover:text-white" data-tab="benchmark-content">COMPARADOR (BENCHMARK)</button>
+                    <button class="tab-link-ferramentas py-3 px-6 text-gray-400 hover:text-white" data-tab="cambio-content">CÂMBIO</button> <!-- (NOVO) -->
+                </div>
+
+                <!-- ABA: CALCULADORA DE JUROS COMPOSTOS -->
+                <div id="juros-compostos-content" class="tab-content-ferramentas">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Formulário -->
+                        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Calculadora de Juros Compostos</h2>
+                            <form id="juros-compostos-form" class="space-y-4">
+                                <div>
+                                    <label for="jc-valor-inicial" class="block text-sm font-medium text-gray-400 mb-1">Valor Inicial (R$)</label>
+                                    <input type="number" id="jc-valor-inicial" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="1000" step="100">
+                                </div>
+                                <div>
+                                    <label for="jc-aporte-mensal" class="block text-sm font-medium text-gray-400 mb-1">Aporte Mensal (R$)</label>
+                                    <input type="number" id="jc-aporte-mensal" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="300" step="50">
+                                </div>
+                                <div>
+                                    <label for="jc-taxa-anual" class="block text-sm font-medium text-gray-400 mb-1">Taxa de Juros Anual (%)</label>
+                                    <input type="number" id="jc-taxa-anual" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="jc-tempo-anos" class="block text-sm font-medium text-gray-400 mb-1">Tempo (em anos)</label>
+                                    <input type="number" id="jc-tempo-anos" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="1" min="1">
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                    Calcular
+                                </button>
+                            </form>
+                        </div>
+                        <!-- Resultados e Gráfico -->
+                        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Resultados</h2>
+                            <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Total Investido</span>
+                                    <span id="jc-total-investido" class="text-2xl font-bold text-white">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Total em Juros</span>
+                                    <span id="jc-total-juros" class="text-2xl font-bold text-green-400">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Total Final</span>
+                                    <span id="jc-valor-total" class="text-2xl font-bold text-yellow-400">R$ 0,00</span>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="jurosCompostosChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ABA: COMPARADOR (BENCHMARK) -->
+                <div id="benchmark-content" class="tab-content-ferramentas hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Formulário -->
+                        <div class="lg:col-span-1 bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <h2 class="text-xl font-semibold text-white mb-4">Comparador de Rentabilidade</h2>
+                            <form id="benchmark-form" class="space-y-4">
+                                <div>
+                                    <label for="b-valor-inicial" class="block text-sm font-medium text-gray-400 mb-1">Valor Inicial (R$)</label>
+                                    <input type="number" id="b-valor-inicial" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="1000" step="100">
+                                </div>
+                                <div>
+                                    <label for="b-taxa-investimento" class="block text-sm font-medium text-gray-400 mb-1">Rentabilidade "Seu Investimento" (% a.a.)</label>
+                                    <input type="number" id="b-taxa-investimento" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="15" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="b-nome-benchmark" class="block text-sm font-medium text-gray-400 mb-1">Nome do Benchmark</label>
+                                    <input type="text" id="b-nome-benchmark" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="CDI">
+                                </div>
+                                <div>
+                                    <label for="b-taxa-benchmark" class="block text-sm font-medium text-gray-400 mb-1">Rentabilidade "Benchmark" (% a.a.)</label>
+                                    <input type="number" id="b-taxa-benchmark" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="0.5">
+                                </div>
+                                <div>
+                                    <label for="b-tempo-anos" class="block text-sm font-medium text-gray-400 mb-1">Tempo (em anos)</label>
+                                    <input type="number" id="b-tempo-anos" class="w-full p-2 bg-gray-800 text-white rounded-lg border border-gray-700" value="10" step="1" min="1">
+                                </div>
+                                <button type="submit" class="w-full bg-yellow-400 text-gray-900 font-semibold py-2 rounded-lg hover:bg-yellow-300 transition-colors">
+                                    Comparar
+                                </button>
+                            </form>
+                        </div>
+                        <!-- Resultados e Gráfico -->
+                        <div class="lg:col-span-2 bg-gray-900 p-6 rounded-lg shadow-lg">
+                             <h2 class="text-xl font-semibold text-white mb-4">Resultados</h2>
+                             <div class="grid grid-cols-2 gap-4 mb-6 text-center">
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Final (Seu Investimento)</span>
+                                    <span id="b-valor-investimento" class="text-2xl font-bold text-yellow-400">R$ 0,00</span>
+                                </div>
+                                <div>
+                                    <span class="text-sm text-gray-400 block">Valor Final (Benchmark)</span>
+                                    <span id="b-valor-benchmark" class="text-2xl font-bold text-white">R$ 0,00</span>
+                                </div>
+                            </div>
+                            <div class="h-80">
+                                <canvas id="benchmarkChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- (NOVO) ABA: CÂMBIO -->
+                <div id="cambio-content" class="tab-content-ferramentas hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-semibold text-white">Cotações de Câmbio</h2>
+                        <button id="btn-refresh-cambio" class="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            Atualizar
+                        </button>
+                    </div>
+                    <div id="cambio-loading" class="text-center py-10">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-3xl"></i>
+                    </div>
+                    <div id="cambio-container" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Cards de Câmbio -->
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Dólar (USD)</span>
+                                <i class="fa-solid fa-dollar-sign text-green-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-usd" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-usd-var" class="text-lg text-red-500">0,00%</p>
+                        </div>
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Euro (EUR)</span>
+                                <i class="fa-solid fa-euro-sign text-blue-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-eur" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-eur-var" class="text-lg text-green-500">0,00%</p>
+                        </div>
+                        <div class="bg-gray-900 p-6 rounded-lg shadow-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-2xl font-bold text-white">Bitcoin (BTC)</span>
+                                <i class="fa-brands fa-bitcoin text-yellow-400 text-2xl"></i>
+                            </div>
+                            <p id="cambio-btc" class="text-4xl font-bold text-white">R$ 0,00</p>
+                            <p id="cambio-btc-var" class="text-lg text-red-500">0,00%</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-4 text-right">Dados fornecidos por AwesomeAPI</p>
+                </div>
+
+            </div>
+            
+            <!-- ============================================= -->
+            <!-- PÁGINA: COTAÇÕES CRIPTO                   -->
+            <!-- ============================================= -->
+            <div id="page-cripto" class="page-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-semibold text-white">Top 100 Criptomoedas</h1>
+                    <button id="btn-refresh-cripto" class="bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        Atualizar
+                    </button>
+                </div>
+                <!-- Barra de Pesquisa -->
+                <div class="mb-6 relative">
+                    <input type="text" id="search-cripto" class="w-full p-3 pl-10 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:border-yellow-400" placeholder="Pesquisar nome ou ticker (ex: Bitcoin, BTC)...">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+
+                <!-- Container da Tabela -->
+                <div id="cripto-table-container" class="bg-gray-900 p-6 rounded-lg shadow-lg overflow-x-auto">
+                    <!-- Loading Spinner -->
+                    <div id="cripto-loading" class="hidden text-center py-20">
+                        <i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i>
+                        <p class="mt-4 text-lg">Buscando cotações...</p>
+                    </div>
+                    <!-- Tabela de Cotações -->
+                    <table id="cripto-table" class="min-w-full w-full table-auto text-left hidden">
+                        <thead class="border-b border-gray-700 text-gray-400 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-4 text-center">#</th>
+                                <th class="py-3 px-4">Nome</th>
+                                <th class="py-3 px-4 text-right">Preço (BRL)</th>
+                                <th class="py-3 px-4 text-right">Mudança 24h</th>
+                                <th class="py-3 px-4 text-right">Volume 24h</th>
+                                <th class="py-3 px-4 text-right">Cap. de Mercado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cripto-table-body" class="text-white">
+                            <!-- Linhas serão preenchidas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+            <!-- Outras páginas --><div id="page-faq" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">FAQ</h1>
+                 <p>Página de FAQ em construção.</p>
+            </div>
+            <div id="page-admin" class="page-content hidden">
+                 <h1 class="text-3xl font-semibold text-white mb-6">Admin</h1>
+                 <p>Página de Admin em construção.</p>
+            </div>
+
+        </main>
+    </div>
+    
+    <!-- ============================================= -->
+    <!-- MODAIS                                      -->
+    <!-- ============================================= -->
+
+    <!-- Modal de Edição de Gasto --><div id="edit-gasto-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-sm">
+            <h2 class="text-xl font-semibold text-white mb-4">Editar Gasto</h2>
+            <form id="edit-gasto-form">
+                <input type="hidden" id="edit-gasto-id">
+                <div class="mb-3">
+                    <label for="edit-gasto-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome</label>
+                    <input type="text" id="edit-gasto-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                </div>
+                <div class="mb-4">
+                    <label for="edit-gasto-valor" class="block text-sm font-medium text-gray-400 mb-1">Valor</label>
+                    <input type="number" id="edit-gasto-valor" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="btn-cancel-edit-gasto" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Adicionar Ativo --><div id="add-ativo-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-semibold text-white mb-4">Adicionar Ativo</h2>
+            <form id="add-ativo-form" class="space-y-4">
+                <div>
+                    <label for="ativo-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome / Ticker</label>
+                    <input type="text" id="ativo-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" placeholder="Ex: PETR4, MXRF11, Bitcoin" required>
+                </div>
+                <div>
+                    <label for="ativo-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                    <select id="ativo-categoria" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                        <!-- Opções serão preenchidas por JS -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="ativo-quantidade" class="block text-sm font-medium text-gray-400 mb-1">Quantidade</label>
+                        <input type="number" id="ativo-quantidade" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="any" min="0" placeholder="100" required>
+                    </div>
+                     <div>
+                        <label for="ativo-preco-medio" class="block text-sm font-medium text-gray-400 mb-1">Preço Médio (Custo)</label>
+                        <input type="number" id="ativo-preco-medio" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="25.00" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
+                    <input type="number" id="ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" placeholder="30.00" required>
+                    <p class="text-xs text-gray-500 mt-1">Insira a cotação atual de 1 unidade do ativo.</p>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="btn-cancel-add-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal de Editar Ativo --><div id="edit-ativo-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-xl font-semibold text-white mb-4">Editar Ativo</h2>
+            <form id="edit-ativo-form" class="space-y-4">
+                <input type="hidden" id="edit-ativo-id">
+                <div>
+                    <label for="edit-ativo-nome" class="block text-sm font-medium text-gray-400 mb-1">Nome / Ticker</label>
+                    <input type="text" id="edit-ativo-nome" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                </div>
+                <div>
+                    <label for="edit-ativo-categoria" class="block text-sm font-medium text-gray-400 mb-1">Categoria</label>
+                    <select id="edit-ativo-categoria" class="w-full p-2 bg-gray-700 text-white rounded-lg" required>
+                        <!-- Opções serão preenchidas por JS -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-ativo-quantidade" class="block text-sm font-medium text-gray-400 mb-1">Quantidade</label>
+                        <input type="number" id="edit-ativo-quantidade" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="any" min="0" required>
+                    </div>
+                     <div>
+                        <label for="edit-ativo-preco-medio" class="block text-sm font-medium text-gray-400 mb-1">Preço Médio (Custo)</label>
+                        <input type="number" id="edit-ativo-preco-medio" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-ativo-preco-atual" class="block text-sm font-medium text-gray-400 mb-1">Preço Atual por Ativo (Cotação)</label>
+                    <input type="number" id="edit-ativo-preco-atual" class="w-full p-2 bg-gray-700 text-white rounded-lg" step="0.01" min="0" required>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="btn-cancel-edit-ativo" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-500">Cancelar</button>
+                    <button type="submit" class="bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-yellow-300">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ============================================= -->
+    <!-- SCRIPTS                                       -->
+    <!-- ============================================= -->
+    
+    <!-- Configuração para modo standalone -->
+    <script id="firebase-config" type="application/json">
+        {
+            "apiKey": "AIzaSyCYKGo2bMEtrn37jQzP2Cc6F5SPKo_LPTM",
+            "authDomain": "orcamentodomestico-bdc7b.firebaseapp.com",
+            "projectId": "orcamentodomestico-bdc7b",
+            "storageBucket": "orcamentodomestico-bdc7b.firebasestorage.app",
+            "messagingSenderId": "95988700562",
+            "appId": "1:95988700562:web:d02f3fb8a19d737cfb9d4b",
+            "measurementId": "G-WVEV7S2DP0"
+        }
+    </script>
+    <script id="app-id" type="text/plain">orcamentodomestico-bdc7b</script>
+
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Importa as funções que você precisa dos SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signOut, 
+            onAuthStateChanged,
+            // (NOVOS) Imports para Login
+            GoogleAuthProvider,
+            signInWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            updateProfile // (NOVO) Para atualizar o nome
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot, 
+            collection, 
+            query 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // Disponibiliza funções do Firestore globalmente para o script do dashboard
+        window.firebaseFirestore = {
+            getFirestore, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query
+        };
+        // (NOVO) Disponibiliza funções do Auth globalmente
+        window.firebaseAuth = {
+            getAuth, updateProfile
+        };
+
+        // --- Configuração do Firebase ---
+        let firebaseConfig = {};
+        let appId = 'default-app-id';
+
+        try {
+            const configElement = document.getElementById('firebase-config');
+            if (configElement) {
+                firebaseConfig = JSON.parse(configElement.textContent);
+            } else {
+                 console.error("Configuração do Firebase não encontrada.");
+            }
+            
+            const appIdElement = document.getElementById('app-id');
+            if (appIdElement) {
+                appId = appIdElement.textContent;
+            } else {
+                console.warn("Variável global __app_id não definida. Usando 'default-app-id'.");
+            }
+        } catch (e) {
+            console.error("Erro ao parsear configuração do Firebase:", e);
+        }
+        
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Referências dos Elementos DOM (Login) ---
+        const loginPage = document.getElementById('login-page');
+        const dashboardPage = document.getElementById('dashboard-page');
+        const btnLogout = document.getElementById('btn-logout');
+        
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const btnLogin = document.getElementById('btn-login');
+        const btnCreateAccount = document.getElementById('btn-create-account');
+        const btnGoogleLogin = document.getElementById('btn-google-login');
+        const loginErrorMessage = document.getElementById('login-error-message');
+        
+        // --- (NOVAS) Referências do Perfil ---
+        const headerUserName = document.getElementById('header-user-name');
+        const headerUserAvatar = document.getElementById('header-user-avatar');
+        const perfilForm = document.getElementById('perfil-form');
+        const perfilNome = document.getElementById('perfil-nome');
+        const perfilEmail = document.getElementById('perfil-email');
+        const perfilMessage = document.getElementById('perfil-message');
+
+
+        // --- Monitoramento de Autenticação ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuário está logado
+                loginPage.classList.add('hidden'); // Esconde login
+                dashboardPage.classList.remove('hidden'); // Mostra dashboard
+                
+                // (NOVO) Atualiza a UI do Perfil
+                updateUserUI(user);
+                
+                // Inicializa o dashboard e passa as instâncias necessárias
+                window.initDashboard(user, appId, db); // (MODIFICADO) Passa o objeto 'user' inteiro
+
+            } else {
+                // Usuário não está logado
+                dashboardPage.classList.add('hidden'); // Esconde dashboard
+                loginPage.classList.remove('hidden'); // Mostra login
+            }
+        });
+
+        // (NOVO) Função para atualizar o nome e avatar
+        function updateUserUI(user) {
+            if (!user) return;
+            
+            const nome = user.displayName || user.email; // Usa nome ou email
+            const avatarLetra = (nome[0] || 'U').toUpperCase();
+            
+            headerUserName.textContent = `Olá, ${nome}`;
+            headerUserAvatar.src = user.photoURL || `https://placehold.co/40x40/EAB308/1F2937?text=${avatarLetra}`;
+            
+            perfilNome.value = user.displayName || '';
+            perfilEmail.value = user.email || '';
+        }
+
+        // --- Event Listeners de Login ---
+        
+        // 1. Entrar com E-mail/Senha
+        btnLogin.addEventListener('click', async () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            if (!email || !password) {
+                loginErrorMessage.textContent = "Por favor, preencha e-mail e senha.";
+                return;
+            }
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Erro ao entrar:", error);
+                loginErrorMessage.textContent = "E-mail ou senha inválidos.";
+            }
+        });
+
+        // 2. Criar Conta com E-mail/Senha
+        btnCreateAccount.addEventListener('click', async () => {
+            const email = loginEmail.value;
+            const password = loginPassword.value;
+            if (!email || !password) {
+                loginErrorMessage.textContent = "Por favor, preencha e-mail e senha.";
+                return;
+            }
+            if (password.length < 6) {
+                loginErrorMessage.textContent = "A senha deve ter pelo menos 6 caracteres.";
+                return;
+            }
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Erro ao criar conta:", error);
+                if (error.code === 'auth/email-already-in-use') {
+                    loginErrorMessage.textContent = "Este e-mail já está em uso.";
+                } else {
+                    loginErrorMessage.textContent = "Erro ao criar conta.";
+                }
+            }
+        });
+
+        // 3. Entrar com Google
+        btnGoogleLogin.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                loginErrorMessage.textContent = ""; // Limpa erro
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Erro ao logar com Google:", error);
+                // (MODIFICADO) Mensagem de erro mais clara para o problema do domínio
+                if (error.code === 'auth/unauthorized-domain') {
+                    loginErrorMessage.textContent = "Erro: Domínio não autorizado. Use um servidor local (Live Server).";
+                } else {
+                    loginErrorMessage.textContent = "Falha ao logar com Google.";
+                }
+            }
+        });
+        
+        // 4. (NOVO) Salvar Perfil
+        perfilForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nome = perfilNome.value.trim();
+            const user = auth.currentUser;
+            
+            if (!user) return;
+
+            try {
+                await updateProfile(user, {
+                    displayName: nome
+                });
+                // Atualiza a UI imediatamente
+                updateUserUI(user); 
+                perfilMessage.textContent = "Perfil atualizado com sucesso!";
+                perfilMessage.classList.remove('text-red-400');
+                perfilMessage.classList.add('text-green-400');
+                
+            } catch (error) {
+                console.error("Erro ao atualizar perfil:", error);
+                perfilMessage.textContent = "Erro ao salvar.";
+                perfilMessage.classList.remove('text-green-400');
+                perfilMessage.classList.add('text-red-400');
+            }
+        });
+
+
+        // --- Evento de Logout ---
+        btnLogout.addEventListener('click', async () => {
+            try {
+                // Desconecta os listeners do Firestore antes de sair
+                if (window.unsubscribeGastosListener) {
+                    window.unsubscribeGastosListener();
+                    window.unsubscribeGastosListener = null;
+                }
+                if (window.unsubscribeAtivosListener) {
+                    window.unsubscribeAtivosListener();
+                    window.unsubscribeAtivosListener = null;
+                }
+                await signOut(auth);
+            } catch (error) {
+                console.error("Erro ao fazer logout:", error);
+            }
+        });
+
+    </script>
+
+    <!-- Script do Dashboard (Antigo window.onload) -->
+    <script>
+        // Movemos todo o código do dashboard para esta função
+        // Ela será chamada pelo script type="module" acima quando a auth estiver pronta
+        window.initDashboard = (user, appId, db) => {
+            
+            // (NOVO) Pega o ID do usuário
+            const userId = user.uid;
+            
+            // Importa funções do Firestore (módulo já carregado)
+            const {
+                doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, collection, query 
+            } = window.firebaseFirestore;
+
+            // --- (NOVO) Constantes da API Brapi ---
+            const BRAPI_TOKEN = "8eZPTTApn1MQmbFDQZtzVw"; // (MODIFICADO) Chave API
+            const tickersAcoes = "PETR4,VALE3,ITUB4,BBDC4,BBAS3,WEGE3,MGLU3,VIIA3,ABEV3,AZUL4,GOL4,CVCB3";
+            const tickersFiis = "MXRF11,HGLG11,KNCR11,BCFF11,XPLG11,CPTS11,XPML11,VGIP11,IRDM11,VISC11";
+            const tickersEtfs = "BOVA11,IVVB11,SMAL11,HASH11,XFIX11,GOLD11,BBOV11,ESGB11";
+            
+            // (NOVO) Cache de dados da Brapi
+            let brapiDataStore = {
+                acoes: [],
+                fiis: [],
+                etfs: []
+            };
+            let brapiDataLoaded = false;
+
+
+            // --- Constantes de Cores e Estilos ---
+            const chartColors = {
+                costs: '#4ade80', // green-400
+                income: '#ca8a04', // yellow-600
+                gridColor: 'rgba(255, 255, 255, 0.1)',
+                ticksColor: 'rgba(255, 255, 255, 0.7)',
+                legendColor: 'rgba(255, 255, 255, 0.9)'
+            };
+            
+            // --- Variáveis Globais para Gráficos ---
+            let portfolioChartInstance = null;
+            let budgetHistoryChartInstance = null;
+            let goalsChartInstance = null;
+            let jurosCompostosChartInstance = null; 
+            let benchmarkChartInstance = null; 
+
+            // --- Fonte Única da Verdade para Metas (Orçamento) ---
+            let goalsData = [
+                { key: 'custos', name: 'Custos fixos', percentage: 30, color: '#60a5fa' },
+                { key: 'conforto', name: 'Conforto', percentage: 15, color: '#2dd4bf' },
+                { key: 'metas', name: 'Metas', percentage: 15, color: '#facc15' },
+                { key: 'prazeres', name: 'Prazeres', percentage: 10, color: '#a78bfa' },
+                { key: 'liberdade', name: 'Liberdade financeira', percentage: 25, color: '#3b82f6' },
+                { key: 'conhecimento', name: 'Conhecimento', percentage: 5, color: '#fb923c' },
+                { key: 'emergencia', name: 'Reserva de emergência', percentage: 0, color: '#ef4444' }, 
+            ];
+            
+            // Fonte Única da Verdade para Categorias de Portfólio
+            const portfolioCategorias = [
+                { key: 'acoes_nac', name: 'Ações Nacionais', color: '#2dd4bf' },
+                { key: 'acoes_int', name: 'Ações Internacionais', color: '#60a5fa' },
+                { key: 'fiis', name: 'Fundos Imobiliários', color: '#facc15' },
+                { key: 'cripto', name: 'Criptomoedas', color: '#a78bfa' },
+                { key: 'renda_fixa', name: 'Renda Fixa', color: '#fb923c' },
+                { key: 'reits', name: 'REITs', color: '#6b7280' }
+            ];
+            
+            // Armazena o estado dos gastos (sincronizado com o Firestore)
+            let gastos = [];
+            // Armazena o estado dos ativos (sincronizado com o Firestore)
+            let ativos = [];
+            // Armazena o estado dos dados cripto
+            let criptoDataLoaded = false;
+            // (NOVO) Armazena o estado dos dados de câmbio
+            let cambioDataLoaded = false;
+            // (NOVO) Trava para evitar chamadas duplicadas da Brapi
+            let brapiDataLoading = false;
+
+
+            // --- Referências DOM (Dashboard) ---
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pageContents = document.querySelectorAll('.page-content');
+            const orcamentoTabs = document.querySelectorAll('.tab-link-orcamento');
+            const orcamentoContents = document.querySelectorAll('.tab-content-orcamento');
+            
+            // ... (Referências DOM do Orçamento) ...
+            const goalsTotalDisplay = document.getElementById('goals-total');
+            const goalsLegendContainer = document.getElementById('goals-legend-container');
+            const goalsSlidersContainer = document.getElementById('goals-sliders-container');
+            const metasTableBody = document.getElementById('metas-table-body');
+            const btnEditarMetas = document.getElementById('btn-editar-metas');
+            const rendaMensalInput = document.getElementById('renda-mensal-input');
+            const resumoTableBody = document.getElementById('resumo-table-body');
+            const resumoTotalGasto = document.getElementById('resumo-total-gasto');
+            const resumoTotalDevoGastar = document.getElementById('resumo-total-devo-gastar');
+            const resumoTotalUtilizado = document.getElementById('resumo-total-utilizado');
+            const addGastoForm = document.getElementById('add-gasto-form');
+            const gastoNomeInput = document.getElementById('gasto-nome');
+            const gastoValorInput = document.getElementById('gasto-valor');
+            const gastoCategoriaSelect = document.getElementById('gasto-categoria');
+            const gastosListContainer = document.getElementById('gastos-list-container');
+            const gastosPlaceholder = document.getElementById('gastos-placeholder');
+            const editGastoModal = document.getElementById('edit-gasto-modal');
+            const editGastoForm = document.getElementById('edit-gasto-form');
+            const editGastoId = document.getElementById('edit-gasto-id');
+            const editGastoNome = document.getElementById('edit-gasto-nome');
+            const editGastoValor = document.getElementById('edit-gasto-valor');
+            const btnCancelEditGasto = document.getElementById('btn-cancel-edit-gasto');
+            const btnSave = document.getElementById('btn-save');
+
+            // ... (Referências DOM do Portfólio) ...
+            const portfolioTotalValor = document.getElementById('portfolio-total-valor');
+            const portfolioLegendContainer = document.getElementById('portfolio-legend-container');
+            const btnOpenAddAtivoModal = document.getElementById('btn-open-add-ativo-modal');
+            const ativosListContainer = document.getElementById('ativos-list-container');
+            const ativosPlaceholder = document.getElementById('ativos-placeholder');
+            const addAtivoModal = document.getElementById('add-ativo-modal');
+            const addAtivoForm = document.getElementById('add-ativo-form');
+            const btnCancelAddAtivo = document.getElementById('btn-cancel-add-ativo');
+            const addAtivoNome = document.getElementById('ativo-nome');
+            const addAtivoCategoria = document.getElementById('ativo-categoria');
+            const addAtivoQuantidade = document.getElementById('ativo-quantidade');
+            const addAtivoPrecoMedio = document.getElementById('ativo-preco-medio');
+            const addAtivoPrecoAtual = document.getElementById('ativo-preco-atual');
+            const editAtivoModal = document.getElementById('edit-ativo-modal');
+            const editAtivoForm = document.getElementById('edit-ativo-form');
+            const btnCancelEditAtivo = document.getElementById('btn-cancel-edit-ativo');
+            const editAtivoId = document.getElementById('edit-ativo-id');
+            const editAtivoNome = document.getElementById('edit-ativo-nome');
+            const editAtivoCategoria = document.getElementById('edit-ativo-categoria');
+            const editAtivoQuantidade = document.getElementById('edit-ativo-quantidade');
+            const editAtivoPrecoMedio = document.getElementById('edit-ativo-preco-medio');
+            const editAtivoPrecoAtual = document.getElementById('edit-ativo-preco-atual');
+
+            // ... (Referências DOM Ferramentas) ...
+            const ferramentasTabs = document.querySelectorAll('.tab-link-ferramentas');
+            const ferramentasContents = document.querySelectorAll('.tab-content-ferramentas');
+            const jurosCompostosForm = document.getElementById('juros-compostos-form');
+            const jcTotalInvestido = document.getElementById('jc-total-investido');
+            const jcTotalJuros = document.getElementById('jc-total-juros');
+            const jcValorTotal = document.getElementById('jc-valor-total');
+            const benchmarkForm = document.getElementById('benchmark-form');
+            const bValorInvestimento = document.getElementById('b-valor-investimento');
+            const bValorBenchmark = document.getElementById('b-valor-benchmark');
+            const bNomeBenchmarkInput = document.getElementById('b-nome-benchmark');
+            const btnRefreshCambio = document.getElementById('btn-refresh-cambio');
+            const cambioLoading = document.getElementById('cambio-loading');
+            const cambioContainer = document.getElementById('cambio-container');
+
+            // ... (Referências DOM (Cripto) ...
+            const btnRefreshCripto = document.getElementById('btn-refresh-cripto');
+            const criptoTableContainer = document.getElementById('cripto-table-container');
+            const criptoLoading = document.getElementById('cripto-loading');
+            const criptoTable = document.getElementById('cripto-table');
+            const criptoTableBody = document.getElementById('cripto-table-body');
+            const searchCripto = document.getElementById('search-cripto');
+
+            // ... (Referências DOM (Ações, FIIs, ETFs) ...
+            const searchAcoes = document.getElementById('search-acoes');
+            const searchFiis = document.getElementById('search-fiis');
+            const searchEtfs = document.getElementById('search-etfs');
+            const searchRendaFixa = document.getElementById('search-renda-fixa');
+            const tableBodyAcoes = document.getElementById('table-body-acoes');
+            const tableBodyFiis = document.getElementById('table-body-fiis');
+            const tableBodyEtfs = document.getElementById('table-body-etfs');
+            const tableBodyRendaFixa = document.getElementById('table-body-renda-fixa');
+            const loadingAcoes = document.getElementById('loading-acoes');
+            const loadingFiis = document.getElementById('loading-fiis');
+            const loadingEtfs = document.getElementById('loading-etfs');
+            const tableAcoes = document.getElementById('table-acoes');
+            const tableFiis = document.getElementById('table-fiis');
+            const tableEtfs = document.getElementById('table-etfs');
+
+
+            // --- Referências do Firestore ---
+            const configRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento', 'config');
+            const gastosCollection = collection(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos');
+            const ativosCollection = collection(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos');
+
+
+            // --- Lógica de Navegação (Troca de Páginas) ---
+            const setActiveLink = (clickedLink) => {
+                navLinks.forEach(link => link.classList.remove('active-link'));
+                clickedLink.classList.add('active-link');
+            };
+
+            const showPage = (pageId) => {
+                pageContents.forEach(page => {
+                    page.classList.toggle('hidden', page.id !== `page-${pageId}`);
+                });
+                
+                // (MODIFICADO) Controla o carregamento das APIs
+                if (pageId === 'carteira') {
+                    initPortfolioChart(); 
+                    initBudgetHistoryChart();
+                } else if (pageId === 'orcamento') {
+                    initGoalsChart(); 
+                } else if (pageId === 'ferramentas') { 
+                    initJurosCompostosChart();
+                    initBenchmarkChart();
+                    if (jurosCompostosForm) jurosCompostosForm.dispatchEvent(new Event('submit'));
+                    if (benchmarkForm) benchmarkForm.dispatchEvent(new Event('submit'));
+                    initCambioPage(); // (NOVO)
+                } else if (pageId === 'cripto') {
+                    initCriptoPage();
+                } else if (pageId === 'acoes-br') { // (NOVO)
+                    initBrapiPage('acoes');
+                } else if (pageId === 'fiis') { // (NOVO)
+                    initBrapiPage('fiis');
+                } else if (pageId === 'etfs') { // (NOVO)
+                    initBrapiPage('etfs');
+                } else if (pageId === 'renda-fixa') { // (NOVO)
+                    // Apenas renderiza, pois é estático
+                    renderRendaFixaTable(staticRendaFixaData);
+                }
+            };
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = link.dataset.page;
+                    if (!pageId) return;
+                    setActiveLink(link);
+                    showPage(pageId);
+                });
+            });
+            
+            // --- Lógica das Abas da Página Orçamento ---
+            orcamentoTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTabClick(e.target, orcamentoTabs, 'active-tab-orcamento', orcamentoContents);
+                });
+            });
+            
+            btnEditarMetas.addEventListener('click', (e) => {
+                e.preventDefault();
+                const metasTabButton = document.querySelector('.tab-link-orcamento[data-tab="metas-content"]');
+                handleTabClick(metasTabButton, orcamentoTabs, 'active-tab-orcamento', orcamentoContents);
+            });
+            
+            // Lógica das Abas da Página Ferramentas
+            ferramentasTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handleTabClick(e.target, ferramentasTabs, 'active-tab-ferramentas', ferramentasContents);
+                });
+            });
+
+            // Função genérica para Abas
+            function handleTabClick(tabButton, tabs, activeClass, contents) {
+                if (!tabButton) return;
+                
+                tabs.forEach(t => {
+                    const isActive = t === tabButton;
+                    t.classList.toggle(activeClass, isActive);
+                    t.classList.toggle('text-white', isActive);
+                    t.classList.toggle('text-gray-400', !isActive);
+                });
+
+                const tabId = tabButton.dataset.tab;
+                contents.forEach(content => {
+                    content.classList.toggle('hidden', content.id !== tabId);
+                });
+            }
+
+            // --- Estilo CSS dinâmico para links ativos ---
+            if (!document.getElementById('active-link-style')) {
+                const style = document.createElement('style');
+                style.id = 'active-link-style';
+                style.innerHTML = `
+                    .active-link {
+                        background-color: #1f2937; /* bg-gray-800 */
+                        color: #facc15; /* text-yellow-400 */
+                        font-weight: 600;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE DADOS (ORÇAMENTO)
+            // ==========================================================
+            
+            // 1. Salvar Renda e Metas (Orçamento)
+            async function saveConfiguration() {
+                try {
+                    const renda = parseFloat(rendaMensalInput.value) || 0;
+                    const metasParaSalvar = goalsData.map(g => ({ key: g.key, percentage: g.percentage }));
+                    
+                    await setDoc(configRef, {
+                        rendaMensal: renda,
+                        metas: metasParaSalvar
+                    });
+                    
+                    const saveIcon = btnSave.querySelector('i');
+                    saveIcon.classList.add('fa-beat', 'text-yellow-400');
+                    setTimeout(() => {
+                        saveIcon.classList.remove('fa-beat', 'text-yellow-400');
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error("Erro ao salvar configuração: ", error);
+                }
+            }
+            
+            // 2. Carregar Renda e Metas (Orçamento)
+            async function loadConfiguration() {
+                try {
+                    const docSnap = await getDoc(configRef);
+                    if (docSnap.exists()) {
+                        const config = docSnap.data();
+                        rendaMensalInput.value = (config.rendaMensal || 6000).toFixed(2);
+                        
+                        if (config.metas && Array.isArray(config.metas)) {
+                            goalsData = goalsData.map(localGoal => {
+                                const savedGoal = config.metas.find(g => g.key === localGoal.key);
+                                return savedGoal ? { ...localGoal, percentage: savedGoal.percentage } : localGoal;
+                            });
+                        }
+                    } else {
+                        rendaMensalInput.value = "6000.00";
+                        await saveConfiguration(); // Salva os padrões
+                    }
+                    fullRender(); // Renderiza tudo após carregar
+                } catch (error) {
+                    console.error("Erro ao carregar configuração: ", error);
+                }
+            }
+            
+            // 3. Adicionar Gasto
+            async function addGasto(e) {
+                e.preventDefault();
+                const nome = gastoNomeInput.value.trim();
+                const valor = parseFloat(gastoValorInput.value);
+                const categoriaKey = gastoCategoriaSelect.value;
+                
+                if (!nome || isNaN(valor) || valor <= 0 || !categoriaKey) return;
+                
+                try {
+                    await addDoc(gastosCollection, {
+                        nome: nome,
+                        valor: valor,
+                        categoriaKey: categoriaKey,
+                        createdAt: new Date()
+                    });
+                    addGastoForm.reset();
+                } catch (error) {
+                    console.error("Erro ao adicionar gasto: ", error);
+                }
+            }
+
+            // 4. Excluir Gasto
+            async function deleteGasto(gastoId) {
+                if (!gastoId) return;
+                try {
+                    const gastoRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos', gastoId);
+                    await deleteDoc(gastoRef);
+                } catch (error) {
+                    console.error("Erro ao excluir gasto: ", error);
+                }
+            }
+            
+            // 5. Editar Gasto (Salvar no modal)
+            async function updateGasto(e) {
+                e.preventDefault();
+                const id = editGastoId.value;
+                const nome = editGastoNome.value.trim();
+                const valor = parseFloat(editGastoValor.value);
+                
+                if (!id || !nome || isNaN(valor) || valor <= 0) return;
+                
+                try {
+                    const gastoRef = doc(db, 'artifacts', appId, 'users', userId, 'orcamento_gastos', id);
+                    await updateDoc(gastoRef, {
+                        nome: nome,
+                        valor: valor
+                    });
+                    closeEditGastoModal();
+                } catch (error) {
+                    console.error("Erro ao atualizar gasto: ", error);
+                }
+            }
+            
+            // 6. Listener de Gastos (Tempo Real)
+            function setupGastosListener() {
+                if (window.unsubscribeGastosListener) {
+                    window.unsubscribeGastosListener();
+                }
+                const q = query(gastosCollection);
+                window.unsubscribeGastosListener = onSnapshot(q, (querySnapshot) => {
+                    gastos = [];
+                    querySnapshot.forEach((doc) => {
+                        gastos.push({ id: doc.id, ...doc.data() });
+                    });
+                    gastos.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    renderGastosList();
+                    updateResumoTable();
+                }, (error) => {
+                    console.error("Erro no listener de gastos: ", error);
+                });
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE DADOS (PORTFÓLIO)
+            // ==========================================================
+
+            // 1. Adicionar Ativo
+            async function addAtivo(e) {
+                e.preventDefault();
+                const nome = addAtivoNome.value.trim();
+                const categoriaKey = addAtivoCategoria.value;
+                const quantidade = parseFloat(addAtivoQuantidade.value);
+                const precoMedio = parseFloat(addAtivoPrecoMedio.value);
+                const precoAtual = parseFloat(addAtivoPrecoAtual.value);
+
+                if (!nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) {
+                    console.warn("Formulário de ativo inválido.");
+                    return;
+                }
+
+                try {
+                    await addDoc(ativosCollection, {
+                        nome: nome,
+                        categoriaKey: categoriaKey,
+                        quantidade: quantidade,
+                        precoMedio: precoMedio,
+                        precoAtual: precoAtual,
+                        createdAt: new Date()
+                    });
+                    closeAddAtivoModal();
+                } catch (error) {
+                    console.error("Erro ao adicionar ativo: ", error);
+                }
+            }
+
+            // 2. Excluir Ativo
+            async function deleteAtivo(ativoId) {
+                if (!ativoId) return;
+                try {
+                    const ativoRef = doc(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos', ativoId);
+                    await deleteDoc(ativoRef);
+                } catch (error) {
+                    console.error("Erro ao excluir ativo: ", error);
+                }
+            }
+            
+            // 3. Editar Ativo (Salvar no modal)
+            async function updateAtivo(e) {
+                e.preventDefault();
+                const id = editAtivoId.value;
+                const nome = editAtivoNome.value.trim();
+                const categoriaKey = editAtivoCategoria.value;
+                const quantidade = parseFloat(editAtivoQuantidade.value);
+                const precoMedio = parseFloat(editAtivoPrecoMedio.value);
+                const precoAtual = parseFloat(editAtivoPrecoAtual.value);
+
+                if (!id || !nome || !categoriaKey || isNaN(quantidade) || isNaN(precoMedio) || isNaN(precoAtual)) {
+                     console.warn("Formulário de edição de ativo inválido.");
+                    return;
+                }
+                
+                try {
+                    const ativoRef = doc(db, 'artifacts', appId, 'users', userId, 'portfolio_ativos', id);
+                    await updateDoc(ativoRef, {
+                        nome: nome,
+                        categoriaKey: categoriaKey,
+                        quantidade: quantidade,
+                        precoMedio: precoMedio,
+                        precoAtual: precoAtual,
+                    });
+                    closeEditAtivoModal();
+                } catch (error) {
+                    console.error("Erro ao atualizar ativo: ", error);
+                }
+            }
+
+            // 4. Listener de Ativos (Tempo Real)
+            function setupAtivosListener() {
+                if (window.unsubscribeAtivosListener) {
+                    window.unsubscribeAtivosListener();
+                }
+                const q = query(ativosCollection);
+                window.unsubscribeAtivosListener = onSnapshot(q, (querySnapshot) => {
+                    ativos = [];
+                    querySnapshot.forEach((doc) => {
+                        ativos.push({ id: doc.id, ...doc.data() });
+                    });
+                    ativos.sort((a, b) => (a.createdAt > b.createdAt) ? 1 : -1);
+                    
+                    renderAtivosList();
+                    updatePortfolioChartAndLegend();
+                    
+                }, (error) => {
+                    console.error("Erro no listener de ativos: ", error);
+                });
+            }
+            
+            // ==========================================================
+            // (NOVO) FUNÇÕES DE DADOS (APIs Externas)
+            // ==========================================================
+            
+            // 1. Câmbio (AwesomeAPI)
+            function initCambioPage() {
+                if (!cambioDataLoaded) {
+                    fetchCambioData();
+                }
+            }
+            
+            async function fetchCambioData() {
+                cambioLoading.classList.remove('hidden');
+                cambioContainer.classList.add('hidden');
+                
+                try {
+                    const url = 'https://economia.awesomeapi.com.br/last/USD-BRL,EUR-BRL,BTC-BRL';
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const data = await response.json();
+                    
+                    renderCambioData(data.USDBRL, 'usd');
+                    renderCambioData(data.EURBRL, 'eur');
+                    renderCambioData(data.BTCBRL, 'btc');
+                    
+                    cambioDataLoaded = true;
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados de câmbio:", error);
+                    cambioLoading.innerHTML = `<p class="text-red-500">Falha ao carregar cotações de câmbio.</p>`;
+                } finally {
+                    if (cambioDataLoaded) {
+                        cambioLoading.classList.add('hidden');
+                        cambioContainer.classList.remove('hidden');
+                    }
+                }
+            }
+            
+            function renderCambioData(data, key) {
+                if (!data) return;
+                const valor = parseFloat(data.bid);
+                const variacao = parseFloat(data.pctChange);
+                
+                const elValor = document.getElementById(`cambio-${key}`);
+                const elVar = document.getElementById(`cambio-${key}-var`);
+                
+                elValor.textContent = formatCurrencyBRL(valor);
+                elVar.textContent = `${variacao.toFixed(2)}%`;
+                elVar.className = `text-lg ${getResultadoColor(variacao)}`;
+            }
+
+            // 2. Cripto (CoinGecko)
+            function initCriptoPage() {
+                if (!criptoDataLoaded) {
+                    fetchCriptoData();
+                }
+            }
+
+            async function fetchCriptoData() {
+                criptoLoading.classList.remove('hidden');
+                criptoTable.classList.add('hidden');
+                criptoLoading.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-yellow-400 text-4xl"></i><p class="mt-4 text-lg">Buscando cotações...</p>`;
+                
+                try {
+                    const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=brl&order=market_cap_desc&per_page=100&page=1&sparkline=false';
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const coins = await response.json();
+                    renderCriptoTable(coins); // Renderiza a tabela
+                    criptoDataLoaded = true;
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados de cripto:", error);
+                    criptoLoading.innerHTML = `<p class="text-red-500">Falha ao carregar dados. Verifique sua conexão e tente atualizar.</p>`;
+                } finally {
+                    if (criptoDataLoaded) {
+                        criptoLoading.classList.add('hidden');
+                        criptoTable.classList.remove('hidden');
+                    } else {
+                        criptoLoading.classList.remove('hidden');
+                        criptoTable.classList.add('hidden');
+                    }
+                }
+            }
+
+            function renderCriptoTable(coins, filter = "") {
+                criptoTableBody.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
+                
+                const filteredCoins = coins.filter(coin => 
+                    coin.name.toLowerCase().includes(searchTerm) || 
+                    coin.symbol.toLowerCase().includes(searchTerm)
+                );
+                
+                if(filteredCoins.length === 0) {
+                     criptoTableBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">Nenhum resultado encontrado para "${filter}".</td></tr>`;
+                     return;
+                }
+                
+                filteredCoins.forEach(coin => {
+                    const priceChange = coin.price_change_percentage_24h || 0;
+                    const priceChangeColor = getResultadoColor(priceChange);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 text-center text-gray-400">${coin.market_cap_rank}</td>
+                        <td class="py-3 px-4">
+                            <div class="flex items-center gap-3">
+                                <img src="${coin.image}" alt="${coin.name}" class="w-6 h-6 rounded-full">
+                                <div>
+                                    <span class="font-semibold text-white">${coin.name}</span>
+                                    <span class="text-xs text-gray-400 uppercase ml-2">${coin.symbol}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-4 text-right font-medium text-white">${formatCurrencyBRL(coin.current_price)}</td>
+                        <td class="py-3 px-4 text-right ${priceChangeColor}">${priceChange.toFixed(2)}%</td>
+                        <td class="py-3 px-4 text-right text-gray-300">${formatCurrencyBRL(coin.total_volume)}</td>
+                        <td class="py-3 px-4 text-right text-gray-300">${formatCurrencyBRL(coin.market_cap)}</td>
+                    `;
+                    criptoTableBody.appendChild(row);
+                });
+            }
+
+            // 3. Ações, FIIs, ETFs (Brapi API) (MODIFICADO)
+            
+            // Função ÚNICA para buscar todos os dados da Brapi
+            async function fetchAllBrapiData() {
+                if (brapiDataLoaded || brapiDataLoading) return; // (MODIFICADO) Adiciona verificação de 'loading'
+                brapiDataLoading = true; // (NOVO) Trava a função
+                
+                // Mostra todos os loadings
+                loadingAcoes.classList.remove('hidden');
+                loadingFiis.classList.remove('hidden');
+                loadingEtfs.classList.remove('hidden');
+                tableAcoes.classList.add('hidden');
+                tableFiis.classList.add('hidden');
+                tableEtfs.classList.add('hidden');
+
+                try {
+                    const allTickers = [tickersAcoes, tickersFiis, tickersEtfs].join(',');
+                    const url = `https://brapi.dev/api/quote/${allTickers}?token=${BRAPI_TOKEN}`;
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP: ${response.status}`);
+                    }
+                    const data = await response.json();
+                    
+                    if (!data.results) {
+                        throw new Error("Formato de resposta inesperado da Brapi.");
+                    }
+                    
+                    // Separa os resultados
+                    const allTickersSet = {
+                        acoes: new Set(tickersAcoes.split(',')),
+                        fiis: new Set(tickersFiis.split(',')),
+                        etfs: new Set(tickersEtfs.split(','))
+                    };
+                    
+                    data.results.forEach(item => {
+                        if (allTickersSet.acoes.has(item.symbol)) {
+                            brapiDataStore.acoes.push(item);
+                        } else if (allTickersSet.fiis.has(item.symbol)) {
+                            brapiDataStore.fiis.push(item);
+                        } else if (allTickersSet.etfs.has(item.symbol)) {
+                            brapiDataStore.etfs.push(item);
+                        }
+                    });
+                    
+                    brapiDataLoaded = true;
+
+                    // Renderiza as tabelas com os dados completos
+                    renderBrapiTable(brapiDataStore.acoes, tableBodyAcoes);
+                    renderBrapiTable(brapiDataStore.fiis, tableBodyFiis);
+                    renderBrapiTable(brapiDataStore.etfs, tableBodyEtfs);
+                    
+                } catch (error) {
+                    console.error("Erro ao buscar dados da Brapi:", error);
+                    // Mostra erro em todas as tabelas
+                    const errorMsg = `<p class="text-red-500">Falha ao carregar dados. ${error.message}.</p>`;
+                    loadingAcoes.innerHTML = errorMsg;
+                    loadingFiis.innerHTML = errorMsg;
+                    loadingEtfs.innerHTML = errorMsg;
+                } finally {
+                    brapiDataLoading = false; // (NOVO) Libera a trava, independente do resultado
+                    // Esconde todos os loadings e mostra as tabelas
+                    loadingAcoes.classList.add('hidden');
+                    loadingFiis.classList.add('hidden');
+                    loadingEtfs.classList.add('hidden');
+                    tableAcoes.classList.remove('hidden');
+                    tableFiis.classList.remove('hidden');
+                    tableEtfs.classList.remove('hidden');
+                }
+            }
+
+            // Inicializa uma página da Brapi (agora só filtra)
+            function initBrapiPage(type) {
+                if (!brapiDataLoaded) {
+                    fetchAllBrapiData(); // Chama a função única se os dados não foram carregados
+                }
+                // Os dados serão renderizados quando a 'fetchAllBrapiData' terminar
+            }
+
+            // Renderiza uma tabela da Brapi
+            function renderBrapiTable(data, tableBody, filter = "") {
+                tableBody.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
+
+                const filteredData = data.filter(item => 
+                    item.symbol.toLowerCase().includes(searchTerm) || 
+                    (item.longName && item.longName.toLowerCase().includes(searchTerm))
+                );
+                
+                if(filteredData.length === 0) {
+                     tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">Nenhum resultado encontrado.</td></tr>`;
+                     return;
+                }
+
+                filteredData.forEach(item => {
+                    const price = item.regularMarketPrice || 0;
+                    const change = item.regularMarketChangePercent || 0;
+                    const changeColor = getResultadoColor(change);
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-medium">${item.symbol}</td>
+                        <td class="py-3 px-4 text-gray-300">${item.longName || 'N/A'}</td>
+                        <td class="py-3 px-4 text-right font-medium">${formatCurrencyBRL(price)}</td>
+                        <td class="py-3 px-4 text-right ${changeColor}">${change.toFixed(2)}%</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            // 4. Renda Fixa (Estático)
+            const staticRendaFixaData = [
+                { nome: "Tesouro Selic 2027", tipo: "Tesouro Direto", rentabilidade: "Selic + 0,10%", vencimento: "01/03/2027" },
+                { nome: "Tesouro IPCA+ 2035", tipo: "Tesouro Direto", rentabilidade: "IPCA + 5,50%", vencimento: "15/05/2035" },
+                { nome: "CDB Banco X 110%", tipo: "CDB Pós", rentabilidade: "110% do CDI", vencimento: "10/10/2028" },
+                { nome: "LCI Banco Y 10.5%", tipo: "LCI Pré", rentabilidade: "10,5% a.a.", vencimento: "20/11/2026" }
+            ];
+            
+            function renderRendaFixaTable(data, filter = "") {
+                tableBodyRendaFixa.innerHTML = '';
+                const searchTerm = filter.toLowerCase();
+                
+                const filteredData = data.filter(item => 
+                    item.nome.toLowerCase().includes(searchTerm) || 
+                    item.tipo.toLowerCase().includes(searchTerm)
+                );
+
+                if(filteredData.length === 0) {
+                     tableBodyRendaFixa.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-gray-400">Nenhum resultado encontrado.</td></tr>`;
+                     return;
+                }
+
+                filteredData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800 hover:bg-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-medium">${item.nome}</td>
+                        <td class="py-3 px-4">${item.tipo}</td>
+                        <td class="py-3 px-4 text-right">${item.rentabilidade}</td>
+                        <td class="py-3 px-4 text-right">${item.vencimento}</td>
+                    `;
+                    tableBodyRendaFixa.appendChild(row);
+                });
+            }
+
+
+            // ==========================================================
+            // FUNÇÕES DE CÁLCULO (FERRAMENTAS)
+            // ==========================================================
+
+            // 1. Calculadora de Juros Compostos
+            function calcularJurosCompostos(e) {
+                if (e) e.preventDefault();
+                
+                const P = parseFloat(document.getElementById('jc-valor-inicial').value) || 0;
+                const A = parseFloat(document.getElementById('jc-aporte-mensal').value) || 0;
+                const taxaAnual = parseFloat(document.getElementById('jc-taxa-anual').value) || 0;
+                const anos = parseInt(document.getElementById('jc-tempo-anos').value) || 0;
+                
+                const r_mensal = (taxaAnual / 100) / 12;
+                const n_meses = anos * 12;
+                
+                let labels = ['Ano 0'];
+                let dataTotal = [P];
+                let dataInvestido = [P];
+                
+                let currentValue = P;
+                let currentInvestido = P;
+
+                for (let m = 1; m <= n_meses; m++) {
+                    currentValue += A;
+                    currentValue *= (1 + r_mensal);
+                    currentInvestido += A;
+                    
+                    if (m % 12 === 0) {
+                        labels.push(`Ano ${m / 12}`);
+                        dataTotal.push(currentValue);
+                        dataInvestido.push(currentInvestido);
+                    }
+                }
+                
+                const totalJuros = currentValue - currentInvestido;
+                
+                jcTotalInvestido.textContent = formatCurrencyBRL(currentInvestido);
+                jcTotalJuros.textContent = formatCurrencyBRL(totalJuros);
+                jcValorTotal.textContent = formatCurrencyBRL(currentValue);
+                
+                if (jurosCompostosChartInstance) {
+                    jurosCompostosChartInstance.data.labels = labels;
+                    jurosCompostosChartInstance.data.datasets[0].data = dataTotal;
+                    jurosCompostosChartInstance.data.datasets[1].data = dataInvestido;
+                    jurosCompostosChartInstance.update();
+                }
+            }
+
+            // 2. Calculadora de Benchmark
+            function calcularBenchmark(e) {
+                if (e) e.preventDefault();
+
+                const P = parseFloat(document.getElementById('b-valor-inicial').value) || 0;
+                const r_inv = parseFloat(document.getElementById('b-taxa-investimento').value) || 0;
+                const r_bench = parseFloat(document.getElementById('b-taxa-benchmark').value) || 0;
+                const anos = parseInt(document.getElementById('b-tempo-anos').value) || 0;
+                const nomeBenchmark = bNomeBenchmarkInput.value || 'Benchmark';
+                
+                let labels = ['Ano 0'];
+                let dataInv = [P];
+                let dataBench = [P];
+                
+                let currentInv = P;
+                let currentBench = P;
+
+                for (let y = 1; y <= anos; y++) {
+                    labels.push(`Ano ${y}`);
+                    currentInv *= (1 + r_inv / 100);
+                    currentBench *= (1 + r_bench / 100);
+                    dataInv.push(currentInv);
+                    dataBench.push(currentBench);
+                }
+
+                bValorInvestimento.textContent = formatCurrencyBRL(currentInv);
+                bValorBenchmark.textContent = formatCurrencyBRL(currentBench);
+
+                if (benchmarkChartInstance) {
+                    benchmarkChartInstance.data.labels = labels;
+                    benchmarkChartInstance.data.datasets[0].data = dataInv;
+                    benchmarkChartInstance.data.datasets[1].data = dataBench;
+                    benchmarkChartInstance.data.datasets[1].label = nomeBenchmark;
+                    benchmarkChartInstance.update();
+                }
+            }
+
+
+            // ==========================================================
+            // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (ORÇAMENTO)
+            // ==========================================================
+
+            function fullRender() {
+                renderGoalsSliders();
+                renderGoalsLegend();
+                renderMetasTabela();
+                renderGastoCategoriaSelect();
+                updateGoalsChart();
+                updateResumoTable();
+            }
+
+            function renderGoalsSliders() {
+                goalsSlidersContainer.innerHTML = '';
+                goalsData.forEach((goal) => {
+                    const sliderDiv = document.createElement('div');
+                    sliderDiv.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <label for="slider-${goal.key}" class="text-lg font-semibold text-white">${goal.name}</label>
+                            <span id="slider-${goal.key}-value" class="text-white font-semibold">${goal.percentage}%</span>
+                        </div>
+                        <input type="range" id="slider-${goal.key}" data-key="${goal.key}" class="slider-progress w-full" min="0" max="100" value="${goal.percentage}">
+                    `;
+                    goalsSlidersContainer.appendChild(sliderDiv);
+                    
+                    const sliderInput = sliderDiv.querySelector('input');
+                    sliderInput.style.setProperty('--progress-color', goal.color);
+                    sliderInput.style.setProperty('--progress-percent', `${goal.percentage}%`);
+                });
+            }
+
+            function renderGoalsLegend() {
+                goalsLegendContainer.innerHTML = '';
+                goalsData.forEach(goal => {
+                    if (goal.percentage > 0) {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center gap-2';
+                        legendItem.innerHTML = `
+                            <span class="w-3 h-3 rounded-full" style="background-color: ${goal.color};"></span>
+                            <span>${goal.name}</span>
+                        `;
+                        goalsLegendContainer.appendChild(legendItem);
+                    }
+                });
+            }
+            
+            function updateGoalsChart() {
+                if (goalsChartInstance) {
+                    goalsChartInstance.data.labels = goalsData.map(g => g.name);
+                    goalsChartInstance.data.datasets[0].data = goalsData.map(g => g.percentage);
+                    goalsChartInstance.data.datasets[0].backgroundColor = goalsData.map(g => g.color);
+                    goalsChartInstance.update();
+                    renderGoalsLegend();
+                }
+            }
+
+            function handleSliderInput(e) {
+                if (!e.target || e.target.type !== 'range') return;
+                
+                const key = e.target.dataset.key;
+                const value = parseFloat(e.target.value);
+                
+                const goal = goalsData.find(g => g.key === key);
+                if (goal) {
+                    goal.percentage = value;
+                }
+                
+                document.getElementById(`slider-${key}-value`).textContent = `${value}%`;
+                e.target.style.setProperty('--progress-percent', `${value}%`);
+                
+                const total = goalsData.reduce((sum, val) => sum + val.percentage, 0);
+                goalsTotalDisplay.textContent = `Total: ${total.toFixed(0)}%`;
+                goalsTotalDisplay.classList.toggle('text-red-500', total !== 100);
+                goalsTotalDisplay.classList.toggle('text-white', total === 100);
+
+                updateGoalsChart();
+                renderMetasTabela();
+                updateResumoTable();
+            }
+
+            function renderMetasTabela() {
+                metasTableBody.innerHTML = '';
+                goalsData.forEach(goal => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3">${goal.name}</td>
+                        <td class="py-3 text-right">${goal.percentage.toFixed(0)}%</td>
+                    `;
+                    metasTableBody.appendChild(row);
+                });
+            }
+
+            function renderGastoCategoriaSelect() {
+                gastoCategoriaSelect.innerHTML = '<option value="">Selecione...</option>';
+                goalsData.forEach(goal => {
+                    const option = document.createElement('option');
+                    option.value = goal.key;
+                    option.textContent = goal.name;
+                    gastoCategoriaSelect.appendChild(option);
+                });
+            }
+            
+            function updateResumoTable() {
+                const renda = parseFloat(rendaMensalInput.value) || 0;
+                resumoTableBody.innerHTML = '';
+                
+                let totalGastoGeral = 0;
+                let totalDevoGastarGeral = 0;
+                
+                goalsData.forEach(goal => {
+                    const gastosDaCategoria = gastos.filter(g => g.categoriaKey === goal.key);
+                    const totalGastoCategoria = gastosDaCategoria.reduce((sum, g) => sum + g.valor, 0);
+                    const devoGastarCategoria = renda * (goal.percentage / 100);
+                    
+                    const utilizadoPercent = devoGastarCategoria > 0 
+                        ? (totalGastoCategoria / devoGastarCategoria) * 100 
+                        : (totalGastoCategoria > 0 ? 100 : 0);
+
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-800';
+                    row.innerHTML = `
+                        <td class="py-3">${goal.name}</td>
+                        <td class="py-3 text-right">${formatCurrencyBRL(totalGastoCategoria)}</td>
+                        <td class="py-3 text-right">${formatCurrencyBRL(devoGastarCategoria)}</td>
+                        <td class="py-3 text-right ${getPercentColor(utilizadoPercent)}">${utilizadoPercent.toFixed(2)}%</td>
+                    `;
+                    resumoTableBody.appendChild(row);
+                    
+                    totalGastoGeral += totalGastoCategoria;
+                    totalDevoGastarGeral += devoGastarCategoria;
+                });
+                
+                const utilizadoGeralPercent = totalDevoGastarGeral > 0 
+                    ? (totalGastoGeral / totalDevoGastarGeral) * 100 
+                    : (totalGastoGeral > 0 ? 100 : 0);
+                
+                resumoTotalGasto.textContent = formatCurrencyBRL(totalGastoGeral);
+                resumoTotalDevoGastar.textContent = formatCurrencyBRL(totalDevoGastarGeral);
+                resumoTotalUtilizado.textContent = `${utilizadoGeralPercent.toFixed(0)}%`;
+                resumoTotalUtilizado.className = `pt-4 text-right ${getPercentColor(utilizadoGeralPercent)}`;
+                
+                updateGastosListTotals(renda);
+            }
+            
+            function renderGastosList() {
+                gastosListContainer.innerHTML = '';
+                
+                if (gastos.length === 0) {
+                    gastosListContainer.appendChild(gastosPlaceholder);
+                    return;
+                }
+
+                const gastosAgrupados = {};
+                goalsData.forEach(goal => {
+                    gastosAgrupados[goal.key] = { name: goal.name, items: [] };
+                });
+                
+                gastos.forEach(gasto => {
+                    if (gastosAgrupados[gasto.categoriaKey]) {
+                        gastosAgrupados[gasto.categoriaKey].items.push(gasto);
+                    }
+                });
+
+                Object.keys(gastosAgrupados).forEach(key => {
+                    const categoria = gastosAgrupados[key];
+                    if (categoria.items.length > 0) {
+                        const categoriaContainer = document.createElement('div');
+                        categoriaContainer.id = `categoria-${key}`;
+                        
+                        const itemsHtml = categoria.items.map(gasto => `
+                            <div class="flex items-center justify-between bg-gray-800 p-3 rounded-lg">
+                                <div class="flex-grow">
+                                    <span class="text-sm text-gray-300 block">${gasto.nome}</span>
+                                    <span class="text-white font-medium">${formatCurrencyBRL(gasto.valor)}</span>
+                                </div>
+                                <button class="edit-gasto-btn p-1 text-gray-400 hover:text-yellow-400" data-id="${gasto.id}" data-nome="${gasto.nome}" data-valor="${gasto.valor}">
+                                    <i class="fa-solid fa-pencil w-4 h-4 pointer-events-none"></i>
+                                </button>
+                                <button class="delete-gasto-btn p-1 text-gray-400 hover:text-red-500" data-id="${gasto.id}">
+                                    <i class="fa-solid fa-trash w-4 h-4 pointer-events-none"></i>
+                                </button>
+                            </div>
+                        `).join('');
+
+                        categoriaContainer.innerHTML = `
+                            <h3 class="font-semibold text-white mb-2">${categoria.name}</h3>
+                            <div class="space-y-2">${itemsHtml}</div>
+                            <div class="text-right text-white font-bold text-sm mt-2 border-t border-gray-700 pt-2">
+                                Total: <span id="total-${key}">R$ 0,00</span>
+                            </div>
+                        `;
+                        gastosListContainer.appendChild(categoriaContainer);
+                    }
+                });
+            }
+            
+            function updateGastosListTotals(renda) {
+                goalsData.forEach(goal => {
+                    const totalSpan = document.getElementById(`total-${goal.key}`);
+                    if (totalSpan) {
+                        const gastosDaCategoria = gastos.filter(g => g.categoriaKey === goal.key);
+                        const totalGastoCategoria = gastosDaCategoria.reduce((sum, g) => sum + g.valor, 0);
+                        totalSpan.textContent = formatCurrencyBRL(totalGastoCategoria);
+                    }
+                });
+            }
+
+            // --- Funções Auxiliares ---
+            function getPercentColor(percent) {
+                if (percent > 95) return 'text-red-500';
+                if (percent > 80) return 'text-yellow-500';
+                return 'text-green-400';
+            }
+            function getResultadoColor(resultado) {
+                if (resultado > 0) return 'text-green-400';
+                if (resultado < 0) return 'text-red-500';
+                return 'text-gray-400';
+            }
+            function formatCurrencyBRL(value) {
+                if (value === null || value === undefined || isNaN(value)) return 'R$ 0,00';
+                return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
+
+            // --- Funções do Modal de Edição (Gasto) ---
+            function openEditGastoModal(gasto) {
+                editGastoId.value = gasto.id;
+                editGastoNome.value = gasto.nome;
+                editGastoValor.value = gasto.valor.toFixed(2);
+                editGastoModal.classList.remove('hidden');
+            }
+            function closeEditGastoModal() {
+                editGastoModal.classList.add('hidden');
+                editGastoForm.reset();
+            }
+
+            // ==========================================================
+            // FUNÇÕES DE RENDERIZAÇÃO E CÁLCULO (PORTFÓLIO)
+            // ==========================================================
+            
+            function renderPortfolioCategoriaSelect() {
+                const selects = [addAtivoCategoria, editAtivoCategoria];
+                selects.forEach(select => {
+                    select.innerHTML = '<option value="">Selecione a Categoria...</option>';
+                    portfolioCategorias.forEach(cat => {
+                        const option = document.createElement('option');
+                        option.value = cat.key;
+                        option.textContent = cat.name;
+                        select.appendChild(option);
+                    });
+                });
+            }
+
+            function renderAtivosList() {
+                ativosListContainer.innerHTML = '';
+                
+                if (ativos.length === 0) {
+                    ativosListContainer.appendChild(ativosPlaceholder);
+                    return; 
+                }
+
+                const ativosAgrupados = {};
+                portfolioCategorias.forEach(cat => {
+                    ativosAgrupados[cat.key] = { name: cat.name, items: [] };
+                });
+                
+                ativos.forEach(ativo => {
+                    if (ativosAgrupados[ativo.categoriaKey]) {
+                        ativosAgrupados[ativo.categoriaKey].items.push(ativo);
+                    }
+                });
+
+                Object.keys(ativosAgrupados).forEach(key => {
+                    const categoria = ativosAgrupados[key];
+                    if (categoria.items.length > 0) {
+                        const categoriaContainer = document.createElement('div');
+                        categoriaContainer.className = 'bg-gray-900 p-6 rounded-lg shadow-lg';
+                        
+                        const itemsHtml = categoria.items.map(ativo => {
+                            const precoAtual = ativo.precoAtual || 0;
+                            const valorInvestido = ativo.quantidade * ativo.precoMedio;
+                            const valorAtualTotal = ativo.quantidade * precoAtual;
+                            const resultado = valorAtualTotal - valorInvestido;
+                            const resultadoPercent = valorInvestido > 0 ? (resultado / valorInvestido) * 100 : 0;
+                            
+                            return `
+                                <div class="grid grid-cols-7 gap-4 items-center py-3 border-b border-gray-800 last:border-b-0">
+                                    <div class="col-span-2">
+                                        <span class="text-lg font-semibold text-white block">${ativo.nome}</span>
+                                        <span class="text-sm text-gray-400">Qtd: ${ativo.quantidade}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Preço Médio</span>
+                                        <span class="text-white">${formatCurrencyBRL(ativo.precoMedio)}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Preço Atual</span>
+                                        <span class="text-white">${formatCurrencyBRL(precoAtual)}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Valor Invest.</span>
+                                        <span class="text-white">${formatCurrencyBRL(valorInvestido)}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Valor Atual</span>
+                                        <span class="text-white">${formatCurrencyBRL(valorAtualTotal)}</span>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm text-gray-400 block">Resultado</span>
+                                        <span class="${getResultadoColor(resultado)} font-semibold">
+                                            ${formatCurrencyBRL(resultado)} (${resultadoPercent.toFixed(1)}%)
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-end gap-2 pb-3 border-b border-gray-800 last:border-b-0">
+                                    <button class="edit-ativo-btn text-xs bg-gray-700 hover:bg-yellow-600 text-white py-1 px-2 rounded"
+                                        data-id="${ativo.id}"
+                                        data-nome="${ativo.nome}"
+                                        data-categoria="${ativo.categoriaKey}"
+                                        data-quantidade="${ativo.quantidade}"
+                                        data-preco-medio="${ativo.precoMedio}"
+                                        data-preco-atual="${precoAtual}" 
+                                    >
+                                        <i class="fa-solid fa-pencil mr-1 pointer-events-none"></i> Editar
+                                    </button>
+                                    <button class="delete-ativo-btn text-xs bg-gray-700 hover:bg-red-600 text-white py-1 px-2 rounded" data-id="${ativo.id}">
+                                        <i class="fa-solid fa-trash mr-1 pointer-events-none"></i> Excluir
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
+
+                        categoriaContainer.innerHTML = `
+                            <h3 class="text-xl font-semibold text-white mb-4">${categoria.name}</h3>
+                            <div class="space-y-2">${itemsHtml}</div>
+                        `;
+                        ativosListContainer.appendChild(categoriaContainer);
+                    }
+                });
+            }
+            
+            function updatePortfolioChartAndLegend() {
+                let totalPortfolio = 0;
+                const totaisCategoria = {};
+                portfolioCategorias.forEach(cat => totaisCategoria[cat.key] = 0);
+
+                ativos.forEach(ativo => {
+                    const precoAtual = ativo.precoAtual || 0;
+                    const valor = ativo.quantidade * precoAtual;
+                    totalPortfolio += valor;
+                    if (totaisCategoria[ativo.categoriaKey] !== undefined) {
+                        totaisCategoria[ativo.categoriaKey] += valor;
+                    }
+                });
+                
+                const chartData = portfolioCategorias.map(cat => totaisCategoria[cat.key]);
+                const chartLabels = portfolioCategorias.map(cat => cat.name);
+                const chartColors = portfolioCategorias.map(cat => cat.color);
+                
+                if (portfolioChartInstance) {
+                    portfolioChartInstance.data.labels = chartLabels;
+                    portfolioChartInstance.data.datasets[0].data = chartData;
+                    portfolioChartInstance.data.datasets[0].backgroundColor = chartColors;
+                    portfolioChartInstance.update();
+                }
+                
+                portfolioTotalValor.textContent = formatCurrencyBRL(totalPortfolio);
+                
+                portfolioLegendContainer.innerHTML = '';
+                portfolioCategorias.forEach(cat => {
+                    const valorCategoria = totaisCategoria[cat.key];
+                    const percent = totalPortfolio > 0 ? (valorCategoria / totalPortfolio) * 100 : 0;
+                    
+                    if (valorCategoria > 0) {
+                        const legendItem = document.createElement('div');
+                        legendItem.className = 'flex items-center justify-between';
+                        legendItem.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full" style="background-color: ${cat.color}"></span>
+                                <span>${cat.name}</span>
+                            </div>
+                            <span>${percent.toFixed(2)}%</span>
+                        `;
+                        portfolioLegendContainer.appendChild(legendItem);
+                    }
+                });
+            }
+
+            // --- Funções dos Modais (Ativo) ---
+            function openAddAtivoModal() {
+                addAtivoForm.reset();
+                addAtivoModal.classList.remove('hidden');
+            }
+            function closeAddAtivoModal() {
+                addAtivoModal.classList.add('hidden');
+            }
+            function openEditAtivoModal(ativo) {
+                editAtivoId.value = ativo.id;
+                editAtivoNome.value = ativo.nome;
+                editAtivoCategoria.value = ativo.categoria;
+                editAtivoQuantidade.value = ativo.quantidade;
+                editAtivoPrecoMedio.value = ativo.precoMedio;
+                editAtivoPrecoAtual.value = ativo.precoAtual.toFixed(2);
+                editAtivoModal.classList.remove('hidden');
+            }
+            function closeEditAtivoModal() {
+                editAtivoModal.classList.add('hidden');
+                editAtivoForm.reset();
+            }
+
+
+            // --- Funções de Inicialização dos Gráficos (Chart.js) ---
+            
+            function initPortfolioChart() {
+                const portfolioCanvas = document.getElementById('portfolioChart');
+                if (portfolioCanvas && !portfolioChartInstance) { 
+                    const portfolioCtx = portfolioCanvas.getContext('2d');
+                    portfolioChartInstance = new Chart(portfolioCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: [], datasets: [{ data: [], backgroundColor: [], borderWidth: 0, hoverOffset: 4 }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, cutout: '80%', 
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { 
+                                    enabled: true,
+                                    callbacks: {
+                                        label: function(context) {
+                                            const label = context.label || '';
+                                            const value = context.raw || 0;
+                                            const total = context.chart.getDatasetMeta(0).total;
+                                            const percent = total > 0 ? (value / total) * 100 : 0;
+                                            return `${label}: ${formatCurrencyBRL(value)} (${percent.toFixed(1)}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            function initBudgetHistoryChart() {
+                const budgetHistoryCanvas = document.getElementById('budgetHistoryChart');
+                if (budgetHistoryCanvas && !budgetHistoryChartInstance) {
+                    const budgetHistoryCtx = budgetHistoryCanvas.getContext('2d');
+                    budgetHistoryChartInstance = new Chart(budgetHistoryCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['04/2023', '05/2023', '06/2023', '07/2023', '08/2023', '09/2023', '10/2023', '11/2023', '12/2023'],
+                            datasets: [
+                                { label: 'Custos', data: [12, 19, 3, 5, 2, 8, 15, 6, 9], backgroundColor: chartColors.costs, borderRadius: 4 },
+                                { label: 'Renda', data: [8, 10, 5, 2, 9, 3, 16, 17, 4], backgroundColor: chartColors.income, borderRadius: 4 }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: {
+                                legend: { position: 'top', align: 'end', labels: { color: chartColors.legendColor, boxWidth: 12, padding: 20 } }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
+                            }
+                        }
+                    });
+                }
+            }
+            
+            function initGoalsChart() {
+                const goalsCanvas = document.getElementById('goalsChart');
+                if (goalsCanvas && !goalsChartInstance) {
+                    const goalsCtx = goalsCanvas.getContext('2d');
+                    goalsChartInstance = new Chart(goalsCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: goalsData.map(g => g.name),
+                            datasets: [{
+                                data: goalsData.map(g => g.percentage),
+                                backgroundColor: goalsData.map(g => g.color),
+                                borderWidth: 0, hoverOffset: 4
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, cutout: '80%', 
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { 
+                                    enabled: true,
+                                    callbacks: { label: function(context) { return `${context.label}: ${context.raw}%`; } }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            function initJurosCompostosChart() {
+                const jcCanvas = document.getElementById('jurosCompostosChart');
+                if (jcCanvas && !jurosCompostosChartInstance) {
+                    const jcCtx = jcCanvas.getContext('2d');
+                    jurosCompostosChartInstance = new Chart(jcCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                { label: 'Valor Total Acumulado', data: [], borderColor: chartColors.income, backgroundColor: chartColors.income, fill: false, tension: 0.1 },
+                                { label: 'Total Investido', data: [], borderColor: chartColors.gridColor, backgroundColor: chartColors.gridColor, fill: false, tension: 0.1, borderDash: [5, 5] }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
+                            },
+                            plugins: { legend: { labels: { color: chartColors.legendColor } } }
+                        }
+                    });
+                }
+            }
+
+            function initBenchmarkChart() {
+                const bCanvas = document.getElementById('benchmarkChart');
+                if (bCanvas && !benchmarkChartInstance) {
+                    const bCtx = bCanvas.getContext('2d');
+                    benchmarkChartInstance = new Chart(bCtx, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [
+                                { label: 'Seu Investimento', data: [], borderColor: chartColors.income, backgroundColor: chartColors.income, fill: false, tension: 0.1 },
+                                { label: 'Benchmark', data: [], borderColor: chartColors.costs, backgroundColor: chartColors.costs, fill: false, tension: 0.1 }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: chartColors.gridColor }, ticks: { color: chartColors.ticksColor } },
+                                x: { grid: { display: false }, ticks: { color: chartColors.ticksColor } }
+                            },
+                            plugins: { legend: { labels: { color: chartColors.legendColor } } }
+                        }
+                    });
+                }
+            }
+            
+            // ==========================================================
+            // ADIÇÃO DE EVENT LISTENERS
+            // ==========================================================
+            
+            // --- Listeners do Orçamento ---
+            btnSave.addEventListener('click', saveConfiguration);
+            rendaMensalInput.addEventListener('change', updateResumoTable);
+            goalsSlidersContainer.addEventListener('input', handleSliderInput);
+            addGastoForm.addEventListener('submit', addGasto);
+            
+            gastosListContainer.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-gasto-btn');
+                const deleteBtn = e.target.closest('.delete-gasto-btn');
+                
+                if (editBtn) {
+                    const gasto = { id: editBtn.dataset.id, nome: editBtn.dataset.nome, valor: parseFloat(editBtn.dataset.valor) };
+                    openEditGastoModal(gasto);
+                }
+                if (deleteBtn) {
+                    const gastoId = deleteBtn.dataset.id;
+                    if (gastoId) { deleteGasto(gastoId); }
+                }
+            });
+            
+            editGastoForm.addEventListener('submit', updateGasto);
+            btnCancelEditGasto.addEventListener('click', closeEditGastoModal);
+            
+            // --- Listeners do Portfólio ---
+            btnOpenAddAtivoModal.addEventListener('click', openAddAtivoModal);
+            btnCancelAddAtivo.addEventListener('click', closeAddAtivoModal);
+            addAtivoForm.addEventListener('submit', addAtivo);
+
+            ativosListContainer.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.edit-ativo-btn');
+                const deleteBtn = e.target.closest('.delete-ativo-btn');
+
+                if (editBtn) {
+                    const ativo = {
+                        id: editBtn.dataset.id, nome: editBtn.dataset.nome, categoria: editBtn.dataset.categoria,
+                        quantidade: parseFloat(editBtn.dataset.quantidade), precoMedio: parseFloat(editBtn.dataset.precoMedio),
+                        precoAtual: parseFloat(editBtn.dataset.precoAtual)
+                    };
+                    openEditAtivoModal(ativo);
+                }
+                if (deleteBtn) {
+                    const ativoId = deleteBtn.dataset.id;
+                    if (ativoId) { deleteAtivo(ativoId); }
+                }
+            });
+
+            editAtivoForm.addEventListener('submit', updateAtivo);
+            btnCancelEditAtivo.addEventListener('click', closeEditAtivoModal);
+
+            // --- Listeners de Ferramentas ---
+            jurosCompostosForm.addEventListener('submit', calcularJurosCompostos);
+            benchmarkForm.addEventListener('submit', calcularBenchmark);
+            bNomeBenchmarkInput.addEventListener('input', (e) => {
+                if(benchmarkChartInstance) {
+                    benchmarkChartInstance.data.datasets[1].label = e.target.value || 'Benchmark';
+                    benchmarkChartInstance.update('none'); 
+                }
+            });
+            btnRefreshCambio.addEventListener('click', fetchCambioData);
+            
+            // --- Listeners de Cotações ---
+            btnRefreshCripto.addEventListener('click', fetchCriptoData);
+            searchCripto.addEventListener('input', (e) => {
+                // A função `renderCriptoTable` agora precisa do cache local de cripto
+                // (Esta parte precisa de refatoração para guardar os dados cripto localmente, assim como a Brapi)
+                // Por agora, esta pesquisa não funcionará em tempo real sem refatorar `fetchCriptoData`
+                // Vamos simplificar: a pesquisa cripto não vai refazer a busca, apenas filtrar o que está na tela (se já carregado)
+                if(criptoDataLoaded) {
+                    // (Necessário refatorar para armazenar dados cripto em cache como `brapiDataStore`)
+                }
+            });
+
+            searchAcoes.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.acoes, tableBodyAcoes, e.target.value);
+            });
+            searchFiis.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.fiis, tableBodyFiis, e.target.value);
+            });
+            searchEtfs.addEventListener('input', (e) => {
+                renderBrapiTable(brapiDataStore.etfs, tableBodyEtfs, e.target.value);
+            });
+            searchRendaFixa.addEventListener('input', (e) => {
+                renderRendaFixaTable(staticRendaFixaData, e.target.value);
+            });
+            
+            // ==========================================================
+            // INICIALIZAÇÃO
+            // ==========================================================
+            
+            // 1. Preenche os selects dos modais (ambos os tipos)
+            renderGastoCategoriaSelect();
+            renderPortfolioCategoriaSelect(); 
+
+            // 2. Carrega Renda e Metas (Orçamento)
+            loadConfiguration();
+            
+            // 3. Inicia os listeners de dados
+            setupGastosListener();
+            setupAtivosListener(); 
+            
+            // 4. (NOVO) Inicia o carregamento de dados da Brapi em segundo plano
+            // (Não chama 'await' para não bloquear a UI)
+            fetchAllBrapiData();
+
+            // 5. Inicializa a Página Padrão
+            showPage('home'); // (MODIFICADO) Começa na página de Perfil
+            setActiveLink(document.querySelector('.nav-link[data-page="home"]')); // (MODIFICADO)
+            
+        }; // Fim do 'initDashboard'
+    </script>
+
+</body>
+</html>
