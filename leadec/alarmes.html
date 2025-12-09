@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Alarmes Industriais</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior-y: none;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease-in-out;
+        }
+        .sidebar-item:hover, .sidebar-item.active {
+            background-color: #3182ce; /* blue-600 */
+            color: white;
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s ease;
+        }
+        #status-chart {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <!-- Tela de Login -->
+    <div id="login-view" class="flex items-center justify-center h-screen bg-gray-200">
+        <div class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg">
+            <div class="flex justify-center mb-6">
+                <i class="fas fa-bell text-4xl text-blue-500"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-2">Bem-vindo ao Gerenciador</h2>
+            <p class="text-center text-gray-500 mb-6">Faça login para continuar</p>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="seu@email.com">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="password" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="••••••••">
+                </div>
+                <p id="auth-error" class="text-red-500 text-sm text-center mb-4"></p>
+                <div class="flex items-center justify-between space-x-2">
+                    <button type="button" id="register-btn" class="w-full bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition">Registrar</button>
+                    <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Entrar</button>
+                </div>
+            </form>
+            <div class="relative flex py-5 items-center">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm">OU</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+            <button id="google-login-btn" class="w-full flex items-center justify-center bg-white border border-gray-300 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-50 transition">
+                <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google logo" class="h-5 mr-3">
+                Entrar com Google
+            </button>
+        </div>
+    </div>
+
+    <!-- Aplicação Principal -->
+    <div id="app" class="flex h-screen hidden">
+        <!-- Overlay for mobile sidebar -->
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-20 hidden md:hidden"></div>
+        
+        <!-- Sidebar de Navegação -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 w-64 bg-gray-800 text-white flex flex-col p-4 shadow-lg transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out z-30">
+            <div class="flex items-center justify-between mb-8">
+                <div class="flex items-center">
+                    <i class="fas fa-bell text-2xl text-blue-400 mr-3"></i>
+                    <h1 class="text-xl font-bold">Alarmes</h1>
+                </div>
+                <button id="close-sidebar-btn" class="md:hidden text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <nav id="node-list" class="flex-grow overflow-y-auto">
+                <a href="#" id="dashboard-link" class="sidebar-item active flex items-center p-3 rounded-lg mb-2">
+                    <i class="fas fa-chart-line w-6 mr-3"></i>
+                    <span>Dashboard</span>
+                </a>
+                 <a href="#" id="audit-link" class="sidebar-item flex items-center p-3 rounded-lg mb-2">
+                    <i class="fas fa-history w-6 mr-3"></i>
+                    <span>Auditoria</span>
+                </a>
+                <div class="flex justify-between items-center mt-4 mb-2 px-3">
+                    <h2 class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Nós do Sistema</h2>
+                    <button id="add-node-btn" class="text-gray-400 hover:text-white transition">
+                        <i class="fas fa-plus-circle"></i>
+                    </button>
+                </div>
+                <!-- Container for dynamic nodes -->
+                <div id="dynamic-node-list"></div>
+            </nav>
+            <div id="user-info" class="border-t border-gray-700 pt-4">
+                <p id="user-email" class="text-sm text-center text-gray-400 truncate"></p>
+                <button id="logout-btn" class="w-full mt-2 bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition flex items-center justify-center">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    <span>Sair</span>
+                </button>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col">
+            <!-- Mobile Header -->
+            <header class="md:hidden bg-white shadow-md p-4 flex justify-between items-center">
+                <button id="hamburger-btn" class="text-gray-600">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+                <h1 id="mobile-header-title" class="text-lg font-bold">Dashboard</h1>
+            </header>
+
+            <!-- Conteúdo Principal -->
+            <main class="flex-1 p-4 md:p-8 overflow-y-auto">
+                <!-- Visão do Dashboard -->
+                <div id="dashboard-view">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                        <div>
+                            <h1 class="text-3xl font-bold mb-2">Dashboard de Status</h1>
+                            <p class="text-gray-600">Visão geral do estado dos alarmes na fábrica.</p>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-4 sm:mt-0">
+                            <button id="import-sheet-btn" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-teal-700 transition duration-300 flex items-center">
+                                <i class="fas fa-file-import mr-2"></i> Importar
+                            </button>
+                            <button id="export-all-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-700 transition duration-300 flex items-center">
+                                <i class="fas fa-file-excel mr-2"></i> Exportar Tudo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
+                            <input type="search" id="dashboard-search-input" placeholder="Pesquisar em todos os alarmes..." class="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-lg">
+                        </div>
+                    </div>
+
+                    <!-- Cards de Status Principais -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
+                            <div class="bg-blue-100 p-4 rounded-full mr-4">
+                                <i class="fas fa-list-ol text-2xl text-blue-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Total de Alarmes</p>
+                                <p id="total-alarms" class="text-3xl font-bold">0</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
+                            <div class="bg-green-100 p-4 rounded-full mr-4">
+                                <i class="fas fa-check-circle text-2xl text-green-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Funcionando</p>
+                                <p id="active-alarms" class="text-3xl font-bold text-green-600">0</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
+                            <div class="bg-red-100 p-4 rounded-full mr-4">
+                                <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Total de Falhas</p>
+                                <p id="total-failures-alarms" class="text-3xl font-bold text-red-600">0</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center">
+                            <div class="bg-gray-200 p-4 rounded-full mr-4">
+                                <i class="fas fa-power-off text-2xl text-gray-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Desativado</p>
+                                <p id="deactivated-alarms" class="text-3xl font-bold text-gray-600">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detalhamento de Falhas -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+                            <p class="text-gray-500 text-sm">Não Funcionando</p>
+                            <p id="inactive-alarms" class="text-2xl font-bold text-red-600">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+                            <p class="text-gray-500 text-sm">Aguard. Manutenção</p>
+                            <p id="maintenance-alarms" class="text-2xl font-bold text-yellow-600">0</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-md text-center">
+                            <p class="text-gray-500 text-sm">Aguard. Peças</p>
+                            <p id="parts-alarms" class="text-2xl font-bold text-blue-600">0</p>
+                        </div>
+                    </div>
+
+
+                    <!-- Gráficos de Distribuição e Evolução -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h2 class="text-xl font-semibold mb-4">Distribuição de Status</h2>
+                            <canvas id="status-chart"></canvas>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h2 class="text-xl font-semibold mb-4">Alarmes Corrigidos por Semana</h2>
+                            <canvas id="evolution-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visão da Lista de Alarmes por Nó -->
+                <div id="node-view" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h1 id="node-title" class="text-3xl font-bold"></h1>
+                            <p class="text-gray-600">Gerencie os alarmes cadastrados neste nó.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-grow">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </span>
+                                <input type="search" id="node-search-input" placeholder="Pesquisar..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                             <div class="flex items-center gap-2">
+                                <button id="zoom-out-btn" title="Diminuir fonte" class="bg-white border rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100"><i class="fas fa-search-minus"></i></button>
+                                <button id="zoom-in-btn" title="Aumentar fonte" class="bg-white border rounded-lg px-3 py-2 text-gray-600 hover:bg-gray-100"><i class="fas fa-search-plus"></i></button>
+                                <button id="export-node-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-green-700 transition duration-300 flex items-center w-full sm:w-auto justify-center">
+                                    <i class="fas fa-file-excel mr-2"></i><span class="hidden sm:inline">Exportar</span>
+                                </button>
+                                <button id="add-alarm-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition duration-300 flex items-center w-full sm:w-auto justify-center">
+                                    <i class="fas fa-plus mr-2"></i><span class="hidden sm:inline">Adicionar</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Desktop Table -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hidden md:block">
+                        <div class="overflow-x-auto">
+                            <table id="node-table" class="w-full text-left" style="font-size: 14px;">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Item</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Descrição</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Localização</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Endereço</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Ala</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">SAP</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Qtd.</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Data Criação</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Status</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Última Modificação</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Última Verificação</th>
+                                        <th class="px-2 py-3 text-sm font-semibold text-gray-600">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="alarms-table-body">
+                                   <!-- Linhas da tabela serão inseridas aqui -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                     <!-- Mobile Card View -->
+                    <div id="alarms-card-view" class="md:hidden">
+                        <!-- Cards de alarme serão inseridos aqui -->
+                    </div>
+                    <div id="empty-state" class="text-center p-12 text-gray-500 hidden">
+                        <i class="fas fa-bell-slash text-4xl mb-4"></i>
+                        <p>Nenhum alarme cadastrado para este nó.</p>
+                    </div>
+                </div>
+
+                 <!-- Visão de Filtro por Status -->
+                <div id="status-filter-view" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h1 id="status-filter-title" class="text-3xl font-bold"></h1>
+                            <p class="text-gray-600">Lista de todos os alarmes com este status.</p>
+                        </div>
+                         <div class="relative w-full sm:w-auto sm:max-w-xs">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </span>
+                            <input type="search" id="status-search-input" placeholder="Pesquisar..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hidden md:block">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Item</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Nó</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Descrição</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Localização</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Status</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Última Modificação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="status-filter-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="status-filter-card-view" class="md:hidden">
+                    </div>
+                     <div id="status-filter-empty-state" class="text-center p-12 text-gray-500 hidden">
+                        <i class="fas fa-bell-slash text-4xl mb-4"></i>
+                        <p>Nenhum alarme encontrado com este status.</p>
+                    </div>
+                </div>
+                
+                 <!-- Visão de Resultados de Pesquisa -->
+                <div id="search-results-view" class="hidden">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                        <div>
+                            <h1 id="search-results-title" class="text-3xl font-bold"></h1>
+                            <p class="text-gray-600">Resultados da sua busca em todos os alarmes.</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden hidden md:block">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Item</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Nó</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Descrição</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Localização</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Status</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Última Modificação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="search-results-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="search-results-card-view" class="md:hidden">
+                    </div>
+                     <div id="search-results-empty-state" class="text-center p-12 text-gray-500 hidden">
+                        <i class="fas fa-search text-4xl mb-4"></i>
+                        <p>Nenhum alarme encontrado para sua busca.</p>
+                    </div>
+                </div>
+
+
+                <!-- Visão de Auditoria -->
+                <div id="audit-view" class="hidden">
+                    <h1 class="text-3xl font-bold mb-2">Trilha de Auditoria</h1>
+                    <p class="text-gray-600 mb-8">Histórico de todas as modificações realizadas no sistema.</p>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Data</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Usuário</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Ação</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Detalhes da Mudança</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Justificativa</th>
+                                        <th class="p-4 text-sm font-semibold text-gray-600">Alarme/Nó</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="audit-table-body">
+                                    <!-- Logs de auditoria -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="audit-empty-state" class="text-center p-12 text-gray-500 hidden">
+                            <i class="fas fa-history text-4xl mb-4"></i>
+                            <p>Nenhuma modificação registrada ainda.</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container">
+        <!-- Modal para Adicionar/Editar Alarme -->
+        <div id="alarm-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg md:max-w-3xl p-6 md:p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="modal-title" class="text-2xl font-bold">Adicionar Novo Alarme</h2>
+                    <button id="close-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="alarm-form">
+                    <input type="hidden" id="alarm-id">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label for="item" class="block text-sm font-medium text-gray-700 mb-1">Item</label>
+                            <input type="text" id="item" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="descricao" class="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                            <input type="text" id="descricao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="localizacao" class="block text-sm font-medium text-gray-700 mb-1">Localização</label>
+                            <input type="text" id="localizacao" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="endereco" class="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+                            <input type="text" id="endereco" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="ala" class="block text-sm font-medium text-gray-700 mb-1">Ala</label>
+                            <input type="text" id="ala" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="sap" class="block text-sm font-medium text-gray-700 mb-1">SAP</label>
+                            <input type="text" id="sap" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="quantidade" class="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
+                            <input type="number" id="quantidade" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="data" class="block text-sm font-medium text-gray-700 mb-1">Data de Criação</label>
+                            <input type="date" id="data" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-gray-100" readonly>
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                            <select id="status" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                                <option value="Funcionando">Funcionando</option>
+                                <option value="Não Funcionando">Não Funcionando</option>
+                                <option value="Aguardando Manutenção">Aguardando Manutenção</option>
+                                <option value="Aguardando Peças">Aguardando Peças</option>
+                                <option value="Desativado">Desativado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Alarme</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal para Adicionar Nó -->
+        <div id="add-node-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Adicionar Novo Nó</h2>
+                    <button id="close-add-node-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="add-node-form">
+                    <div>
+                        <label for="node-name" class="block text-sm font-medium text-gray-700 mb-1">Nome do Nó</label>
+                        <input type="text" id="node-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-add-node-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Salvar Nó</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Editar Nó -->
+        <div id="edit-node-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Editar Nome do Nó</h2>
+                    <button id="close-edit-node-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="edit-node-form">
+                    <input type="hidden" id="edit-node-id">
+                    <input type="hidden" id="edit-node-old-name">
+                    <div>
+                        <label for="edit-node-name" class="block text-sm font-medium text-gray-700 mb-1">Novo Nome do Nó</label>
+                        <input type="text" id="edit-node-name" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
+                    </div>
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-edit-node-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Atualizar Nó</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modal de Histórico do Alarme -->
+        <div id="history-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="history-modal-title" class="text-2xl font-bold">Histórico do Alarme</h2>
+                    <button id="close-history-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <div id="history-modal-body" class="max-h-96 overflow-y-auto">
+                    <!-- Conteúdo do histórico aqui -->
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal de Confirmação para Deletar -->
+        <div id="confirm-delete-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 transform scale-95 transition-all duration-300">
+                <h2 class="text-xl font-bold mb-4">Confirmar Exclusão</h2>
+                <p id="confirm-delete-message" class="text-gray-600 mb-6">Você tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</p>
+                <div class="flex justify-end">
+                    <button id="cancel-delete-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                    <button id="confirm-delete-btn" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition">Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Justificativa da Mudança -->
+        <div id="reason-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-8 transform scale-95 transition-all duration-300">
+                <h2 class="text-xl font-bold mb-4">Justificativa da Alteração</h2>
+                <p class="text-gray-600 mb-4">Por favor, descreva brevemente o motivo desta alteração.</p>
+                <form id="reason-form">
+                    <textarea id="change-reason" rows="4" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Manutenção preventiva realizada."></textarea>
+                    <div class="mt-6 flex justify-end">
+                        <button type="button" id="cancel-reason-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition">Confirmar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal para Importar Planilha -->
+        <div id="import-modal" class="modal-backdrop fixed inset-0 flex items-center justify-center hidden opacity-0">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-8 transform scale-95 transition-all duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold">Importar Alarmes da Planilha</h2>
+                    <button id="close-import-modal-btn" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+                </div>
+                <form id="import-form">
+                    <p class="text-gray-600 mb-1">
+                        Copie os dados da sua planilha (Excel, Google Sheets, etc), incluindo a linha do cabeçalho, e cole no campo abaixo.
+                    </p>
+                    <p class="text-gray-500 text-sm mb-4">
+                        O sistema irá criar novos alarmes ou <strong class="font-semibold">atualizar existentes</strong> com base na combinação de 'Item' e 'Nó'.
+                    </p>
+                    <textarea id="sheet-data" rows="10" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Cole os dados da planilha aqui..."></textarea>
+                    
+                    <div class="mt-4">
+                        <label for="import-reason" class="block text-sm font-medium text-gray-700 mb-1">Justificativa da Importação</label>
+                        <textarea id="import-reason" rows="2" class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required placeholder="Ex: Carga inicial de dados da Ala 3."></textarea>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" id="cancel-import-btn" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg mr-4 hover:bg-gray-300 transition">Cancelar</button>
+                        <button type="submit" class="bg-teal-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-teal-700 transition">Importar Dados</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Alert/Toast -->
+    <div id="toast-notification" class="fixed top-5 right-5 bg-green-500 text-white py-3 px-5 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300">
+        <p id="toast-message">Operação realizada com sucesso!</p>
+    </div>
+
+
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, setDoc, serverTimestamp, query, deleteDoc, where, getDocs, writeBatch, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+
+        // --- INÍCIO DA CONFIGURAÇÃO PARA USO LOCAL ---
+        const LOCAL_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBnjR2jPu92EVvrkgX-lzmxFFdUm69ReMY",
+            authDomain: "alarmes-3d3f8.firebaseapp.com",
+            projectId: "alarmes-3d3f8",
+            storageBucket: "alarmes-3d3f8.firebasestorage.app",
+            messagingSenderId: "266272928787",
+            appId: "1:266272928787:web:59e26b24dc977af3f9fbe6",
+            measurementId: "G-TDD14WQ5EX"
+        };
+        // --- FIM DA CONFIGURAÇÃO PARA USO LOCAL ---
+
+        // A lógica abaixo usará a configuração do Canvas se disponível, ou a sua configuração local caso contrário.
+        const firebaseConfig = typeof __firebase_config !== 'undefined'
+            ? JSON.parse(__firebase_config)
+            : LOCAL_FIREBASE_CONFIG;
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // Configuração e Variáveis Globais
+        const INITIAL_NODES = ["Nó 01", "Nó 2", "Nó 4", "Nó 5", "Nó 6", "Nó 7", "Nó 11", "Nó 13", "MINIMAX", "FACP FIRE AETRA"];
+        let db, auth;
+        let currentUser = null;
+        let alarms = [];
+        let nodes = [];
+        let auditLog = [];
+        let statusChartInstance = null;
+        let evolutionChartInstance = null;
+        let selectedView = 'dashboard';
+        let currentSelectedNode = null;
+        let currentSearchTerm = '';
+        let currentFontSize = 14;
+        const MIN_FONT_SIZE = 10;
+        const MAX_FONT_SIZE = 20;
+        let unsubscribeAlarms = () => {};
+        let unsubscribeNodes = () => {};
+        let unsubscribeAuditLog = () => {};
+        
+        // Elementos da UI
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app');
+        const dashboardView = document.getElementById('dashboard-view');
+        const nodeView = document.getElementById('node-view');
+        const auditView = document.getElementById('audit-view');
+        const statusFilterView = document.getElementById('status-filter-view');
+        const searchResultsView = document.getElementById('search-results-view');
+        const alarmsTableBody = document.getElementById('alarms-table-body');
+        const alarmsCardView = document.getElementById('alarms-card-view');
+        const auditTableBody = document.getElementById('audit-table-body');
+        const nodeTitle = document.getElementById('node-title');
+        const mobileHeaderTitle = document.getElementById('mobile-header-title');
+        const dynamicNodeList = document.getElementById('dynamic-node-list');
+        const statusFilterTitle = document.getElementById('status-filter-title');
+        const statusFilterTableBody = document.getElementById('status-filter-table-body');
+        const statusFilterCardView = document.getElementById('status-filter-card-view');
+        const searchResultsTitle = document.getElementById('search-results-title');
+        const searchResultsTableBody = document.getElementById('search-results-table-body');
+        const searchResultsCardView = document.getElementById('search-results-card-view');
+        const nodeSearchInput = document.getElementById('node-search-input');
+        const statusSearchInput = document.getElementById('status-search-input');
+        const dashboardSearchInput = document.getElementById('dashboard-search-input');
+        const historyModal = document.getElementById('history-modal');
+        const closeHistoryModalBtn = document.getElementById('close-history-modal-btn');
+        const historyModalTitle = document.getElementById('history-modal-title');
+        const historyModalBody = document.getElementById('history-modal-body');
+        const zoomInBtn = document.getElementById('zoom-in-btn');
+        const zoomOutBtn = document.getElementById('zoom-out-btn');
+        const nodeTable = document.getElementById('node-table');
+        
+        // --- FUNÇÕES DO MODAL DE ALARME ---
+        const modal = document.getElementById('alarm-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const alarmForm = document.getElementById('alarm-form');
+        const openModalBtn = document.getElementById('add-alarm-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+
+        const openModal = () => {
+            document.getElementById('data').value = new Date().toISOString().slice(0, 10);
+            modal.classList.remove('hidden');
+            setTimeout(() => { 
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+        const closeModal = () => {
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            alarmForm.reset();
+            document.getElementById('alarm-id').value = '';
+        };
+
+        openModalBtn.addEventListener('click', () => {
+            modalTitle.textContent = `Adicionar Alarme em ${currentSelectedNode}`;
+            openModal();
+        });
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+        
+        // --- FUNÇÕES DO MODAL DE HISTÓRICO ---
+        const openHistoryModal = (alarmId) => {
+            const alarm = alarms.find(a => a.id === alarmId);
+            if (!alarm) return;
+
+            historyModalTitle.textContent = `Histórico do Item: ${alarm.item}`;
+            
+            const alarmHistory = auditLog
+                .filter(log => log.alarmId === alarmId)
+                .sort((a, b) => b.timestamp.toMillis() - a.timestamp.toMillis());
+
+            historyModalBody.innerHTML = '';
+
+            if (alarmHistory.length === 0) {
+                historyModalBody.innerHTML = '<p class="text-gray-500 text-center">Nenhum histórico de alterações para este item.</p>';
+            } else {
+                const list = document.createElement('ul');
+                list.className = 'space-y-4';
+                alarmHistory.forEach(log => {
+                    const item = document.createElement('li');
+                    item.className = 'p-3 bg-gray-50 rounded-lg border';
+                    const logDate = log.timestamp ? log.timestamp.toDate().toLocaleString('pt-BR') : 'N/A';
+                    
+                    let action = '';
+                    let details = '';
+
+                    if (log.fieldName === 'status') {
+                        action = 'Mudança de Status';
+                        details = `de <span class="font-semibold">${log.oldValue || 'N/A'}</span> para <span class="font-semibold">${log.newValue}</span>`;
+                    } else if (log.fieldName === 'verificação') {
+                        action = 'Verificação Confirmada';
+                        details = 'O estado funcional do alarme foi confirmado.';
+                    } else {
+                        action = `Campo Modificado: ${log.fieldName}`;
+                        details = `de <span class="font-semibold">${log.oldValue || 'vazio'}</span> para <span class="font-semibold">${log.newValue}</span>`;
+                    }
+
+                    item.innerHTML = `
+                        <div class="flex justify-between items-center mb-1">
+                            <p class="font-semibold text-gray-800">${action}</p>
+                            <p class="text-xs text-gray-500">${logDate}</p>
+                        </div>
+                        <p class="text-sm text-gray-600">${details}</p>
+                        <p class="text-sm text-gray-500 mt-1"><i class="fas fa-user mr-2"></i>${log.userEmail}</p>
+                        <p class="text-sm text-gray-700 mt-2 p-2 bg-gray-100 rounded"><b>Justificativa:</b> ${log.changeReason || 'N/A'}</p>
+                    `;
+                    list.appendChild(item);
+                });
+                historyModalBody.appendChild(list);
+            }
+
+            historyModal.classList.remove('hidden');
+            setTimeout(() => { 
+                historyModal.classList.remove('opacity-0');
+                historyModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const closeHistoryModal = () => {
+            historyModal.classList.add('opacity-0');
+            historyModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => historyModal.classList.add('hidden'), 300);
+        };
+        closeHistoryModalBtn.addEventListener('click', closeHistoryModal);
+        historyModal.addEventListener('click', (e) => {
+            if (e.target === historyModal) closeHistoryModal();
+        });
+
+
+        // --- FUNÇÕES DO MODAL DE NÓ (Adicionar/Editar) ---
+        const addNodeModal = document.getElementById('add-node-modal');
+        const addNodeForm = document.getElementById('add-node-form');
+        const editNodeModal = document.getElementById('edit-node-modal');
+        const editNodeForm = document.getElementById('edit-node-form');
+        
+        const closeAddNodeModal = () => {
+            addNodeModal.classList.add('opacity-0');
+            addNodeModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => addNodeModal.classList.add('hidden'), 300);
+            addNodeForm.reset();
+        };
+
+        const openEditNodeModal = (nodeId, nodeName) => {
+            document.getElementById('edit-node-id').value = nodeId;
+            document.getElementById('edit-node-old-name').value = nodeName;
+            document.getElementById('edit-node-name').value = nodeName;
+            editNodeModal.classList.remove('hidden');
+            setTimeout(() => {
+                editNodeModal.classList.remove('opacity-0');
+                editNodeModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const closeEditNodeModal = () => {
+            editNodeModal.classList.add('opacity-0');
+            editNodeModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                editNodeModal.classList.add('hidden');
+                editNodeForm.reset();
+            }, 300);
+        };
+
+        document.getElementById('close-add-node-modal-btn').addEventListener('click', closeAddNodeModal);
+        document.getElementById('cancel-add-node-btn').addEventListener('click', closeAddNodeModal);
+        document.getElementById('close-edit-node-modal-btn').addEventListener('click', closeEditNodeModal);
+        document.getElementById('cancel-edit-node-btn').addEventListener('click', closeEditNodeModal);
+
+        // --- FUNÇÕES DO MODAL DE IMPORTAÇÃO ---
+        const importModal = document.getElementById('import-modal');
+        const importForm = document.getElementById('import-form');
+
+        const openImportModal = () => {
+            importModal.classList.remove('hidden');
+            setTimeout(() => {
+                importModal.classList.remove('opacity-0');
+                importModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+        const closeImportModal = () => {
+            importModal.classList.add('opacity-0');
+            importModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => importModal.classList.add('hidden'), 300);
+            importForm.reset();
+        };
+
+        document.getElementById('import-sheet-btn').addEventListener('click', openImportModal);
+        document.getElementById('close-import-modal-btn').addEventListener('click', closeImportModal);
+        document.getElementById('cancel-import-btn').addEventListener('click', closeImportModal);
+
+        // --- FUNÇÕES DO MODAL DE CONFIRMAÇÃO ---
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        let deleteFunction = null;
+
+        const openConfirmDeleteModal = (message, onDelete) => {
+            document.getElementById('confirm-delete-message').textContent = message;
+            deleteFunction = onDelete;
+            confirmDeleteModal.classList.remove('hidden');
+            setTimeout(() => { 
+                confirmDeleteModal.classList.remove('opacity-0');
+                confirmDeleteModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+        const closeConfirmDeleteModal = () => {
+            confirmDeleteModal.classList.add('opacity-0');
+            confirmDeleteModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => confirmDeleteModal.classList.add('hidden'), 300);
+            deleteFunction = null;
+        };
+        cancelDeleteBtn.addEventListener('click', closeConfirmDeleteModal);
+        confirmDeleteBtn.addEventListener('click', () => {
+            if (deleteFunction) {
+                deleteFunction();
+            }
+            closeConfirmDeleteModal();
+        });
+
+        // --- FUNÇÕES DO MODAL DE JUSTIFICATIVA ---
+        const reasonModal = document.getElementById('reason-modal');
+        const reasonForm = document.getElementById('reason-form');
+        let reasonConfirmCallback = null;
+        let activeEditableField = null;
+
+        const openReasonModal = (onConfirm) => {
+            reasonConfirmCallback = onConfirm;
+            reasonModal.classList.remove('hidden');
+            setTimeout(() => {
+                reasonModal.classList.remove('opacity-0');
+                reasonModal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        };
+
+        const closeReasonModal = () => {
+            reasonModal.classList.add('opacity-0');
+            reasonModal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                reasonModal.classList.add('hidden');
+                reasonForm.reset();
+                reasonConfirmCallback = null;
+            }, 300);
+        };
+        
+        document.getElementById('cancel-reason-btn').addEventListener('click', () => {
+            if (activeEditableField) {
+                activeEditableField.target.value = activeEditableField.oldValue;
+                activeEditableField = null;
+            }
+            closeReasonModal();
+        });
+
+        reasonForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const reason = document.getElementById('change-reason').value;
+            if (reasonConfirmCallback) {
+                reasonConfirmCallback(reason);
+            }
+            closeReasonModal();
+        });
+
+
+        // --- FUNÇÃO DE NOTIFICAÇÃO (TOAST) ---
+        const showToast = (message, isError = false) => {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.className = `fixed top-5 right-5 text-white py-3 px-5 rounded-lg shadow-lg transform transition-transform duration-300 ${isError ? 'bg-red-500' : 'bg-green-500'} translate-x-0`;
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+
+        // --- FUNÇÕES DE EXPORTAÇÃO ---
+        const exportToExcel = (data, fileName) => {
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Alarmes");
+            XLSX.writeFile(workbook, `${fileName}.xlsx`);
+        };
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+        const getWeekNumber = (d) => {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return [d.getUTCFullYear(), weekNo];
+        }
+
+        const getStatusClass = (status) => {
+            switch (status) {
+                case 'Funcionando':
+                    return 'bg-green-100 text-green-800';
+                case 'Não Funcionando':
+                    return 'bg-red-100 text-red-800';
+                case 'Aguardando Manutenção':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'Aguardando Peças':
+                    return 'bg-blue-100 text-blue-800';
+                 case 'Desativado':
+                    return 'bg-gray-200 text-gray-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        };
+
+        const renderSidebar = () => {
+            const dynamicNodeListContainer = document.getElementById('dynamic-node-list');
+            dynamicNodeListContainer.innerHTML = ''; // Limpa apenas o container dos nós
+
+            nodes.sort((a, b) => a.name.localeCompare(b.name)).forEach(node => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'sidebar-item flex items-center justify-between p-3 rounded-lg mb-2 group';
+                link.dataset.node = node.name;
+                
+                link.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-server w-6 mr-3"></i>
+                        <span class="truncate">${node.name}</span>
+                    </div>
+                     <div class="flex items-center space-x-3">
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="edit-node-btn text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button data-node-id="${node.id}" data-node-name="${node.name}" class="delete-node-btn text-gray-400 hover:text-white opacity-0 group-hover:opacity-100 transition">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                `;
+                
+                link.addEventListener('click', (e) => {
+                    if (e.target.closest('button')) return; 
+                    e.preventDefault();
+                    switchView('node', node.name);
+                });
+
+                dynamicNodeListContainer.appendChild(link);
+            });
+             
+            dynamicNodeListContainer.querySelectorAll('.edit-node-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nodeId = btn.dataset.nodeId;
+                    const nodeName = btn.dataset.nodeName;
+                    openEditNodeModal(nodeId, nodeName);
+                });
+            });
+
+            dynamicNodeListContainer.querySelectorAll('.delete-node-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const nodeId = btn.dataset.nodeId;
+                    const nodeName = btn.dataset.nodeName;
+                    openConfirmDeleteModal(`Tem certeza que deseja excluir o nó "${nodeName}" e todos os seus alarmes?`, () => {
+                         openReasonModal((reason) => {
+                            deleteNodeAndAlarms(nodeId, nodeName, reason);
+                         });
+                    });
+                });
+            });
+        };
+
+        const updateDashboardCards = () => {
+            const total = alarms.length;
+            const active = alarms.filter(a => a.status && a.status === 'Funcionando').length;
+            const inactive = alarms.filter(a => a.status && a.status === 'Não Funcionando').length;
+            const maintenance = alarms.filter(a => a.status && a.status === 'Aguardando Manutenção').length;
+            const waitingForParts = alarms.filter(a => a.status && a.status === 'Aguardando Peças').length;
+            const totalFailures = inactive + maintenance + waitingForParts;
+            const deactivated = alarms.filter(a => a.status && a.status === 'Desativado').length;
+            
+            document.getElementById('total-alarms').textContent = total;
+            document.getElementById('active-alarms').textContent = active;
+            document.getElementById('inactive-alarms').textContent = inactive;
+            document.getElementById('maintenance-alarms').textContent = maintenance;
+            document.getElementById('parts-alarms').textContent = waitingForParts;
+            document.getElementById('total-failures-alarms').textContent = totalFailures;
+            document.getElementById('deactivated-alarms').textContent = deactivated;
+        };
+        
+        const renderStatusChart = () => {
+            const statusCounts = {
+                'Funcionando': 0,
+                'Não Funcionando': 0,
+                'Aguardando Manutenção': 0,
+                'Aguardando Peças': 0,
+                'Desativado': 0
+            };
+
+            alarms.forEach(alarm => {
+                if (alarm.status && statusCounts.hasOwnProperty(alarm.status)) {
+                    statusCounts[alarm.status]++;
+                }
+            });
+            
+            const labels = Object.keys(statusCounts);
+            const data = Object.values(statusCounts);
+
+            const ctx = document.getElementById('status-chart').getContext('2d');
+            if (statusChartInstance) statusChartInstance.destroy();
+            
+            statusChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Status dos Alarmes',
+                        data: data,
+                        backgroundColor: ['rgb(34, 197, 94)','rgb(239, 68, 68)','rgb(245, 158, 11)','rgb(59, 130, 246)', 'rgb(107, 114, 128)'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { legend: { position: 'top' } },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const chartElement = elements[0];
+                            const label = statusChartInstance.data.labels[chartElement.index];
+                            switchView('status-filter', label);
+                        }
+                    }
+                }
+            });
+        };
+
+        const renderEvolutionChart = () => {
+            const nonWorkingStates = ['Não Funcionando', 'Aguardando Manutenção', 'Aguardando Peças'];
+            const fixedAlarms = auditLog.filter(log =>
+                log.fieldName === 'status' &&
+                nonWorkingStates.includes(log.oldValue) &&
+                log.newValue === 'Funcionando' &&
+                log.timestamp
+            );
+
+            const weeklyFixes = {};
+            
+            fixedAlarms.forEach(log => {
+                const date = log.timestamp.toDate();
+                const [year, week] = getWeekNumber(date);
+                const weekKey = `${year}-W${String(week).padStart(2, '0')}`; // Pad for sorting
+                weeklyFixes[weekKey] = (weeklyFixes[weekKey] || 0) + 1;
+            });
+
+            const sortedWeeks = Object.keys(weeklyFixes).sort().slice(-12);
+            const labels = sortedWeeks.map(k => k.replace('-W', ' Sem '));
+            const data = sortedWeeks.map(k => weeklyFixes[k]);
+
+            const ctx = document.getElementById('evolution-chart').getContext('2d');
+            if (evolutionChartInstance) evolutionChartInstance.destroy();
+
+            evolutionChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Alarmes Corrigidos',
+                        data: data,
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        };
+
+        const renderAlarms = (node) => {
+            let filteredAlarms = alarms.filter(alarm => alarm.node === node);
+            
+            if (currentSearchTerm) {
+                const searchTerm = currentSearchTerm.toLowerCase().trim();
+                filteredAlarms = filteredAlarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(searchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(searchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(searchTerm)) ||
+                    (alarm.address && alarm.address.toLowerCase().includes(searchTerm)) ||
+                    (alarm.wing && alarm.wing.toLowerCase().includes(searchTerm)) ||
+                    (alarm.sap && alarm.sap.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            alarmsTableBody.innerHTML = '';
+            alarmsCardView.innerHTML = '';
+            
+            document.getElementById('empty-state').classList.toggle('hidden', filteredAlarms.length === 0);
+
+            if (filteredAlarms.length > 0) {
+                filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || '', undefined, { numeric: true }));
+
+                filteredAlarms.forEach(alarm => {
+                    const statusClass = getStatusClass(alarm.status);
+                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleString('pt-BR') : 'N/A';
+                    const lastVerificationDate = alarm.lastVerification ? alarm.lastVerification.toDate().toLocaleString('pt-BR') : '-';
+                    const alarmDate = alarm.data ? new Date(alarm.data + 'T00:00:00Z').toLocaleDateString('pt-BR') : '-';
+                    
+                    const statusOptions = `
+                        <option value="Funcionando" ${alarm.status === 'Funcionando' ? 'selected' : ''}>Funcionando</option>
+                        <option value="Não Funcionando" ${alarm.status === 'Não Funcionando' ? 'selected' : ''}>Não Funcionando</option>
+                        <option value="Aguardando Manutenção" ${alarm.status === 'Aguardando Manutenção' ? 'selected' : ''}>Aguardando Manutenção</option>
+                        <option value="Aguardando Peças" ${alarm.status === 'Aguardando Peças' ? 'selected' : ''}>Aguardando Peças</option>
+                        <option value="Desativado" ${alarm.status === 'Desativado' ? 'selected' : ''}>Desativado</option>
+                    `;
+                    
+                    // Render Table Row (for desktop)
+                    const row = document.createElement('tr');
+                    row.className = 'border-b hover:bg-gray-50 transition';
+                    row.innerHTML = `
+                        <td class="px-2 py-3 whitespace-nowrap">${alarm.item || '-'}</td>
+                        <td class="px-2 py-3"><input type="text" value="${alarm.description || ''}" data-id="${alarm.id}" data-field="description" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="px-2 py-3"><input type="text" value="${alarm.location || ''}" data-id="${alarm.id}" data-field="location" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="px-2 py-3"><input type="text" value="${alarm.address || ''}" data-id="${alarm.id}" data-field="address" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="px-2 py-3"><input type="text" value="${alarm.wing || ''}" data-id="${alarm.id}" data-field="wing" class="editable-field bg-transparent w-full focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="px-2 py-3 whitespace-nowrap">${alarm.sap || '-'}</td>
+                        <td class="px-2 py-3"><input type="number" value="${alarm.quantidade != null ? alarm.quantidade : ''}" data-id="${alarm.id}" data-field="quantidade" class="editable-field bg-transparent w-24 text-center focus:outline-none focus:bg-gray-100 p-2 rounded-md border border-transparent focus:border-gray-300 transition"></td>
+                        <td class="px-2 py-3 whitespace-nowrap">${alarmDate}</td>
+                        <td class="px-2 py-3">
+                            <select data-id="${alarm.id}" class="status-select ${statusClass} rounded-full px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2">
+                                ${statusOptions}
+                            </select>
+                        </td>
+                        <td class="px-2 py-3 text-sm text-gray-600 whitespace-nowrap">${lastUpdateDate}</td>
+                        <td class="px-2 py-3 text-sm text-gray-600 whitespace-nowrap">${lastVerificationDate}</td>
+                        <td class="px-2 py-3 text-center space-x-2">
+                           <button data-id="${alarm.id}" class="history-alarm-btn text-gray-400 hover:text-blue-600 transition" title="Ver histórico"><i class="fas fa-history"></i></button>
+                           <button data-id="${alarm.id}" class="verify-alarm-btn text-gray-400 hover:text-green-600 transition" title="Confirmar verificação"><i class="fas fa-check-circle"></i></button>
+                           <button data-id="${alarm.id}" class="delete-alarm-btn text-gray-400 hover:text-red-600 transition" title="Excluir alarme"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    alarmsTableBody.appendChild(row);
+
+                    // Render Card (for mobile)
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg shadow mb-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${alarm.item || 'N/A'}</h3>
+                                <input type="text" value="${alarm.description || ''}" data-id="${alarm.id}" data-field="description" class="editable-field bg-transparent w-full text-sm text-gray-600 focus:outline-none focus:bg-gray-100 p-1 rounded-md border border-transparent focus:border-gray-300 transition">
+                            </div>
+                            <select data-id="${alarm.id}" class="status-select ${statusClass} rounded-full px-3 py-1 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 text-right">
+                                ${statusOptions}
+                            </select>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Localização:</strong> <input type="text" value="${alarm.location || ''}" data-id="${alarm.id}" data-field="location" class="editable-field bg-transparent w-1/2 text-right focus:outline-none focus:bg-gray-100 p-1 rounded-md border border-transparent focus:border-gray-300 transition"></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Endereço:</strong> <input type="text" value="${alarm.address || ''}" data-id="${alarm.id}" data-field="address" class="editable-field bg-transparent w-1/2 text-right focus:outline-none focus:bg-gray-100 p-1 rounded-md border border-transparent focus:border-gray-300 transition"></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Ala:</strong> <input type="text" value="${alarm.wing || ''}" data-id="${alarm.id}" data-field="wing" class="editable-field bg-transparent w-1/2 text-right focus:outline-none focus:bg-gray-100 p-1 rounded-md border border-transparent focus:border-gray-300 transition"></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Qtd:</strong> <input type="number" value="${alarm.quantidade != null ? alarm.quantidade : ''}" data-id="${alarm.id}" data-field="quantidade" class="editable-field bg-transparent w-1/2 text-right focus:outline-none focus:bg-gray-100 p-1 rounded-md border border-transparent focus:border-gray-300 transition"></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">SAP:</strong> <span>${alarm.sap || '-'}</span></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Criação:</strong> <span>${alarmDate}</span></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Modificação:</strong> <span>${lastUpdateDate}</span></div>
+                            <div class="flex justify-between items-center"><strong class="text-gray-500">Verificação:</strong> <span>${lastVerificationDate}</span></div>
+                        </div>
+                        <div class="flex justify-end space-x-4 mt-4 border-t pt-3">
+                           <button data-id="${alarm.id}" class="history-alarm-btn text-gray-500 hover:text-blue-600 transition text-xl" title="Ver histórico"><i class="fas fa-history"></i></button>
+                           <button data-id="${alarm.id}" class="verify-alarm-btn text-gray-500 hover:text-green-600 transition text-xl" title="Confirmar verificação"><i class="fas fa-check-circle"></i></button>
+                           <button data-id="${alarm.id}" class="delete-alarm-btn text-gray-500 hover:text-red-600 transition text-xl" title="Excluir alarme"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    `;
+                    alarmsCardView.appendChild(card);
+                });
+            }
+        };
+        
+        const renderSearchResults = (searchTerm) => {
+            const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
+            let filteredAlarms = [];
+            if (lowerCaseSearchTerm) {
+                filteredAlarms = alarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.address && alarm.address.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.wing && alarm.wing.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.sap && alarm.sap.toLowerCase().includes(lowerCaseSearchTerm)) ||
+                    (alarm.node && alarm.node.toLowerCase().includes(lowerCaseSearchTerm))
+                );
+            }
+
+            searchResultsTableBody.innerHTML = '';
+            searchResultsCardView.innerHTML = '';
+
+            document.getElementById('search-results-empty-state').classList.toggle('hidden', filteredAlarms.length > 0);
+
+            if (filteredAlarms.length > 0) {
+                 filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || '', undefined, { numeric: true }));
+
+                filteredAlarms.forEach(alarm => {
+                    const statusClass = getStatusClass(alarm.status);
+                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleString('pt-BR') : 'N/A';
+                    
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+                    row.innerHTML = `
+                        <td class="p-4 whitespace-nowrap">${alarm.item || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.node || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.description || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.location || '-'}</td>
+                        <td class="p-4"><span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span></td>
+                        <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${lastUpdateDate}</td>
+                    `;
+                    searchResultsTableBody.appendChild(row);
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg shadow mb-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${alarm.item || 'N/A'}</h3>
+                                <p class="text-sm text-gray-600">${alarm.description || ''}</p>
+                            </div>
+                            <span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><strong class="text-gray-500">Nó:</strong> <span>${alarm.node || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Localização:</strong> <span>${alarm.location || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Modificação:</strong> <span>${lastUpdateDate}</span></div>
+                        </div>
+                    `;
+                    searchResultsCardView.appendChild(card);
+                });
+            }
+        };
+
+
+        const renderStatusFilteredAlarms = (status) => {
+            let filteredAlarms = alarms.filter(alarm => alarm.status && alarm.status === status);
+            
+            if (currentSearchTerm) {
+                const searchTerm = currentSearchTerm.toLowerCase().trim();
+                filteredAlarms = filteredAlarms.filter(alarm =>
+                    (alarm.item && alarm.item.toLowerCase().includes(searchTerm)) ||
+                    (alarm.node && alarm.node.toLowerCase().includes(searchTerm)) ||
+                    (alarm.description && alarm.description.toLowerCase().includes(searchTerm)) ||
+                    (alarm.location && alarm.location.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            statusFilterTableBody.innerHTML = '';
+            statusFilterCardView.innerHTML = '';
+
+            document.getElementById('status-filter-empty-state').classList.toggle('hidden', filteredAlarms.length > 0);
+
+            if (filteredAlarms.length > 0) {
+                 filteredAlarms.sort((a, b) => (a.item || '').localeCompare(b.item || '', undefined, { numeric: true }));
+
+                filteredAlarms.forEach(alarm => {
+                    const statusClass = getStatusClass(alarm.status);
+                    const lastUpdateDate = alarm.lastUpdate ? alarm.lastUpdate.toDate().toLocaleString('pt-BR') : 'N/A';
+                    
+                    // Render Table Row
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+                    row.innerHTML = `
+                        <td class="p-4 whitespace-nowrap">${alarm.item || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.node || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.description || '-'}</td>
+                        <td class="p-4 whitespace-nowrap">${alarm.location || '-'}</td>
+                        <td class="p-4"><span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span></td>
+                        <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${lastUpdateDate}</td>
+                    `;
+                    statusFilterTableBody.appendChild(row);
+
+                    // Render Card
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg shadow mb-4';
+                    card.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${alarm.item || 'N/A'}</h3>
+                                <p class="text-sm text-gray-600">${alarm.description || ''}</p>
+                            </div>
+                            <span class="${statusClass} rounded-full px-3 py-1 text-xs font-semibold">${alarm.status}</span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between"><strong class="text-gray-500">Nó:</strong> <span>${alarm.node || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Localização:</strong> <span>${alarm.location || '-'}</span></div>
+                            <div class="flex justify-between"><strong class="text-gray-500">Modificação:</strong> <span>${lastUpdateDate}</span></div>
+                        </div>
+                    `;
+                    statusFilterCardView.appendChild(card);
+                });
+            }
+        };
+
+        const renderAuditLogTable = () => {
+            auditTableBody.innerHTML = '';
+            document.getElementById('audit-empty-state').classList.toggle('hidden', auditLog.length > 0);
+
+            auditLog.forEach(log => {
+                const row = document.createElement('tr');
+                row.className = 'border-b';
+                const logDate = log.timestamp ? log.timestamp.toDate().toLocaleString('pt-BR') : 'N/A';
+                
+                let action = '';
+                let details = '';
+
+                if (log.fieldName === 'alarme') {
+                    if (log.newValue === 'criado') {
+                        action = '<span class="font-semibold text-green-600">Alarme Criado</span>';
+                        details = 'Novo registro adicionado ao sistema.';
+                    } else if (log.newValue === 'deletado') {
+                        action = '<span class="font-semibold text-red-600">Alarme Excluído</span>';
+                        details = 'Registro removido permanentemente.';
+                    }
+                } else if (log.fieldName === 'nó') {
+                    if (log.newValue === 'deletado') {
+                         action = '<span class="font-semibold text-red-600">Nó Excluído</span>';
+                         details = `Nó '${log.oldValue}' e seus alarmes foram removidos.`;
+                    } else {
+                         action = '<span class="font-semibold text-purple-600">Nó Renomeado</span>';
+                         details = `Nome alterado de "${log.oldValue}" para "${log.newValue}".`;
+                    }
+                } else if (log.fieldName === 'verificação') {
+                     action = `<span class="font-semibold text-cyan-600">Verificação</span>`;
+                     details = `Alarme confirmado como "Funcionando".`;
+                }
+                
+                else {
+                     action = `<span class="font-semibold text-blue-600">Campo Modificado</span>`;
+                     details = `<b>${log.fieldName}</b>: <span class="text-gray-500">"${log.oldValue || 'vazio'}"</span> &rarr; <span class="text-black">"${log.newValue}"</span>`;
+                }
+
+                row.innerHTML = `
+                    <td class="p-4 text-sm text-gray-600 whitespace-nowrap">${logDate}</td>
+                    <td class="p-4 text-sm text-gray-500 truncate" title="${log.userEmail || ''}">${log.userEmail || '-'}</td>
+                    <td class="p-4 text-sm">${action}</td>
+                    <td class="p-4 text-sm">${details}</td>
+                    <td class="p-4 text-sm text-gray-700">${log.changeReason || '-'}</td>
+                    <td class="p-4 text-sm font-medium">${log.alarmItem || '-'}</td>
+                `;
+                auditTableBody.appendChild(row);
+            });
+        };
+
+        const switchView = (view, data = null) => {
+            selectedView = view;
+            currentSelectedNode = view === 'node' ? data : null;
+            
+            currentSearchTerm = '';
+            nodeSearchInput.value = '';
+            statusSearchInput.value = '';
+            // Don't clear dashboard search on tab switch, only on new search
+            // dashboardSearchInput.value = ''; 
+
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            [dashboardView, nodeView, auditView, statusFilterView, searchResultsView].forEach(v => v.classList.add('hidden'));
+
+            if (view === 'dashboard') {
+                dashboardView.classList.remove('hidden');
+                document.getElementById('dashboard-link').classList.add('active');
+                mobileHeaderTitle.textContent = "Dashboard";
+                updateDashboardCards();
+                renderStatusChart();
+                renderEvolutionChart();
+            } else if (view === 'node') {
+                nodeView.classList.remove('hidden');
+                nodeTitle.textContent = data;
+                mobileHeaderTitle.textContent = data;
+                renderAlarms(data);
+                const activeItem = document.querySelector(`.sidebar-item[data-node="${data}"]`);
+                if(activeItem) activeItem.classList.add('active');
+            } else if (view === 'audit') {
+                 auditView.classList.remove('hidden');
+                 document.getElementById('audit-link').classList.add('active');
+                 mobileHeaderTitle.textContent = "Auditoria";
+                 renderAuditLogTable();
+            } else if (view === 'status-filter') {
+                statusFilterView.classList.remove('hidden');
+                document.getElementById('dashboard-link').classList.add('active'); // Keep dashboard active
+                statusFilterTitle.textContent = `Alarmes: ${data}`;
+                mobileHeaderTitle.textContent = data;
+                renderStatusFilteredAlarms(data);
+            } else if (view === 'search-results') {
+                searchResultsView.classList.remove('hidden');
+                document.getElementById('dashboard-link').classList.add('active');
+                searchResultsTitle.textContent = `Resultados para: "${data}"`;
+                mobileHeaderTitle.textContent = 'Resultados da Busca';
+                renderSearchResults(data);
+            }
+        };
+        
+        // --- FUNÇÕES DO FIREBASE ---
+        
+        function initializeAppListeners() {
+            if (currentUser) {
+                listenToAlarms();
+                listenToNodes();
+                listenToAuditLog();
+            }
+        }
+        
+        function clearAppListeners() {
+            unsubscribeAlarms();
+            unsubscribeNodes();
+            unsubscribeAuditLog();
+            alarms = [];
+            nodes = [];
+            auditLog = [];
+        }
+
+        function listenToAlarms() {
+            const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
+            unsubscribeAlarms = onSnapshot(query(collection(db, alarmsCollectionPath)), (snapshot) => {
+                alarms = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (selectedView === 'node') {
+                    renderAlarms(currentSelectedNode);
+                } else if (selectedView === 'dashboard') {
+                    updateDashboardCards();
+                    renderStatusChart();
+                } else if (selectedView === 'status-filter') {
+                    const currentStatus = statusFilterTitle.textContent.replace('Alarmes: ', '');
+                    renderStatusFilteredAlarms(currentStatus);
+                } else if (selectedView === 'search-results') {
+                    const currentQuery = searchResultsTitle.textContent.match(/"([^"]*)"/)[1];
+                    renderSearchResults(currentQuery);
+                }
+            }, (error) => console.error("Erro ao ouvir os alarmes: ", error));
+        }
+        
+        function listenToNodes() {
+            const nodesCollectionPath = `artifacts/${appId}/public/data/nodes`;
+            let hasAttemptedInit = false; // Flag to ensure we only try to initialize once.
+
+            unsubscribeNodes = onSnapshot(query(collection(db, nodesCollectionPath)), (snapshot) => {
+                
+                if (snapshot.empty && !hasAttemptedInit) {
+                    hasAttemptedInit = true; // Set flag immediately to prevent re-entry.
+                    
+                    const batch = writeBatch(db);
+                    const nodesCollectionRef = collection(db, nodesCollectionPath);
+                    INITIAL_NODES.forEach(nodeName => {
+                        const newNodeRef = doc(nodesCollectionRef);
+                        batch.set(newNodeRef, { name: nodeName });
+                    });
+                    
+                    batch.commit().catch(e => {
+                        console.error("Error committing initial nodes batch:", e);
+                        showToast("Falha ao criar nós iniciais.", true);
+                        hasAttemptedInit = false; // Allow retry on failure
+                    });
+                    return; // Wait for the listener to fire again with the new data.
+                }
+
+                nodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderSidebar();
+                
+                const activeItem = document.querySelector('.sidebar-item.active');
+                if (activeItem) activeItem.classList.remove('active');
+
+                if (selectedView === 'node' && !nodes.some(n => n.name === currentSelectedNode)) {
+                    switchView('dashboard');
+                } else if (selectedView === 'node') {
+                    const item = document.querySelector(`.sidebar-item[data-node="${currentSelectedNode}"]`);
+                    if (item) item.classList.add('active');
+                } else {
+                     const item = document.getElementById(`${selectedView}-link`);
+                     if (item) item.classList.add('active');
+                }
+            }, (error) => {
+                console.error("Erro ao carregar os nós do sistema.", true);
+                showToast("Erro ao carregar os nós do sistema.", true);
+            });
+        }
+
+        function listenToAuditLog() {
+            const auditLogCollectionPath = `artifacts/${appId}/public/data/audit_log`;
+            const q = query(collection(db, auditLogCollectionPath), orderBy("timestamp", "desc"));
+
+            unsubscribeAuditLog = onSnapshot(q, (snapshot) => {
+                auditLog = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                if(selectedView === 'audit') renderAuditLogTable();
+                else if (selectedView === 'dashboard') renderEvolutionChart();
+            }, (error) => console.error("Erro ao ouvir o log de auditoria: ", error));
+        }
+
+        async function logAudit(fieldName, oldValue, newValue, alarmId, alarmItem, changeReason) {
+            if (!currentUser) return;
+            const auditLogCollectionPath = `artifacts/${appId}/public/data/audit_log`;
+            try {
+                await addDoc(collection(db, auditLogCollectionPath), {
+                    alarmId, alarmItem, fieldName, oldValue, newValue, changeReason,
+                    changedBy: currentUser.uid,
+                    userEmail: currentUser.email,
+                    timestamp: serverTimestamp()
+                });
+            } catch (error) {
+                console.error("Erro ao escrever no log de auditoria:", error);
+            }
+        }
+
+        async function saveAlarm(data, reason) {
+            if (!currentUser) {
+                showToast("Usuário não autenticado.", true);
+                return;
+            }
+            const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
+            const id = document.getElementById('alarm-id').value;
+            const originalAlarm = id ? alarms.find(a => a.id === id) : null;
+            
+            try {
+                if (id) {
+                    const alarmRef = doc(db, alarmsCollectionPath, id);
+                    await setDoc(alarmRef, data, { merge: true });
+                    showToast("Alarme atualizado com sucesso!");
+                    
+                    Object.keys(data).forEach(key => {
+                        if (originalAlarm && String(originalAlarm[key] || '') !== String(data[key])) {
+                            if (key !== 'lastUpdate') {
+                               logAudit(key, originalAlarm[key] || null, data[key], id, data.item, reason);
+                            }
+                        }
+                    });
+                } else {
+                    const docRef = await addDoc(collection(db, alarmsCollectionPath), data);
+                    showToast("Alarme adicionado com sucesso!");
+                    logAudit('alarme', null, 'criado', docRef.id, data.item, reason);
+                }
+                closeModal();
+            } catch (error) {
+                console.error("Erro ao salvar alarme: ", error);
+                showToast("Falha ao salvar o alarme.", true);
+            }
+        }
+        
+        async function processImport(textData, reason) {
+            const lines = textData.trim().split('\n');
+            if (lines.length < 2) {
+                showToast("Dados insuficientes para importação. Copie o cabeçalho e pelo menos uma linha de dados.", true);
+                return;
+            }
+
+            const header = lines[0].split('\t').map(h => h.trim().toLowerCase());
+            const rows = lines.slice(1);
+
+            const headerMap = {
+                item: header.indexOf('item'),
+                description: header.indexOf('descrição') > -1 ? header.indexOf('descrição') : header.indexOf('descricao'),
+                location: header.indexOf('localização') > -1 ? header.indexOf('localização') : header.indexOf('localizacao'),
+                address: header.indexOf('endereço') > -1 ? header.indexOf('endereço') : header.indexOf('endereco'),
+                wing: header.indexOf('ala'),
+                node: header.indexOf('nó') > -1 ? header.indexOf('nó') : header.indexOf('no'),
+                status: header.indexOf('status'),
+                data: header.indexOf('data'),
+                sap: header.indexOf('sap'),
+                quantidade: header.indexOf('quantidade') > -1 ? header.indexOf('quantidade') : (header.indexOf('qtd') > -1 ? header.indexOf('qtd') : header.indexOf('qtd.'))
+            };
+
+            if (headerMap.item === -1 || headerMap.node === -1) {
+                showToast("A importação falhou. As colunas 'Item' e 'Nó' são obrigatórias.", true);
+                return;
+            }
+
+            const existingAlarmsMap = new Map(alarms.map(a => [`${a.node}|${a.item}`.toLowerCase(), a]));
+            const alarmsToCreate = [];
+            const alarmsToUpdate = [];
+            const newNodes = new Set();
+            const failedRows = [];
+
+            rows.forEach((line, index) => {
+                const values = line.split('\t');
+                let alarmData = {};
+
+                Object.keys(headerMap).forEach(key => {
+                    const idx = headerMap[key];
+                    if (idx > -1 && values[idx]) {
+                        let value = values[idx].trim();
+                        if (key === 'data' && value) {
+                            const parts = value.split('/');
+                            if (parts.length === 3) {
+                                const [day, month, year] = parts;
+                                alarmData[key] = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                            } else {
+                                alarmData[key] = value;
+                            }
+                        } else {
+                            alarmData[key] = value;
+                        }
+                    }
+                });
+                
+                if(alarmData.no) {
+                    alarmData.node = alarmData.no;
+                    delete alarmData.no;
+                }
+
+                if (!alarmData.item || !alarmData.node) {
+                    failedRows.push({ line: index + 2, reason: "Faltando 'Item' ou 'Nó'." });
+                    return;
+                }
+
+                alarmData.lastUpdate = serverTimestamp();
+                const key = `${alarmData.node}|${alarmData.item}`.toLowerCase();
+                const existingAlarm = existingAlarmsMap.get(key);
+
+                if (existingAlarm) {
+                    alarmsToUpdate.push({ newData: alarmData, oldData: existingAlarm });
+                } else {
+                    alarmsToCreate.push(alarmData);
+                }
+
+                const nodeExists = nodes.some(n => n.name.toLowerCase() === alarmData.node.toLowerCase());
+                if (!nodeExists) {
+                    const canonicalNodeName = [...newNodes].find(n => n.toLowerCase() === alarmData.node.toLowerCase()) || alarmData.node;
+                    newNodes.add(canonicalNodeName);
+                }
+            });
+
+            if (alarmsToCreate.length === 0 && alarmsToUpdate.length === 0) {
+                showToast("Nenhum alarme válido para criar ou atualizar.", true);
+                return;
+            }
+
+            try {
+                const batch = writeBatch(db);
+                
+                if (newNodes.size > 0) {
+                    const nodesCollectionRef = collection(db, `artifacts/${appId}/public/data/nodes`);
+                    newNodes.forEach(nodeName => {
+                        const newNodeRef = doc(nodesCollectionRef);
+                        batch.set(newNodeRef, { name: nodeName });
+                    });
+                }
+
+                const alarmsCollectionRef = collection(db, `artifacts/${appId}/public/data/alarms`);
+                alarmsToCreate.forEach(alarmData => {
+                    const newAlarmRef = doc(alarmsCollectionRef);
+                    batch.set(newAlarmRef, alarmData);
+                    logAudit('alarme', null, 'criado via importação', newAlarmRef.id, alarmData.item, reason);
+                });
+
+                alarmsToUpdate.forEach(({ newData, oldData }) => {
+                    const alarmRef = doc(alarmsCollectionRef, oldData.id);
+                    batch.set(alarmRef, newData, { merge: true });
+                    Object.keys(newData).forEach(key => {
+                        if (String(oldData[key] || '') !== String(newData[key]) && key !== 'lastUpdate') {
+                           logAudit(key, oldData[key] || null, newData[key], oldData.id, newData.item, reason);
+                        }
+                    });
+                });
+                
+                await batch.commit();
+
+                let summary = `${alarmsToCreate.length} criados, ${alarmsToUpdate.length} atualizados.`;
+                if (failedRows.length > 0) {
+                    summary += ` ${failedRows.length} linhas falharam.`;
+                    console.error("Linhas de importação com falha:", failedRows);
+                }
+                showToast(summary);
+                closeImportModal();
+
+            } catch(error) {
+                console.error("Erro na importação em massa:", error);
+                showToast("Ocorreu um erro durante a importação.", true);
+            }
+        }
+
+
+        async function saveNode(nodeName) {
+            if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
+            if (!nodeName || nodeName.trim() === '') {
+                showToast("O nome do nó não pode ser vazio.", true); return;
+            }
+            if (nodes.some(node => node.name.toLowerCase() === nodeName.trim().toLowerCase())) {
+                showToast("Já existe um nó com esse nome.", true); return;
+            }
+            const nodesCollectionPath = `artifacts/${appId}/public/data/nodes`;
+            try {
+                await addDoc(collection(db, nodesCollectionPath), { name: nodeName.trim() });
+                showToast("Nó adicionado com sucesso!");
+                closeAddNodeModal();
+            } catch (error) {
+                console.error("Erro ao salvar o nó:", error);
+                showToast("Falha ao salvar o nó.", true);
+            }
+        }
+
+        async function updateNode(nodeId, oldName, newName, reason) {
+            if (!currentUser || !newName || newName.trim() === '') {
+                showToast("Nome inválido.", true); return;
+            }
+            if (nodes.some(node => node.name.toLowerCase() === newName.trim().toLowerCase() && node.id !== nodeId)) {
+                showToast("Já existe um nó com esse nome.", true); return;
+            }
+
+            const nodesCollectionPath = `artifacts/${appId}/public/data/nodes`;
+            const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
+            const nodeRef = doc(db, nodesCollectionPath, nodeId);
+            const q = query(collection(db, alarmsCollectionPath), where("node", "==", oldName));
+
+            try {
+                const batch = writeBatch(db);
+                batch.update(nodeRef, { name: newName.trim() });
+
+                const alarmSnapshot = await getDocs(q);
+                alarmSnapshot.forEach(doc => {
+                    batch.update(doc.ref, { node: newName.trim() });
+                });
+
+                await batch.commit();
+                logAudit('nó', oldName, newName.trim(), nodeId, `Nó ${oldName}`, reason);
+                showToast("Nó atualizado com sucesso!");
+                closeEditNodeModal();
+                
+                if (currentSelectedNode === oldName) {
+                    switchView('node', newName.trim());
+                }
+
+            } catch (error) {
+                console.error("Erro ao atualizar o nó:", error);
+                showToast("Falha ao atualizar o nó.", true);
+            }
+        }
+
+        async function deleteAlarm(alarmId, reason) {
+             if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
+            const alarmDocPath = `artifacts/${appId}/public/data/alarms/${alarmId}`;
+            try {
+                const alarmToDelete = alarms.find(a => a.id === alarmId);
+                await deleteDoc(doc(db, alarmDocPath));
+                logAudit('alarme', 'existente', 'deletado', alarmId, alarmToDelete.item, reason);
+                showToast("Alarme excluído com sucesso!");
+            } catch (error) {
+                console.error("Erro ao excluir alarme:", error);
+                showToast("Falha ao excluir o alarme.", true);
+            }
+        }
+
+        async function deleteNodeAndAlarms(nodeId, nodeName, reason) {
+            if (!currentUser) { showToast("Usuário não autenticado.", true); return; }
+            const alarmsCollectionPath = `artifacts/${appId}/public/data/alarms`;
+            const q = query(collection(db, alarmsCollectionPath), where("node", "==", nodeName));
+            
+            try {
+                const alarmSnapshot = await getDocs(q);
+                const batch = writeBatch(db);
+                alarmSnapshot.forEach(docRef => batch.delete(docRef.ref));
+                
+                const nodeDocPath = `artifacts/${appId}/public/data/nodes/${nodeId}`;
+                batch.delete(doc(db, nodeDocPath));
+
+                await batch.commit();
+                logAudit('nó', nodeName, 'deletado', nodeId, `Todos os alarmes do nó ${nodeName}`, reason);
+                showToast(`Nó "${nodeName}" e seus alarmes foram excluídos.`);
+            } catch (error) {
+                console.error("Erro ao excluir o nó e seus alarmes:", error);
+                showToast("Falha ao excluir o nó.", true);
+            }
+        }
+        
+        // --- INICIALIZAÇÃO E AUTENTICAÇÃO ---
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                document.getElementById('user-email').textContent = user.email;
+                initializeAppListeners();
+            } else {
+                currentUser = null;
+                loginView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                clearAppListeners();
+            }
+        });
+
+        const authError = document.getElementById('auth-error');
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, password)
+                .catch(error => { authError.textContent = "Email ou senha inválidos."; });
+        });
+
+        document.getElementById('register-btn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(() => {
+                    authError.textContent = '';
+                    showToast("Conta criada com sucesso!");
+                })
+                .catch(error => { authError.textContent = "Erro ao registrar. A senha deve ter pelo menos 6 caracteres."; });
+        });
+        
+        document.getElementById('google-login-btn').addEventListener('click', () => {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider)
+                .catch(error => { console.error("Erro no login com Google:", error); });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            signOut(auth);
+        });
+        
+        
+        // --- MANIPULADORES DE EVENTOS GERAIS ---
+        alarmForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const alarmData = {
+                item: document.getElementById('item').value,
+                description: document.getElementById('descricao').value,
+                location: document.getElementById('localizacao').value,
+                address: document.getElementById('endereco').value,
+                wing: document.getElementById('ala').value,
+                sap: document.getElementById('sap').value,
+                quantidade: document.getElementById('quantidade').value || 0,
+                data: document.getElementById('data').value,
+                status: document.getElementById('status').value,
+                node: currentSelectedNode,
+                lastUpdate: serverTimestamp(),
+            };
+            openReasonModal((reason) => {
+                saveAlarm(alarmData, reason);
+            });
+        });
+
+        importForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const data = document.getElementById('sheet-data').value;
+            const reason = document.getElementById('import-reason').value;
+            if (!reason) {
+                showToast("Por favor, forneça uma justificativa para a importação.", true);
+                return;
+            }
+            processImport(data, reason);
+        });
+
+        addNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nodeName = document.getElementById('node-name').value;
+            saveNode(nodeName);
+        });
+        
+        editNodeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nodeId = document.getElementById('edit-node-id').value;
+            const oldName = document.getElementById('edit-node-old-name').value;
+            const newName = document.getElementById('edit-node-name').value;
+            openReasonModal((reason) => {
+                updateNode(nodeId, oldName, newName, reason);
+            });
+        });
+
+
+        nodeView.addEventListener('change', async (e) => {
+            if (e.target.classList.contains('status-select')) {
+                const id = e.target.dataset.id;
+                const newStatus = e.target.value;
+                const alarmToUpdate = alarms.find(a => a.id === id);
+                if (!alarmToUpdate) return;
+                const oldStatus = alarmToUpdate.status;
+
+                openReasonModal((reason) => {
+                     const alarmRef = doc(db, `artifacts/${appId}/public/data/alarms`, id);
+                    
+                    try {
+                        setDoc(alarmRef, { status: newStatus, lastUpdate: serverTimestamp() }, { merge: true });
+                        logAudit('status', oldStatus, newStatus, id, alarmToUpdate.item, reason);
+                        showToast("Status atualizado!");
+                    } catch (error) {
+                         console.error("Erro ao atualizar status:", error);
+                         showToast("Falha ao atualizar status.", true);
+                         // Revert on UI is handled by Firestore listener
+                    }
+                });
+            }
+        });
+
+        nodeView.addEventListener('click', (e) => {
+             const deleteBtn = e.target.closest('.delete-alarm-btn');
+             const verifyBtn = e.target.closest('.verify-alarm-btn');
+             const historyBtn = e.target.closest('.history-alarm-btn');
+
+             if (deleteBtn) {
+                 const alarmId = deleteBtn.dataset.id;
+                 const alarm = alarms.find(a => a.id === alarmId);
+                 openConfirmDeleteModal(`Tem certeza que deseja excluir o alarme "${alarm.item}: ${alarm.description}"?`, () => {
+                     openReasonModal((reason) => {
+                        deleteAlarm(alarmId, reason);
+                     });
+                 });
+             }
+
+             if (verifyBtn) {
+                const alarmId = verifyBtn.dataset.id;
+                const alarm = alarms.find(a => a.id === alarmId);
+                openReasonModal(async (reason) => {
+                    const alarmRef = doc(db, `artifacts/${appId}/public/data/alarms`, alarmId);
+                    try {
+                        await updateDoc(alarmRef, {
+                            lastVerification: serverTimestamp(),
+                            lastUpdate: serverTimestamp()
+                        });
+                        logAudit('verificação', null, 'confirmada', alarmId, alarm.item, reason);
+                        showToast("Verificação confirmada!");
+                    } catch (error) {
+                        console.error("Erro ao confirmar verificação:", error);
+                        showToast("Falha ao confirmar verificação.", true);
+                    }
+                });
+             }
+
+             if (historyBtn) {
+                 const alarmId = historyBtn.dataset.id;
+                 openHistoryModal(alarmId);
+             }
+        });
+        
+        nodeView.addEventListener('blur', (e) => {
+            if (e.target.classList.contains('editable-field')) {
+                const id = e.target.dataset.id;
+                const field = e.target.dataset.field;
+                const newValue = e.target.value.trim();
+                
+                const alarmToUpdate = alarms.find(a => a.id === id);
+                if (!alarmToUpdate) return;
+                
+                const oldValue = (alarmToUpdate[field] !== undefined && alarmToUpdate[field] !== null) ? String(alarmToUpdate[field]) : '';
+
+                if (newValue !== oldValue) {
+                    activeEditableField = { target: e.target, oldValue: oldValue };
+                    openReasonModal(async (reason) => {
+                        const alarmRef = doc(db, `artifacts/${appId}/public/data/alarms`, id);
+                        try {
+                            const valueToSave = field === 'quantidade' ? (newValue === '' ? 0 : Number(newValue)) : newValue;
+                            await updateDoc(alarmRef, {
+                                [field]: valueToSave,
+                                lastUpdate: serverTimestamp()
+                            });
+                            logAudit(field, oldValue, valueToSave, id, alarmToUpdate.item, reason);
+                            showToast("Campo atualizado com sucesso!");
+                        } catch (error) {
+                            console.error(`Erro ao atualizar o campo ${field}:`, error);
+                            showToast(`Falha ao atualizar o campo.`, true);
+                            e.target.value = oldValue; // Reverte em caso de falha
+                        } finally {
+                            activeEditableField = null;
+                        }
+                    });
+                }
+            }
+        }, true); // Usa a fase de captura para o evento 'blur'
+
+
+        document.getElementById('export-all-btn').addEventListener('click', () => {
+            if (alarms.length === 0) {
+                showToast("Nenhum alarme para exportar.", true);
+                return;
+            }
+            const dataToExport = alarms.map(({ id, lastUpdate, lastVerification, ...rest }) => ({
+                ...rest, 
+                lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '',
+                lastVerification: lastVerification?.toDate().toLocaleString('pt-BR') || ''
+            }));
+            const today = new Date().toISOString().slice(0, 10);
+            exportToExcel(dataToExport, `Todos_Alarmes_${today}`);
+        });
+
+        document.getElementById('export-node-btn').addEventListener('click', () => {
+            const dataToExport = alarms.filter(a => a.node === currentSelectedNode);
+             if (dataToExport.length === 0) {
+                showToast("Nenhum alarme neste nó para exportar.", true);
+                return;
+            }
+            const cleanedData = dataToExport.map(({ id, lastUpdate, lastVerification, ...rest }) => ({
+                ...rest, 
+                lastUpdate: lastUpdate?.toDate().toLocaleString('pt-BR') || '',
+                lastVerification: lastVerification?.toDate().toLocaleString('pt-BR') || ''
+            }));
+            const today = new Date().toISOString().slice(0, 10);
+            exportToExcel(cleanedData, `Alarmes_${currentSelectedNode.replace(' ', '_')}_${today}`);
+        });
+
+        nodeSearchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            renderAlarms(currentSelectedNode);
+        });
+
+        statusSearchInput.addEventListener('input', (e) => {
+            currentSearchTerm = e.target.value;
+            const currentStatus = statusFilterTitle.textContent.replace('Alarmes: ', '');
+            renderStatusFilteredAlarms(currentStatus);
+        });
+        
+        dashboardSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            if (searchTerm.trim() !== '') {
+                switchView('search-results', searchTerm);
+            } else {
+                switchView('dashboard');
+            }
+        });
+
+        zoomInBtn.addEventListener('click', () => {
+            if (currentFontSize < MAX_FONT_SIZE) {
+                currentFontSize++;
+                nodeTable.style.fontSize = `${currentFontSize}px`;
+            }
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            if (currentFontSize > MIN_FONT_SIZE) {
+                currentFontSize--;
+                nodeTable.style.fontSize = `${currentFontSize}px`;
+            }
+        });
+
+        // --- SIDEBAR MOBILE ---
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.remove('hidden');
+        }
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.add('hidden');
+        }
+
+        hamburgerBtn.addEventListener('click', openSidebar);
+        closeSidebarBtn.addEventListener('click', closeSidebar);
+        sidebarOverlay.addEventListener('click', closeSidebar);
+
+
+        // --- INICIALIZAÇÃO DA UI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('dashboard-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                switchView('dashboard');
+                closeSidebar();
+            });
+             document.getElementById('audit-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                switchView('audit');
+                closeSidebar();
+            });
+             dynamicNodeList.addEventListener('click', (e) => {
+                if(e.target.closest('a')) {
+                    closeSidebar();
+                }
+             });
+            document.getElementById('add-node-btn').addEventListener('click', () => {
+                addNodeModal.classList.remove('hidden');
+                setTimeout(() => { 
+                    addNodeModal.classList.remove('opacity-0');
+                    addNodeModal.querySelector('div').classList.remove('scale-95');
+                }, 10);
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
