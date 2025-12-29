@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -42,6 +41,9 @@
         .subdivision-header { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-top: 0.5rem; margin-bottom: 0.25rem; padding-left: 0.25rem; display: flex; justify-content: space-between; align-items: center; }
         .subdivision-zone { min-height: 20px; padding-bottom: 8px; border-radius: 4px; transition: background-color 0.2s; }
         .subdivision-zone.drag-over { background-color: #eff6ff; }
+
+        /* Destaque de busca */
+        .highlight-search { background-color: #fef08a; padding: 0 2px; border-radius: 2px; }
     </style>
 </head>
 <body class="bg-gray-50 h-[100dvh] w-screen overflow-hidden flex flex-col">
@@ -102,8 +104,11 @@
                     </button>
 
                     <div class="relative w-full sm:w-96 mt-1 sm:mt-0">
-                        <input type="text" id="search-input" placeholder="Buscar..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
+                        <input type="text" id="search-input" placeholder="Buscar item, caixa ou local..." class="border border-gray-200 rounded-lg py-2 px-4 pl-9 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 transition-all">
                         <svg class="w-4 h-4 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <button id="clear-search" class="hidden absolute top-1/2 right-3 -translate-y-1/2 text-gray-400 hover:text-gray-600" onclick="document.getElementById('search-input').value = ''; handleSearch({target: {value: ''}});">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
                     </div>
 
                     <!-- BOTÕES DESKTOP -->
@@ -128,7 +133,19 @@
 
             <!-- NAV SALAS (Só aparece na aba Espaços) -->
             <nav id="rooms-nav-wrapper" class="border-b border-gray-200 bg-white">
-                <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar max-w-7xl mx-auto" id="rooms-container"></div>
+                <div class="max-w-7xl mx-auto flex items-center pr-2">
+                    <div class="flex items-center px-4 py-2 space-x-2 overflow-x-auto no-scrollbar flex-grow" id="rooms-container"></div>
+                    
+                    <!-- Botões de Expandir/Recolher -->
+                    <div class="flex space-x-1 pl-2 border-l border-gray-200 py-1 ml-2">
+                         <button onclick="window.toggleAllLists(false)" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors" title="Expandir Tudo">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 13l-7 7-7-7m14-8l-7 7-7-7"></path></svg>
+                         </button>
+                         <button onclick="window.toggleAllLists(true)" class="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-md transition-colors" title="Recolher Tudo">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7M5 8l7-7 7 7"></path></svg>
+                         </button>
+                    </div>
+                </div>
             </nav>
         </div>
 
@@ -277,16 +294,15 @@
             } catch (error) { console.error("Gemini Error:", error); throw error; }
         }
 
-				// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-				const firebaseConfig = {
-				  apiKey: "AIzaSyClnyh0pvsw0nz1PvjPowHApLzklROFRds",
-				  authDomain: "firello-72b82.firebaseapp.com",
-				  projectId: "firello-72b82",
-				  storageBucket: "firello-72b82.firebasestorage.app",
-				  messagingSenderId: "463200810341",
-				  appId: "1:463200810341:web:51e429b4f2434d8ed99d8c",
-				  measurementId: "G-MQR8VHKMYE"
-				};
+        const firebaseConfig = {
+          apiKey: "AIzaSyClnyh0pvsw0nz1PvjPowHApLzklROFRds",
+          authDomain: "firello-72b82.firebaseapp.com",
+          projectId: "firello-72b82",
+          storageBucket: "firello-72b82.firebasestorage.app",
+          messagingSenderId: "463200810341",
+          appId: "1:463200810341:web:51e429b4f2434d8ed99d8c",
+          measurementId: "G-MQR8VHKMYE"
+        };
         const appId = 'firello-72b82';
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -427,6 +443,21 @@
             document.getElementById('modal-type-value').value = btn.dataset.type;
         }
 
+        window.toggleAllLists = function(collapse) {
+            if (collapse) {
+                // Collapse All: Add all current visible lists to the set
+                state.lists.forEach(list => {
+                    if (list.roomId === currentRoomId || (!list.roomId && currentRoomId === state.rooms[0]?.id)) {
+                        collapsedLists.add(list.id);
+                    }
+                });
+            } else {
+                // Expand All: Clear the set completely
+                collapsedLists.clear();
+            }
+            renderBoard();
+        }
+
         window.switchTab = function(tab) {
             currentTab = tab;
             const spacesView = document.getElementById('view-spaces');
@@ -487,6 +518,7 @@
                     if (searchTerm) {
                         searchTerm = '';
                         document.getElementById('search-input').value = '';
+                        document.getElementById('clear-search').classList.add('hidden');
                     }
                     renderRoomsNav();
                     renderBoard();
@@ -504,9 +536,14 @@
         // --- RENDER BOARD ---
         function renderBoard() {
             const container = document.getElementById('view-spaces');
+            
+            // PRESERVAR O SCROLL: Salva a posição antes de limpar
+            const scrollPos = container.scrollTop;
+            
             container.innerHTML = '';
 
             let listsToShow = [];
+            // Lógica de Busca Aprimorada: Se tiver busca, mostra TUDO que der match, independente da sala
             if (searchTerm) {
                 listsToShow = state.lists.filter(list => {
                     const listMatches = list.title.toLowerCase().includes(searchTerm);
@@ -530,28 +567,32 @@
             listsToShow.forEach(list => {
                 const allCards = (state.cards[list.id] || []);
                 const subdivisions = list.subdivisions || [];
-                const isCollapsed = collapsedLists.has(list.id);
+                
+                // Se estiver buscando, força a lista a ficar expandida
+                const isCollapsed = searchTerm ? false : collapsedLists.has(list.id);
                 
                 const roomName = state.rooms.find(r => r.id === list.roomId)?.title || 'Geral';
                 const listEl = document.createElement('div');
                 listEl.className = 'list bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col ' + (isCollapsed ? 'h-auto' : 'max-h-[60vh] sm:max-h-[75vh]');
                 listEl.dataset.listId = list.id;
                 
-                const highlightClass = (searchTerm && list.title.toLowerCase().includes(searchTerm)) ? 'bg-yellow-50' : '';
-                const roomBadge = searchTerm ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2 border border-gray-200">${roomName}</span>` : '';
+                // Highlight visual se a lista der match na busca
+                const listNameMatch = searchTerm && list.title.toLowerCase().includes(searchTerm);
+                const highlightClass = listNameMatch ? 'bg-yellow-50' : '';
+                const roomBadge = (searchTerm || list.roomId !== currentRoomId) ? `<span class="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full ml-2 border border-gray-200">${roomName}</span>` : '';
                 const typeIcon = getIconForType(list.type);
 
                 // --- HEADER ---
                 let html = `
                     <div class="p-3 border-b border-gray-100 ${highlightClass} flex justify-between items-start">
-                        <div class="flex-grow">
+                        <div class="flex-grow min-w-0">
                             <div class="flex items-center">
-                                <span class="text-xl mr-2">${typeIcon}</span>
-                                <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg leading-tight break-words">${list.title}</h2>
+                                <span class="text-xl mr-2 flex-shrink-0">${typeIcon}</span>
+                                <h2 class="font-bold text-gray-800 list-title cursor-pointer text-lg leading-tight truncate mr-2 ${listNameMatch ? 'highlight-search' : ''}" title="${list.title}">${list.title}</h2>
                                 ${roomBadge}
                             </div>
                         </div>
-                        <div class="flex space-x-1">
+                        <div class="flex space-x-1 shrink-0">
                              <button class="toggle-list-btn text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded-full hover:bg-blue-50" title="${isCollapsed ? 'Expandir' : 'Recolher'}">
                                 <svg class="w-4 h-4 transform transition-transform ${isCollapsed ? '-rotate-90' : 'rotate-0'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </button>
@@ -572,6 +613,7 @@
                 `;
 
                 // --- MAIN CARDS (No subdivision) ---
+                // Se busca ativa: Mostra cards que dão match. Se não, mostra todos.
                 const mainCards = allCards.filter(c => !c.subdivision && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
                 
                 html += `<div class="cards-container subdivision-zone min-h-[40px]" data-list-id="${list.id}" data-subdivision="">`;
@@ -579,7 +621,13 @@
 
                 // --- SUBDIVISIONS ---
                 subdivisions.forEach(sub => {
+                   // Se busca ativa: Mostra cards da subdivisão que dão match.
                    const subCards = allCards.filter(c => c.subdivision === sub && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
+                   
+                   // Se estiver buscando e não houver cards aqui, e o nome da lista não deu match, podemos esconder a subdivisão? 
+                   // Melhor mostrar a estrutura se tiver cards dentro que deram match.
+                   if (searchTerm && subCards.length === 0 && !listNameMatch) return;
+
                    html += `
                         <div class="subdivision-wrapper mt-3">
                             <div class="subdivision-header group">
@@ -598,14 +646,16 @@
                 html += `</div>`; // Close scrolling container
 
                 // --- FOOTER (Add Main Item) ---
-                html += `
-                        <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
-                            <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium" data-sub="">
-                                <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item geral
-                            </button>
-                        </div>
-                    </div>
-                `;
+                if (!searchTerm) {
+                    html += `
+                            <div class="p-2 border-t border-gray-100 bg-white rounded-b-xl">
+                                <button class="add-card-btn w-full py-2.5 px-3 text-left text-sm text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center font-medium" data-sub="">
+                                    <span class="mr-2 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center text-xs">+</span> Adicionar item geral
+                                </button>
+                            </div>
+                    `;
+                }
+                 html += `</div>`;
 
                 listEl.innerHTML = html;
 
@@ -624,10 +674,17 @@
                         const qtyBadge = (card.quantity && card.quantity > 1) 
                             ? `<span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full ml-2 border border-blue-200 whitespace-nowrap">x${card.quantity}</span>` 
                             : '';
+                        
+                        // Highlight do termo buscado
+                        let displayTitle = card.title;
+                        if (searchTerm) {
+                            const regex = new RegExp(`(${searchTerm})`, 'gi');
+                            displayTitle = displayTitle.replace(regex, '<span class="highlight-search">$1</span>');
+                        }
 
                         cardEl.innerHTML = `
                             <div class="flex items-center justify-between pr-12">
-                                <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${card.title} ${qtyBadge}</p>
+                                <p class="card-title text-gray-700 text-sm break-words pr-6 leading-relaxed flex-grow">${displayTitle} ${qtyBadge}</p>
                             </div>
                             
                             <div class="absolute top-2 right-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -646,17 +703,22 @@
                     };
 
                     const mainContainer = listEl.querySelector(`.cards-container[data-subdivision=""]`);
-                    mainCards.forEach(c => mainContainer.appendChild(createCardDOM(c)));
+                    if(mainContainer) mainCards.forEach(c => mainContainer.appendChild(createCardDOM(c)));
 
                     subdivisions.forEach(sub => {
                         const subContainer = listEl.querySelector(`.cards-container[data-subdivision="${sub}"]`);
-                        const cards = allCards.filter(c => c.subdivision === sub && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
-                        cards.forEach(c => subContainer.appendChild(createCardDOM(c)));
+                        if(subContainer) {
+                            const cards = allCards.filter(c => c.subdivision === sub && (searchTerm ? c.title.toLowerCase().includes(searchTerm) : true));
+                            cards.forEach(c => subContainer.appendChild(createCardDOM(c)));
+                        }
                     });
                 }
 
                 container.appendChild(listEl);
             });
+
+            // RESTAURAR O SCROLL
+            container.scrollTop = scrollPos;
         }
 
         // --- RENDER REQUESTS ---
@@ -777,6 +839,9 @@
 
         function handleSearch(e) {
             searchTerm = e.target.value.toLowerCase().trim();
+            const clearBtn = document.getElementById('clear-search');
+            if (searchTerm) clearBtn.classList.remove('hidden'); else clearBtn.classList.add('hidden');
+            
             renderRoomsNav();
             renderBoard();
             renderRequests();
@@ -955,10 +1020,32 @@
                     else if (options.showRequester) await onSave(value, qty, null, null, requester); // Quick fix for new request
                     else await onSave(value, qty);
                     
+                    if (options.keepOpen) {
+                        // Reset form for next item
+                        i.value = '';
+                        i.focus();
+                        if (options.showQuantity) qInput.value = 1;
+                        
+                        // Show success feedback
+                        b.textContent = 'Salvo! Adicionar outro';
+                        b.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        b.classList.add('bg-green-600', 'hover:bg-green-700');
+                        b.disabled = false;
+
+                        // Reset button style after delay
+                        setTimeout(() => {
+                            b.textContent = originalText;
+                            b.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                            b.classList.remove('bg-green-600', 'hover:bg-green-700');
+                        }, 2000);
+                        
+                        return; // Exit without closing
+                    }
+
                     close();
                 } catch (e) {
                     alert("Erro ao salvar: " + e.message);
-                } finally {
+                    // If error, restore button immediately
                     b.textContent = originalText;
                     b.disabled = false;
                 }
@@ -1039,7 +1126,14 @@
             recognition.onresult = async (e) => {
                 const text = e.results[0][0].transcript;
                 overlay.classList.remove('hidden'); status.textContent = `Entendido: "${text}". Pensando...`;
-                const listNames = state.lists.filter(l => l.roomId === currentRoomId).map(l => l.title);
+                
+                // Mapeia listas e suas subdivisões para contexto da IA
+                const listsContext = state.lists
+                    .filter(l => l.roomId === currentRoomId)
+                    .map(l => {
+                        const subs = (l.subdivisions && l.subdivisions.length > 0) ? ` [Divisões: ${l.subdivisions.join(', ')}]` : '';
+                        return `${l.title}${subs}`;
+                    });
                 
                 if (currentTab === 'requests') {
                     try {
@@ -1053,20 +1147,61 @@
                     return;
                 }
 
-                if(listNames.length===0) { alert("Crie caixas/armários primeiro."); overlay.classList.add('hidden'); return; }
+                if(listsContext.length===0) { alert("Crie caixas/armários primeiro."); overlay.classList.add('hidden'); return; }
                 
                 try {
-                    const res = await callGemini(`Sou assistente. Identifique itens e a caixa destino (dentre: ${JSON.stringify(listNames)}) na frase: "${text}". Retorne JSON: {"targetListName": "NomeDaCaixa", "items": ["item1", "item2"]}`);
+                    // Prompt aprimorado para subdivisões
+                    const prompt = `
+                        Sou assistente de organização. Identifique os itens e o local de destino na frase: "${text}".
+                        
+                        Contexto de locais disponíveis nesta sala:
+                        ${listsContext.join('\n')}
+                        
+                        Retorne APENAS um JSON neste formato:
+                        {
+                            "targetListName": "NomeExatoDaCaixaOuArmario",
+                            "targetSubdivision": "NomeDaDivisaoSeHouver",
+                            "items": ["item1", "item2"]
+                        }
+                        
+                        Se a divisão for mencionada (ex: "primeira gaveta", "topo") mas não existir exata no contexto, tente adequar ou use null.
+                    `;
+
+                    const res = await callGemini(prompt);
+                    
                     if(res && res.targetListName) {
                         const target = state.lists.find(l => l.roomId === currentRoomId && l.title.toLowerCase() === res.targetListName.toLowerCase());
+                        
                         if(target) {
+                            // Lógica de Subdivisão
+                            let subdivisionToUse = "";
+                            if (res.targetSubdivision) {
+                                // Tenta achar match exato ou parcial na lista de subdivisões existentes
+                                const existingSub = (target.subdivisions || []).find(s => s.toLowerCase() === res.targetSubdivision.toLowerCase());
+                                if (existingSub) {
+                                    subdivisionToUse = existingSub;
+                                } else {
+                                    // Se a IA detectou uma divisão que não existe na lista (ex: "Gaveta 1" mas a lista tem "Gaveta A"), 
+                                    // por segurança, coloca na raiz ou tenta adicionar?
+                                    // Para não alterar muito a estrutura, vamos colocar na raiz se não der match, 
+                                    // OU se o usuário quiser muito, poderíamos criar. Vamos manter simples: Raiz.
+                                    console.log("Subdivisão não encontrada, salvando na raiz do organizador.");
+                                }
+                            }
+
                             const batch = writeBatch(db);
                             const count = (state.cards[target.id]||[]).length;
-                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { title: t, listId: target.id, order: count+i, quantity: 1, subdivision: "" }));
+                            res.items.forEach((t, i) => batch.set(doc(collection(db, cardsCollectionRef.path)), { 
+                                title: t, 
+                                listId: target.id, 
+                                order: count+i, 
+                                quantity: 1, 
+                                subdivision: subdivisionToUse 
+                            }));
                             await batch.commit();
-                            status.textContent = "Feito!";
-                        } else status.textContent = "Caixa/Armário não encontrado.";
-                    } else status.textContent = "Não entendi.";
+                            status.textContent = `Salvo em ${target.title} ${subdivisionToUse ? '> ' + subdivisionToUse : ''}!`;
+                        } else status.textContent = "Local não encontrado.";
+                    } else status.textContent = "Não entendi o local.";
                 } catch(err) { console.error(err); status.textContent = "Erro na IA."; }
                 setTimeout(() => overlay.classList.add('hidden'), 1500);
             };
@@ -1094,7 +1229,7 @@
                     const listId = btn.closest('.list').dataset.listId;
                     const subdivision = btn.dataset.sub || ""; // Pega a subdivisão do botão clicado
                     
-                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q, subdivision), { showQuantity: true });
+                    showModal('Novo Item', 'Nome do item...', (t, q) => addCard(listId, t, q, subdivision), { showQuantity: true, keepOpen: true });
                 }
                 
                 if (target.matches('.delete-list-btn') || target.closest('.delete-list-btn')) {
