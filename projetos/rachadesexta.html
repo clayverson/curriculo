@@ -10,8 +10,6 @@
         body { font-family: 'Inter', sans-serif; background-color: #f0f2f5; }
         .tab-button.active { border-color: #3b82f6; color: #3b82f6; font-weight: 600; }
         .modal { transition: opacity 0.3s ease, visibility 0.3s ease; }
-        .star { cursor: pointer; color: #d1d5db; transition: color 0.2s; }
-        .star.filled { color: #f59e0b; }
         /* Toggle Switch */
         #mode-toggle:checked ~ .dot { transform: translateX(100%); }
         #mode-toggle:checked ~ .block { background-color: #3b82f6; }
@@ -113,7 +111,7 @@
                                 <tr>
                                     <th scope="col" class="px-6 py-3">Nome</th>
                                     <th scope="col" class="px-6 py-3">Tipo</th>
-                                    <th scope="col" class="px-6 py-3">Ranking</th>
+                                    <th scope="col" class="px-6 py-3">Nota (1-10)</th>
                                     <th scope="col" class="px-6 py-3 text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -138,12 +136,12 @@
                                 </div>
                                 <span class="ml-3 text-sm font-medium text-gray-900">Manual</span>
                             </label>
-                            <button id="draw-teams-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Sortear Times</button>
+                            <button id="draw-teams-btn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Sortear Equilibrado</button>
                         </div>
                     </div>
                     
                     <div id="auto-teams-container" class="grid md:grid-cols-3 gap-6">
-                        <p class="text-gray-500 md:col-span-3">Os times aparecerão aqui após o sorteio.</p>
+                        <p class="text-gray-500 md:col-span-3">Os times aparecerão aqui após o sorteio baseado nas notas.</p>
                     </div>
 
                     <div class="text-center mt-6">
@@ -245,12 +243,22 @@
         <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
             <h3 class="text-xl font-semibold mb-4">Adicionar Novo Jogador</h3>
             <form id="add-player-form">
-                <input type="text" id="playerName" placeholder="Nome do Jogador" class="w-full p-2 border rounded mb-2" required>
-                <select id="playerType" class="w-full p-2 border rounded mb-4" required>
-                    <option value="mensalista">Mensalista</option>
-                    <option value="avulso">Avulso</option>
-                    <option value="goleiro">Goleiro (não paga)</option>
-                </select>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                    <input type="text" id="playerName" placeholder="Nome do Jogador" class="w-full p-2 border rounded" required>
+                </div>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                    <select id="playerType" class="w-full p-2 border rounded" required>
+                        <option value="mensalista">Mensalista</option>
+                        <option value="avulso">Avulso</option>
+                        <option value="goleiro">Goleiro (não paga)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nota (1 a 10)</label>
+                    <input type="number" id="playerRating" min="1" max="10" value="5" class="w-full p-2 border rounded" required>
+                </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('addPlayerModal')">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md">Adicionar</button>
@@ -274,6 +282,10 @@
                         <option value="avulso">Avulso</option>
                         <option value="goleiro">Goleiro (não paga)</option>
                     </select>
+                </div>
+                <div class="mb-4">
+                    <label for="editPlayerRating" class="block text-sm font-medium text-gray-700 mb-1">Nota (1 a 10)</label>
+                    <input type="number" id="editPlayerRating" min="1" max="10" class="w-full p-2 border rounded" required>
                 </div>
                 <div class="flex justify-end space-x-3">
                     <button type="button" class="px-4 py-2 bg-gray-200 rounded-md" onclick="hideModal('editPlayerModal')">Cancelar</button>
@@ -706,15 +718,23 @@
                     if (player.type === 'mensalista') bgColorClass = 'bg-blue-50';
 
                     tr.className = `border-b ${bgColorClass}`;
+                    
+                    // Lógica para cor da nota
+                    let ratingColor = 'text-gray-500';
+                    if(player.rank >= 8) ratingColor = 'text-green-600 font-bold';
+                    else if(player.rank >= 5) ratingColor = 'text-blue-600';
+                    else if(player.rank > 0) ratingColor = 'text-orange-500';
+
                     tr.innerHTML = `
                         <td class="px-6 py-4 font-medium">${counter++}. ${player.name}</td>
                         <td class="px-6 py-4 capitalize">${player.type}</td>
-                        <td class="px-6 py-4 text-yellow-500">${'⭐'.repeat(player.rank || 0)}</td>
+                        <td class="px-6 py-4 ${ratingColor}">${player.rank || 0} / 10</td>
                         <td class="px-6 py-4 text-center space-x-4">
                              <button class="edit-player-btn admin-only text-blue-500 hover:underline" 
                                 data-id="${player.id}" 
                                 data-name="${player.name}" 
-                                data-type="${player.type}">Editar</button>
+                                data-type="${player.type}"
+                                data-rank="${player.rank || 0}">Editar</button>
                             <button class="remove-player-btn admin-only text-red-500 hover:underline" data-id="${player.id}">Remover</button>
                         </td>`;
                     tableBody.appendChild(tr);
@@ -728,7 +748,8 @@
             if (!isAdmin) return;
             const name = document.getElementById('playerName').value;
             const type = document.getElementById('playerType').value;
-            await addDoc(playersCol, { name, type, rank: 0 });
+            const rank = parseInt(document.getElementById('playerRating').value);
+            await addDoc(playersCol, { name, type, rank });
             showMessage('Jogador adicionado!');
             e.target.reset();
             hideModal('addPlayerModal');
@@ -739,17 +760,18 @@
             if (!isAdmin) return;
             const playerId = document.getElementById('editPlayerId').value;
             const newType = document.getElementById('editPlayerType').value;
+            const newRank = parseInt(document.getElementById('editPlayerRating').value);
 
             if (!playerId) return showMessage("Erro: ID do jogador não encontrado.");
 
             const playerRef = doc(playersCol, playerId);
-            await updateDoc(playerRef, { type: newType });
+            await updateDoc(playerRef, { type: newType, rank: newRank });
 
-            showMessage("Tipo de jogador atualizado com sucesso!");
+            showMessage("Dados do jogador atualizados com sucesso!");
             hideModal('editPlayerModal');
         });
 
-        // Lógica de Sorteio de Times
+        // Lógica de Sorteio Equilibrado de Times
         document.getElementById('draw-teams-btn').addEventListener('click', async () => {
             if (!currentGameId) {
                 showMessage("Nenhuma partida ativa para sortear.");
@@ -759,45 +781,74 @@
             const q = query(attendeesCol, where("status", "==", "confirmed"));
             const snapshot = await getDocs(q);
             
-            let confirmedPlayers = snapshot.docs.map(d => d.data());
-            const goalkeepers = confirmedPlayers.filter(p => p.type === 'goleiro');
-            let fieldPlayers = confirmedPlayers.filter(p => p.type !== 'goleiro');
+            let confirmedPlayers = snapshot.docs.map(d => ({...d.data(), id: d.id}));
             
-            for (let i = fieldPlayers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [fieldPlayers[i], fieldPlayers[j]] = [fieldPlayers[j], fieldPlayers[i]];
-            }
-
-            const teamA = [], teamB = [], teamC = [];
-            
-            fieldPlayers.forEach((player) => {
-                if(teamA.length < 6) teamA.push(player);
-                else if(teamB.length < 6) teamB.push(player);
-                else if(teamC.length < 6) teamC.push(player);
+            // Buscar as notas reais dos jogadores no banco de dados (pois o attendance pode não ter a nota atualizada)
+            const playersSnapshot = await getDocs(playersCol);
+            const playerDetails = {};
+            playersSnapshot.forEach(pDoc => {
+                playerDetails[pDoc.id] = pDoc.data().rank || 5;
             });
 
-            const teamAGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
-            const teamBGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
-            const teamCGoal = goalkeepers.length > 0 ? goalkeepers.shift().name : 'Sem Goleiro';
+            // Atualizar notas dos confirmados para o sorteio
+            confirmedPlayers = confirmedPlayers.map(p => ({
+                ...p,
+                rank: playerDetails[p.id] || 5
+            }));
+
+            const goalkeepers = confirmedPlayers.filter(p => p.type === 'goleiro').sort((a, b) => b.rank - a.rank);
+            let fieldPlayers = confirmedPlayers.filter(p => p.type !== 'goleiro').sort((a, b) => b.rank - a.rank);
+            
+            const teamA = [], teamB = [], teamC = [];
+            const teams = [teamA, teamB, teamC];
+
+            // Algoritmo Snake para equilíbrio: 1,2,3 - 3,2,1 - 1,2,3...
+            fieldPlayers.forEach((player, index) => {
+                const cycle = Math.floor(index / 3);
+                const pos = index % 3;
+                const targetIdx = (cycle % 2 === 0) ? pos : (2 - pos);
+                teams[targetIdx].push(player);
+            });
+
+            // Goleiros também equilibrados (Snake Draft)
+            goalkeepers.forEach((goalie, index) => {
+                const cycle = Math.floor(index / 3);
+                const pos = index % 3;
+                const targetIdx = (cycle % 2 === 0) ? pos : (2 - pos);
+                teams[targetIdx].goalie = goalie.name;
+            });
+
+            const renderTeam = (name, team, color, bgHeader, bgList) => {
+                const totalRank = team.reduce((acc, p) => acc + (p.rank || 0), 0);
+                const avgRank = team.length > 0 ? (totalRank / team.length).toFixed(1) : "0.0";
+                
+                return `
+                <div class="bg-white border rounded-lg overflow-hidden shadow-sm">
+                    <div class="${bgHeader} p-3">
+                        <h3 class="text-xl font-bold ${color}">${name}</h3>
+                        <p class="text-xs font-semibold ${color} opacity-80">Média Técnica: ${avgRank}</p>
+                    </div>
+                    <div class="p-3">
+                        <p class="font-bold text-sm mb-2 p-2 rounded bg-gray-100">🧤 Goleiro: ${team.goalie || 'Sem Goleiro'}</p>
+                        <ul class="space-y-1">
+                            ${team.map(p => `
+                                <li class="p-2 ${bgList} rounded text-sm flex justify-between">
+                                    <span>${p.name}</span>
+                                    <span class="font-mono text-gray-500 text-xs">Nota ${p.rank}</span>
+                                </li>
+                            `).join('') || '<li class="text-gray-400 italic text-sm">Sem jogadores</li>'}
+                        </ul>
+                    </div>
+                </div>`;
+            };
             
             const container = document.getElementById('auto-teams-container');
             container.innerHTML = `
-                <div>
-                    <h3 class="text-xl font-bold mb-2 text-blue-700">Time A</h3>
-                    <p class="font-semibold text-sm mb-2 bg-blue-100 p-2 rounded">Goleiro: ${teamAGoal}</p>
-                    <ul class="space-y-1">${teamA.map(p => `<li class="p-2 bg-blue-50 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold mb-2 text-gray-700">Time B</h3>
-                     <p class="font-semibold text-sm mb-2 bg-gray-200 p-2 rounded">Goleiro: ${teamBGoal}</p>
-                    <ul class="space-y-1">${teamB.map(p => `<li class="p-2 bg-gray-100 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold mb-2 text-red-700">Time C</h3>
-                    <p class="font-semibold text-sm mb-2 bg-red-100 p-2 rounded">Goleiro: ${teamCGoal}</p>
-                    <ul class="space-y-1">${teamC.map(p => `<li class="p-2 bg-red-50 rounded">${p.name}</li>`).join('') || '<li>-</li>'}</ul>
-                </div>
+                ${renderTeam('Time A', teamA, 'text-blue-700', 'bg-blue-100', 'bg-blue-50')}
+                ${renderTeam('Time B', teamB, 'text-gray-700', 'bg-gray-200', 'bg-gray-50')}
+                ${renderTeam('Time C', teamC, 'text-red-700', 'bg-red-100', 'bg-red-50')}
             `;
+            
             document.getElementById('share-teams-btn').classList.remove('hidden');
         });
         
@@ -1071,17 +1122,19 @@
                     return showMessage("Sorteie os times primeiro.");
                 }
 
-                let message = "*⚽ Times Sorteados! ⚽*\n\n";
+                let message = "*⚽ Times Equilibrados Sorteados! ⚽*\n\n";
 
                 teamsHeaders.forEach(header => {
                     const teamContainer = header.parentElement;
                     const teamName = header.textContent;
-                    const goalkeeper = teamContainer.querySelector('p').textContent;
-                    const players = Array.from(teamContainer.querySelectorAll('ul > li'))
-                                    .map(li => `- ${li.textContent}`)
+                    const stats = teamContainer.nextElementSibling.textContent; // Média Técnica
+                    const detailContainer = teamContainer.parentElement.querySelector('.p-3');
+                    const goalkeeper = detailContainer.querySelector('p').textContent;
+                    const players = Array.from(detailContainer.querySelectorAll('ul > li'))
+                                    .map(li => `- ${li.textContent.trim()}`)
                                     .join('\n');
                     
-                    message += `*${teamName}*\n`;
+                    message += `*${teamName}* (${stats})\n`;
                     message += `${goalkeeper}\n`;
                     message += `${players}\n\n`;
                 });
@@ -1152,10 +1205,11 @@
                 
                 if (target.classList.contains('edit-player-btn')) {
                     if (!isAdmin) return;
-                    const { id, name, type } = target.dataset;
+                    const { id, name, type, rank } = target.dataset;
                     document.getElementById('editPlayerId').value = id;
                     document.getElementById('editPlayerName').value = name;
                     document.getElementById('editPlayerType').value = type;
+                    document.getElementById('editPlayerRating').value = rank;
                     showModal('editPlayerModal');
                 }
 
@@ -1262,4 +1316,3 @@
     </script>
 </body>
 </html>
-
